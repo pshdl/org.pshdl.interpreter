@@ -1,0 +1,8 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Interpreter
+Bundle-SymbolicName: de.tuhh.ict.pshdl.interpreter
+Bundle-Version: 1.0.0.qualifier
+Export-Package: de.tuhh.ict.pshdl.interpreter,
+ de.tuhh.ict.pshdl.interpreter.utils
+Require-Bundle: com.google.guava;bundle-version="10.0.1"
