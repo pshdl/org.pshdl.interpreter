@@ -6,13 +6,13 @@ public class Graph<T> {
 
 	public static class Node<T> {
 		public final T object;
-		public final HashSet<Edge<T>> inEdges;
-		public final HashSet<Edge<T>> outEdges;
+		public final RandomIterHashSet<Edge<T>> inEdges;
+		public final RandomIterHashSet<Edge<T>> outEdges;
 
 		public Node(T object) {
 			this.object = object;
-			inEdges = new HashSet<Edge<T>>();
-			outEdges = new HashSet<Edge<T>>();
+			inEdges = new RandomIterHashSet<Edge<T>>();
+			outEdges = new RandomIterHashSet<Edge<T>>();
 		}
 
 		public Node<T> addEdge(Node<T> node) {
@@ -105,7 +105,7 @@ public class Graph<T> {
 		ArrayList<Node<T>> L = new ArrayList<Node<T>>();
 
 		// S <- Set of all nodes with no incoming edges
-		HashSet<Node<T>> S = new HashSet<Node<T>>();
+		RandomIterHashSet<Node<T>> S = new RandomIterHashSet<Node<T>>();
 		for (Node<T> n : allNodes) {
 			if (n.inEdges.size() == 0) {
 				S.add(n);
@@ -144,9 +144,7 @@ public class Graph<T> {
 			}
 		}
 		if (cycle) {
-			System.out.println("Cycle present, topological sort not possible");
-		} else {
-			System.out.println("Topological Sort: " + Arrays.toString(L.toArray()));
+			throw new RuntimeException("Cycle present, topological sort not possible");
 		}
 		return L;
 	}

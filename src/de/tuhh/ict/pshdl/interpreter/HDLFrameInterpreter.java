@@ -7,11 +7,11 @@ import java.util.regex.*;
 import de.tuhh.ict.pshdl.interpreter.utils.FluidFrame.*;
 
 public final class HDLFrameInterpreter {
-	private final ExecutableModel model;
+	protected final ExecutableModel model;
 
 	protected final long storage[], storage_prev[];
 
-	protected static final Pattern aiFormatName = Pattern.compile("(.*?)(?:\\{(?:(\\d+)(?:\\:(\\d+))?)\\})?");
+	protected static final Pattern aiFormatName = Pattern.compile("(.*?)(?:\\{(?:(\\d+)(?:\\:(\\d+))?)\\})?(\\$reg)?");
 
 	private final class EncapsulatedAccess {
 		public final int shift;
@@ -20,6 +20,8 @@ public final class HDLFrameInterpreter {
 		public final String name;
 		public final int accessIndex;
 		public final boolean prev;
+		public final int bitStart;
+		public final int bitEnd;
 
 		public EncapsulatedAccess(String name, int accessIndex, boolean prev) {
 			super();
@@ -30,6 +32,8 @@ public final class HDLFrameInterpreter {
 				this.name = matcher.group(1);
 				if (matcher.group(2) == null) {
 					int width = model.getWidth(name);
+					bitStart = 0;
+					bitEnd = 64;
 					this.shift = 0;
 					if (width == 64)
 						this.mask = 0xFFFFFFFFFFFFFFFFL;
@@ -37,19 +41,23 @@ public final class HDLFrameInterpreter {
 						this.mask = (1l << width) - 1;
 					this.writeMask = 0;
 				} else if (matcher.group(3) != null) {
-					int start = Integer.parseInt(matcher.group(2));
-					int end = Integer.parseInt(matcher.group(3));
-					int actualWidth = (start - end) + 1;
-					this.shift = end;
+					bitStart = Integer.parseInt(matcher.group(2));
+					bitEnd = Integer.parseInt(matcher.group(3));
+					int actualWidth = (bitStart - bitEnd) + 1;
+					this.shift = bitEnd;
 					this.mask = (1l << actualWidth) - 1;
 					this.writeMask = ~(mask << shift);
 				} else {
 					this.shift = Integer.parseInt(matcher.group(2));
+					bitStart = shift;
+					bitEnd = shift;
 					this.mask = 1;
 					this.writeMask = ~(mask << shift);
 				}
 			} else
 				throw new IllegalArgumentException("Name:" + name + " is not valid!");
+			// System.out.println("HDLFrameInterpreter.EncapsulatedAccess.EncapsulatedAccess()"
+			// + this);
 		}
 
 		@Override
@@ -65,6 +73,8 @@ public final class HDLFrameInterpreter {
 			initial = storage[accessIndex];
 			long current = initial & writeMask;
 			storage[accessIndex] = current | ((data & mask) << shift);
+			// System.out.println("setData()" + name + "{" + bitStart + ":" +
+			// bitEnd + "} " + storage[accessIndex] + " data:" + data);
 		}
 
 		public long getData() {
@@ -76,8 +86,6 @@ public final class HDLFrameInterpreter {
 	}
 
 	private final EncapsulatedAccess[] internals, internals_prev;
-	private final EncapsulatedAccess[] input, input_prev;
-	private final EncapsulatedAccess[] outputs;
 	private final int[] regIndex, regIndexTarget;
 	private final Map<String, Integer> idx = new TreeMap<String, Integer>();
 	private int deltaCycle = 0;
@@ -98,36 +106,13 @@ public final class HDLFrameInterpreter {
 			internals[i] = new EncapsulatedAccess(in, accessIndex, false);
 			internals_prev[i] = new EncapsulatedAccess(in, accessIndex, true);
 		}
-		this.input = new EncapsulatedAccess[model.inputs.length];
-		this.input_prev = new EncapsulatedAccess[model.inputs.length];
-		for (int i = 0; i < model.inputs.length; i++) {
-			String in = model.inputs[i];
-			String basicName = getBasicName(in);
-			Integer accessIndex = idx.get(basicName);
-			if (accessIndex == null) {
-				accessIndex = currentIdx++;
-				idx.put(basicName, accessIndex);
-			}
-			input[i] = new EncapsulatedAccess(in, accessIndex, false);
-			input_prev[i] = new EncapsulatedAccess(in, accessIndex, true);
-		}
-		this.outputs = new EncapsulatedAccess[model.outputs.length];
-		for (int i = 0; i < model.outputs.length; i++) {
-			String in = model.outputs[i];
-			String basicName = getBasicName(in);
-			Integer accessIndex = idx.get(basicName);
-			if (accessIndex == null) {
-				accessIndex = currentIdx++;
-				idx.put(basicName, accessIndex);
-			}
-			outputs[i] = new EncapsulatedAccess(in, accessIndex, false);
-		}
 		regIndex = new int[model.registerOutputs.length];
 		regIndexTarget = new int[model.registerOutputs.length];
 		for (int i = 0; i < model.registerOutputs.length; i++) {
 			int ridx = model.registerOutputs[i];
 			String name = model.internals[ridx];
-			regIndex[i] = idx.get(name);
+			Integer idxSrc = idx.get(name);
+			regIndex[i] = idxSrc;
 			regIndexTarget[i] = idx.get(ExecutableModel.stripReg(name));
 		}
 		storage = new long[currentIdx];
@@ -191,10 +176,25 @@ public final class HDLFrameInterpreter {
 						stack[stackPos] = -stack[stackPos];
 						break;
 					}
-					case bitAccess:
-						break;
 					case bit_neg: {
 						stack[stackPos] = ~stack[stackPos];
+						break;
+					}
+					case bitAccessSingle: {
+						int bit = inst[++execPos] & 0xff;
+						long current = stack[stackPos];
+						current >>= bit;
+						current &= 1;
+						stack[stackPos] = current;
+						break;
+					}
+					case bitAccessSingleRange: {
+						int lowBit = inst[++execPos] & 0xff;
+						int highBit = inst[++execPos] & 0xff;
+						long current = stack[stackPos];
+						current >>= lowBit;
+						current &= (1 << ((highBit - lowBit) + 1)) - 1;
+						stack[stackPos] = current;
 						break;
 					}
 					case callFrame:
@@ -272,11 +272,10 @@ public final class HDLFrameInterpreter {
 					case loadConstant:
 						stack[++stackPos] = f.constants[inst[++execPos] & 0xff].longValue();
 						break;
-					case loadInput:
-						stack[++stackPos] = input[inst[++execPos] & 0xff].getData();
-						break;
-					case loadInternal:
-						stack[++stackPos] = internals[inst[++execPos] & 0xff].getData();
+					case loadInternal2:
+						int internal = (inst[++execPos] & 0xff) << 8;
+						internal |= (inst[++execPos] & 0xff) << 0;
+						stack[++stackPos] = internals[internal].getData();
 						break;
 					case logiAnd: {
 						long b = stack[stackPos--];
@@ -352,21 +351,9 @@ public final class HDLFrameInterpreter {
 						stack[stackPos] = a ^ b;
 						break;
 					}
-					case isFallingEdgeInput: {
-						int off = inst[++execPos] & 0xFF;
-						long curr = input[off].getData();
-						long prev = input_prev[off].getData();
-						if (f.lastUpdate == deltaCycle)
-							continue nextFrame;
-						else if ((prev == 1) && (curr == 0)) {
-							f.lastUpdate = deltaCycle;
-							regUpdated = true;
-						} else
-							continue nextFrame;
-						break;
-					}
-					case isFallingEdgeInternal: {
-						int off = inst[++execPos] & 0xFF;
+					case isFallingEdgeInternal2: {
+						int off = (inst[++execPos] & 0xFF) << 8;
+						off |= inst[++execPos] & 0xFF;
 						long curr = internals[off].getData() & 1;
 						long prev = internals_prev[off].getData() & 1;
 						if (f.lastUpdate == deltaCycle)
@@ -378,21 +365,9 @@ public final class HDLFrameInterpreter {
 							continue nextFrame;
 						break;
 					}
-					case isRisingEdgeInput: {
-						int off = inst[++execPos] & 0xFF;
-						long curr = input[off].getData() & 1;
-						long prev = input_prev[off].getData() & 1;
-						if (f.lastUpdate == deltaCycle)
-							continue nextFrame;
-						else if ((prev == 0) && (curr == 1)) {
-							f.lastUpdate = deltaCycle;
-							regUpdated = true;
-						} else
-							continue nextFrame;
-						break;
-					}
-					case isRisingEdgeInternal: {
-						int off = inst[++execPos] & 0xFF;
+					case isRisingEdgeInternal2: {
+						int off = (inst[++execPos] & 0xFF) << 8;
+						off |= inst[++execPos] & 0xFF;
 						long curr = internals[off].getData() & 1;
 						long prev = internals_prev[off].getData() & 1;
 						if (f.lastUpdate == deltaCycle)
@@ -407,10 +382,7 @@ public final class HDLFrameInterpreter {
 					}
 					execPos++;
 				} while (execPos < inst.length);
-				if (f.isInternal)
-					internals[f.outputId & 0xff].setData(stack[0]);
-				else
-					outputs[f.outputId & 0xff].setData(stack[0]);
+				internals[f.outputId & 0xff].setData(stack[0]);
 			}
 			if (regUpdated) {
 				for (int i = 0; i < regIndex.length; i++) {

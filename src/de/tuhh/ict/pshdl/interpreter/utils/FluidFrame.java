@@ -15,6 +15,11 @@ public class FluidFrame {
 		public ArgumentedInstruction(Instruction instruction, String... args) {
 			super();
 			this.instruction = instruction;
+			if (args != null)
+				for (String string : args) {
+					if (string == null)
+						throw new IllegalArgumentException("Null is not a valid argument");
+				}
 			this.args = args;
 		}
 
@@ -30,14 +35,11 @@ public class FluidFrame {
 
 	private static class FrameRegister {
 		private int frameIdCounter = 0;
+		public final Set<String> inputs = new RandomIterHashSet<String>();
 		public final Map<String, Byte> frameIds = new LinkedHashMap<String, Byte>();
 		public final List<Frame> frames = new ArrayList<Frame>();
-		private int inIdCounter = 0;
-		public final Map<String, Byte> inputIds = new LinkedHashMap<String, Byte>();
 		private int internalIdCounter = 0;
-		public final Map<String, Byte> internalIds = new LinkedHashMap<String, Byte>();
-		private int outIdCounter = 0;
-		public final Map<String, Byte> outputIds = new LinkedHashMap<String, Byte>();
+		public final Map<String, Integer> internalIds = new LinkedHashMap<String, Integer>();
 
 		public void addFrame(Frame frame) {
 			frames.add(frame);
@@ -47,10 +49,6 @@ public class FluidFrame {
 			return frameIds.get(string);
 		}
 
-		public Byte getInternal(String in) {
-			return internalIds.get(in);
-		}
-
 		public Byte registerFrame(String in) {
 			if (frameIds.get(in) == null) {
 				frameIds.put(in, (byte) frameIdCounter++);
@@ -58,26 +56,22 @@ public class FluidFrame {
 			return frameIds.get(in);
 		}
 
-		public Byte registerInput(String in) {
-			if (inputIds.get(in) == null) {
-				inputIds.put(in, (byte) inIdCounter++);
-			}
-			return inputIds.get(in);
+		public Integer getInternal(String in) {
+			return internalIds.get(in);
 		}
 
-		public Byte registerInternal(String in) {
+		public Integer registerInternal(String in) {
 			if (internalIds.get(in) == null) {
-				internalIds.put(in, (byte) internalIdCounter++);
+				internalIds.put(in, internalIdCounter++);
 			}
 			return internalIds.get(in);
 		}
 
-		public Byte registerOutput(String in) {
-			if (outputIds.get(in) == null) {
-				outputIds.put(in, (byte) outIdCounter++);
-			}
-			return outputIds.get(in);
+		public Integer registerInput(String string) {
+			inputs.add(string);
+			return registerInternal(string);
 		}
+
 	}
 
 	public static enum Instruction {
@@ -85,7 +79,8 @@ public class FluidFrame {
 		and(false, 0, "A binary & operation"), //
 		arith_neg(false, 0, "Arithmetically negates"), //
 		bit_neg(false, 0, "Bit inverts"), //
-		bitAccess(false, -1, "Use the bits given as operands"), //
+		bitAccessSingle(false, 1, "Access a single bit"), //
+		bitAccessSingleRange(false, 2, "Access a bit range"), //
 		callFrame(false, 1, "Calls a frame"), //
 		cast_int(false, 2, "Re-interprets the operand as int and resizes it"), //
 		cast_uint(false, 2, "Re-interprets the operand as uint and resizes it"), //
@@ -95,15 +90,21 @@ public class FluidFrame {
 		eq(false, 0, "An equality == operation"), //
 		greater(false, 0, "An equality > operation"), //
 		greater_eq(false, 0, "An equality >= operation"), //
-		isFallingEdgeInput(false, 1, "Checks for an rising edge on from an input signal"), //
-		isFallingEdgeInternal(false, 1, "Checks for an rising edge on from an internal signal"), //
-		isRisingEdgeInput(false, 1, "Checks for an rising edge on from an input signal"), //
-		isRisingEdgeInternal(false, 1, "Checks for an rising edge on from an internal signal"), //
+		isFallingEdgeInternal1(false, 1, "Checks for an rising edge on from an internal signal"), //
+		isRisingEdgeInternal1(false, 1, "Checks for an rising edge on from an internal signal"), //
+		isFallingEdgeInternal2(false, 1, "Checks for an rising edge on from an internal signal"), //
+		isRisingEdgeInternal2(false, 1, "Checks for an rising edge on from an internal signal"), //
+		isFallingEdgeInternal3(false, 1, "Checks for an rising edge on from an internal signal"), //
+		isRisingEdgeInternal3(false, 1, "Checks for an rising edge on from an internal signal"), //
+		isFallingEdgeInternal4(false, 1, "Checks for an rising edge on from an internal signal"), //
+		isRisingEdgeInternal4(false, 1, "Checks for an rising edge on from an internal signal"), //
 		less(false, 0, "An equality < operation"), //
 		less_eq(false, 0, "An equality <= operation"), //
 		loadConstant(false, 1, "Loads a value from the internal storage"), //
-		loadInput(false, -1, "Loads a value from an input. The first value is the input name, then followed by bit access indexes"), //
-		loadInternal(false, -1, "Loads a value from an internal. The first value is the input name, then followed by bit access indexes"), //
+		loadInternal1(false, -1, "Loads a value from an internal. The first value is the input name, then followed by bit access indexes"), //
+		loadInternal2(false, -1, "Loads a value from an internal. The first value is the input name, then followed by bit access indexes"), //
+		loadInternal3(false, -1, "Loads a value from an internal. The first value is the input name, then followed by bit access indexes"), //
+		loadInternal4(false, -1, "Loads a value from an internal. The first value is the input name, then followed by bit access indexes"), //
 		logiAnd(false, 0, "A logical && operation"), //
 		logic_neg(false, 0, "Logically negates"), //
 		logiOr(false, 0, "A logical || operation"), //
@@ -178,18 +179,16 @@ public class FluidFrame {
 	/**
 	 * All constants by name
 	 */
-	public final Map<String, BigInteger> constants = new TreeMap<String, BigInteger>();
+	public final Map<String, BigInteger> constants = new RandomHashMap<String, BigInteger>();
 
-	public final Set<String> inputs = new LinkedHashSet<String>();
 	public final LinkedList<ArgumentedInstruction> instructions = new LinkedList<ArgumentedInstruction>();
-	private boolean isInternal;
 	public boolean isPredicate;
 	public final String outputName;
 
-	public Set<Predicate> predicates = new HashSet<Predicate>();
-	public final Map<String, FluidFrame> references = new TreeMap<String, FluidFrame>();
+	public Set<Predicate> predicates = new RandomIterHashSet<Predicate>();
+	public final Map<String, FluidFrame> references = new RandomHashMap<String, FluidFrame>();
 
-	public final Map<String, Integer> widths = new TreeMap<String, Integer>();
+	public final Map<String, Integer> widths = new RandomHashMap<String, Integer>();
 
 	public FluidFrame() {
 		this(null);
@@ -211,10 +210,6 @@ public class FluidFrame {
 		instructions.add(new ArgumentedInstruction(inst));
 	}
 
-	public void addInput(String string) {
-		inputs.add(string);
-	}
-
 	public void addPredicate(int predicateID, boolean condition) {
 		predicates.add(new Predicate(condition, predicateID));
 	}
@@ -230,7 +225,6 @@ public class FluidFrame {
 	public FluidFrame append(FluidFrame frame) {
 		// Don't copy references
 		widths.putAll(frame.widths);
-		inputs.addAll(frame.inputs);
 		constants.putAll(frame.constants);
 		instructions.addAll(frame.instructions);
 		return this;
@@ -248,29 +242,19 @@ public class FluidFrame {
 			maxStack = Math.max(maxStack, frame.maxStackDepth);
 			res.add(frame);
 		}
-		String[] inputs = register.inputIds.keySet().toArray(new String[0]);
-		String[] outputs = register.outputIds.keySet().toArray(new String[0]);
 		String[] internals = register.internalIds.keySet().toArray(new String[0]);
-		return new ExecutableModel(res.toArray(new Frame[res.size()]), inputs, outputs, internals, widths, maxStack);
+		return new ExecutableModel(res.toArray(new Frame[res.size()]), internals, widths, maxStack);
 	}
 
 	private void registerFrame(FrameRegister register) {
 		register.registerFrame(outputName);
-		if (isInternal) {
-			if (outputName.endsWith("$reg")) {
-				register.registerInternal(ExecutableModel.stripReg(outputName));
-			}
-			register.registerInternal(outputName);
-		} else {
-			register.registerOutput(outputName);
+		if (outputName.endsWith("$reg")) {
+			register.registerInternal(ExecutableModel.stripReg(outputName));
 		}
+		register.registerInternal(outputName);
 		for (FluidFrame entry : references.values()) {
 			entry.registerFrame(register);
 		}
-	}
-
-	public void setInternal(boolean isInternal) {
-		this.isInternal = isInternal;
 	}
 
 	public void setPredicate(boolean predicate) {
@@ -286,10 +270,18 @@ public class FluidFrame {
 		return instrRes;
 	}
 
+	private int[] toIntArray(Collection<Integer> instr) {
+		int[] instrRes = new int[instr.size()];
+		int pos = 0;
+		for (int i : instr) {
+			instrRes[pos++] = i;
+		}
+		return instrRes;
+	}
+
 	private Frame toFrame(FrameRegister register) {
 		List<Byte> instr = new LinkedList<Byte>();
-		Set<Byte> inputDependencies = new LinkedHashSet<Byte>();
-		Set<Byte> internalDependencies = new LinkedHashSet<Byte>();
+		Set<Integer> internalDependencies = new LinkedHashSet<Integer>();
 		List<BigInteger> constants = new LinkedList<BigInteger>();
 		int stackCount = 0;
 		int maxStackCount = -1;
@@ -298,48 +290,41 @@ public class FluidFrame {
 			int ordinal = ai.instruction.ordinal();
 			instr.add((byte) (ordinal & 0xff));
 			switch (ai.instruction) {
-			case isFallingEdgeInput:
-			case isRisingEdgeInput: {
-				Byte inputId = register.registerInput(toFullRef(ai));
-				if (inputId == null)
-					throw new IllegalArgumentException(ai.toString());
-				inputDependencies.add(inputId);
-				instr.add(inputId);
-				break;
-			}
-			case isFallingEdgeInternal:
-			case isRisingEdgeInternal: {
-				Byte internalId = register.registerInternal(toFullRef(ai));
+			case isFallingEdgeInternal2:
+			case isRisingEdgeInternal2: {
+				Integer internalId = register.registerInternal(toFullRef(ai));
 				if (internalId == null)
 					throw new IllegalArgumentException(ai.toString());
 				internalDependencies.add(internalId);
-				instr.add(internalId);
+				addID2(instr, internalId);
 				break;
 			}
-			case loadInput:
+			case loadInternal2:
 				stackCount++;
 				maxStackCount = Math.max(maxStackCount, stackCount);
-				Byte inputId = register.registerInput(toFullRef(ai));
-				if (inputId == null)
-					throw new IllegalArgumentException(ai.toString());
-				inputDependencies.add(inputId);
-				instr.add(inputId);
-				break;
-			case loadInternal:
-				stackCount++;
-				maxStackCount = Math.max(maxStackCount, stackCount);
-				Byte internalId = register.getInternal(toFullRef(ai));
+				Integer internalId = register.getInternal(toFullRef(ai));
 				if (internalId != null) {
 					internalDependencies.add(internalId);
-					instr.add(internalId);
+					addID2(instr, internalId);
 				} else {
 					internalId = register.getInternal(ai.args[0]);
-					if (internalId == null)
-						throw new IllegalArgumentException(ai.toString());
+					if (internalId == null) {
+						internalId = register.registerInput(ai.args[0]);
+						System.out.println("FluidFrame.toFrame() Registering supected input:" + ai);
+					}
 					internalDependencies.add(internalId);
-					instr.add(internalId);
-					instr.add((byte) (Instruction.bitAccess.ordinal() & 0xFF));
-					instr.add(Byte.parseByte(ai.args[1]));
+					addID2(instr, internalId);
+					if (ai.args.length > 1) {
+						if (ai.args[1].indexOf(':') != -1) {
+							String[] split = ai.args[1].split(":");
+							instr.add((byte) (Instruction.bitAccessSingleRange.ordinal() & 0xFF));
+							instr.add(Byte.parseByte(split[0]));
+							instr.add(Byte.parseByte(split[1]));
+						} else {
+							instr.add((byte) (Instruction.bitAccessSingle.ordinal() & 0xFF));
+							instr.add(Byte.parseByte(ai.args[1]));
+						}
+					}
 				}
 				break;
 			case loadConstant:
@@ -360,23 +345,23 @@ public class FluidFrame {
 				stackCount--;
 			}
 		}
-		Byte outputId;
+		Integer outputId;
 		boolean isReg = outputName.endsWith("$reg");
-		if (isInternal || isReg)
-			outputId = register.registerInternal(outputName);
-		else
-			outputId = register.registerOutput(outputName);
+		outputId = register.registerInternal(outputName);
 		byte[] instrRes = toByteArray(instr);
-		byte[] inputDepRes = toByteArray(inputDependencies);
-		byte[] internalDepRes = toByteArray(internalDependencies);
+		int[] internalDepRes = toIntArray(internalDependencies);
 		// XXX determine maxBitWidth
-		Frame frame = new Frame(instrRes, inputDepRes, internalDepRes, outputId & 0xFF, 32, maxStackCount, constants.toArray(new BigInteger[constants.size()]), outputName,
-				isInternal, isReg);
+		Frame frame = new Frame(instrRes, internalDepRes, outputId & 0xFFFF, 32, maxStackCount, constants.toArray(new BigInteger[constants.size()]), outputName, isReg);
 		register.addFrame(frame);
 		for (FluidFrame ff : references.values()) {
 			ff.toFrame(register);
 		}
 		return frame;
+	}
+
+	private void addID2(List<Byte> instr, Integer internalId) {
+		instr.add((byte) (internalId >> 8));
+		instr.add((byte) (internalId >> 0));
 	}
 
 	private String toFullRef(ArgumentedInstruction ai) {
@@ -398,17 +383,7 @@ public class FluidFrame {
 				sb.append("\t").append(entry.getKey()).append(" = ").append(entry.getValue()).append('\n');
 			}
 		}
-		if (inputs.size() != 0) {
-			sb.append("Inputs:\t");
-			boolean first = true;
-			for (String input : inputs) {
-				if (!first)
-					sb.append(", ");
-				first = false;
-				sb.append(input);
-			}
-			sb.append('\n');
-		}
+
 		for (ArgumentedInstruction ai : instructions) {
 			sb.append(ai).append('\n');
 		}
