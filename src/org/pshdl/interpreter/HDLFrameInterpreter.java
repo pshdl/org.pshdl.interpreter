@@ -1,10 +1,10 @@
-package de.tuhh.ict.pshdl.interpreter;
+package org.pshdl.interpreter;
 
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.regex.*;
 
-import de.tuhh.ict.pshdl.interpreter.utils.FluidFrame.*;
+import org.pshdl.interpreter.utils.FluidFrame.*;
 
 public final class HDLFrameInterpreter {
 	protected final ExecutableModel model;

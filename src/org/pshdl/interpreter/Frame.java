@@ -1,4 +1,4 @@
-package de.tuhh.ict.pshdl.interpreter;
+package org.pshdl.interpreter;
 
 import java.io.*;
 import java.math.*;

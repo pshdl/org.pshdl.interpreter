@@ -1,0 +1,36 @@
+syntax = "proto2";
+package ExecutableModel;
+option java_package = "de.tuhh.ict.pshdl.interpreter.proto";
+option java_outer_classname = "ExecutableModelProto";
+
+message ExecutableModel {
+	optional uint32 maxDataWidth = 1;
+	optional uint32 maxStackDepth = 2;
+	repeated string inputs = 3;
+	repeated string outputs = 4;
+	repeated string internals = 5;
+	repeated uint32 registerOutputs = 6 [packed=true];
+	repeated WidthInfo widths = 7;
+}
+
+message WidthInfo {
+	required string name = 1;
+	required int32 width = 2;
+}
+
+message Frame {
+	required bytes instructions = 1;
+	optional bytes inputDependencies = 2;
+	optional bytes internalDependencies = 3;
+	repeated BInteger constants = 4;
+	required uint32 outputId = 5;
+	optional uint32 maxDataWidth = 6;
+	optional uint32 maxStackDepth = 7;
+	optional string id = 8;
+	required bool isInternal = 9;
+	required bool isReg = 10;
+}
+
+message BInteger {
+  required bytes value = 1;
+}

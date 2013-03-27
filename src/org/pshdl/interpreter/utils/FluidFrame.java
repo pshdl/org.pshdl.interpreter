@@ -1,11 +1,11 @@
-package de.tuhh.ict.pshdl.interpreter.utils;
+package org.pshdl.interpreter.utils;
 
 import java.math.*;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.*;
 
-import de.tuhh.ict.pshdl.interpreter.*;
+import org.pshdl.interpreter.*;
 
 public class FluidFrame {
 	public static class ArgumentedInstruction {

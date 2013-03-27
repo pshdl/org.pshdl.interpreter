@@ -1,10 +1,10 @@
-package de.tuhh.ict.pshdl.interpreter;
+package org.pshdl.interpreter;
 
 import java.io.*;
 import java.util.*;
 
-import de.tuhh.ict.pshdl.interpreter.utils.*;
-import de.tuhh.ict.pshdl.interpreter.utils.Graph.*;
+import org.pshdl.interpreter.utils.*;
+import org.pshdl.interpreter.utils.Graph.*;
 
 public class ExecutableModel implements Serializable {
 	public final int maxDataWidth;
