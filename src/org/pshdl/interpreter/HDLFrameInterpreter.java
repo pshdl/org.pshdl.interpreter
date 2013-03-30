@@ -4,7 +4,7 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.regex.*;
 
-import org.pshdl.interpreter.utils.FluidFrame.*;
+import org.pshdl.interpreter.utils.FluidFrame.Instruction;
 
 public final class HDLFrameInterpreter {
 	protected final ExecutableModel model;
@@ -35,10 +35,11 @@ public final class HDLFrameInterpreter {
 					bitStart = 0;
 					bitEnd = 64;
 					this.shift = 0;
-					if (width == 64)
+					if (width == 64) {
 						this.mask = 0xFFFFFFFFFFFFFFFFL;
-					else
+					} else {
 						this.mask = (1l << width) - 1;
+					}
 					this.writeMask = 0;
 				} else if (matcher.group(3) != null) {
 					bitStart = Integer.parseInt(matcher.group(2));
@@ -78,9 +79,8 @@ public final class HDLFrameInterpreter {
 		}
 
 		public long getData() {
-			if (prev) {
+			if (prev)
 				return (storage_prev[accessIndex] >> shift) & mask;
-			}
 			return (storage[accessIndex] >> shift) & mask;
 		}
 	}
@@ -291,10 +291,11 @@ public final class HDLFrameInterpreter {
 					}
 					case logic_neg: {
 						long a = stack[stackPos];
-						if (a == 0)
+						if (a == 0) {
 							stack[stackPos] = 1;
-						else
+						} else {
 							stack[stackPos] = 0;
+						}
 						break;
 					}
 					case minus: {
@@ -356,13 +357,14 @@ public final class HDLFrameInterpreter {
 						off |= inst[++execPos] & 0xFF;
 						long curr = internals[off].getData() & 1;
 						long prev = internals_prev[off].getData() & 1;
-						if (f.lastUpdate == deltaCycle)
+						if (f.lastUpdate == deltaCycle) {
 							continue nextFrame;
-						else if ((prev == 1) && (curr == 0)) {
+						} else if ((prev == 1) && (curr == 0)) {
 							f.lastUpdate = deltaCycle;
 							regUpdated = true;
-						} else
+						} else {
 							continue nextFrame;
+						}
 						break;
 					}
 					case isRisingEdgeInternal2: {
@@ -370,13 +372,14 @@ public final class HDLFrameInterpreter {
 						off |= inst[++execPos] & 0xFF;
 						long curr = internals[off].getData() & 1;
 						long prev = internals_prev[off].getData() & 1;
-						if (f.lastUpdate == deltaCycle)
+						if (f.lastUpdate == deltaCycle) {
 							continue nextFrame;
-						else if ((prev == 0) && (curr == 1)) {
+						} else if ((prev == 0) && (curr == 1)) {
 							f.lastUpdate = deltaCycle;
 							regUpdated = true;
-						} else
+						} else {
 							continue nextFrame;
+						}
 						break;
 					}
 					}

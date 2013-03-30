@@ -143,9 +143,8 @@ public class Graph<T> {
 				break;
 			}
 		}
-		if (cycle) {
+		if (cycle)
 			throw new RuntimeException("Cycle present, topological sort not possible");
-		}
 		return L;
 	}
 }

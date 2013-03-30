@@ -29,7 +29,7 @@ public class RandomIterHashSet<E> extends HashSet<E> {
 		List<E> temp = new ArrayList<>(super.size());
 		Iterator<E> iterator = super.iterator();
 		while (iterator.hasNext()) {
-			E s = (E) iterator.next();
+			E s = iterator.next();
 			temp.add(s);
 		}
 		Collections.shuffle(temp);

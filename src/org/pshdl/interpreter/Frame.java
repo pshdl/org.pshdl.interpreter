@@ -32,15 +32,19 @@ public class Frame implements Serializable {
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
 		builder.append("Frame [");
-		if (instructions != null)
+		if (instructions != null) {
 			builder.append("instructions=").append(Arrays.toString(instructions)).append(", ");
-		if (internalDependencies != null)
+		}
+		if (internalDependencies != null) {
 			builder.append("internalDependencies=").append(Arrays.toString(internalDependencies)).append(", ");
-		if (constants != null)
+		}
+		if (constants != null) {
 			builder.append("constants=").append(Arrays.toString(constants)).append(", ");
+		}
 		builder.append("outputId=").append(outputId).append(", maxDataWidth=").append(maxDataWidth).append(", maxStackDepth=").append(maxStackDepth).append(", ");
-		if (id != null)
+		if (id != null) {
 			builder.append("id=").append(id);
+		}
 		builder.append("]\n");
 		return builder.toString();
 	}

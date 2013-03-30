@@ -15,11 +15,12 @@ public class FluidFrame {
 		public ArgumentedInstruction(Instruction instruction, String... args) {
 			super();
 			this.instruction = instruction;
-			if (args != null)
+			if (args != null) {
 				for (String string : args) {
 					if (string == null)
 						throw new IllegalArgumentException("Null is not a valid argument");
 				}
+			}
 			this.args = args;
 		}
 
@@ -27,8 +28,9 @@ public class FluidFrame {
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append(instruction);
-			if (args.length != 0)
+			if (args.length != 0) {
 				builder.append(Arrays.toString(args));
+			}
 			return builder.toString();
 		}
 	}
@@ -36,10 +38,10 @@ public class FluidFrame {
 	private static class FrameRegister {
 		private int frameIdCounter = 0;
 		public final Set<String> inputs = new RandomIterHashSet<String>();
-		public final Map<String, Byte> frameIds = new LinkedHashMap<String, Byte>();
-		public final List<Frame> frames = new ArrayList<Frame>();
+		public final Map<String, Byte> frameIds = new RandomHashMap<String, Byte>();
+		public final Set<Frame> frames = new RandomIterHashSet<Frame>();
 		private int internalIdCounter = 0;
-		public final Map<String, Integer> internalIds = new LinkedHashMap<String, Integer>();
+		public final Map<String, Integer> internalIds = new RandomHashMap<String, Integer>();
 
 		public void addFrame(Frame frame) {
 			frames.add(frame);
@@ -196,10 +198,11 @@ public class FluidFrame {
 
 	public FluidFrame(String outputName) {
 		this.id = gid.incrementAndGet();
-		if (outputName != null)
+		if (outputName != null) {
 			this.outputName = outputName;
-		else
+		} else {
 			this.outputName = Integer.toString(id);
+		}
 	}
 
 	public void add(ArgumentedInstruction argumentedInstruction) {
@@ -242,7 +245,10 @@ public class FluidFrame {
 			maxStack = Math.max(maxStack, frame.maxStackDepth);
 			res.add(frame);
 		}
-		String[] internals = register.internalIds.keySet().toArray(new String[0]);
+		String[] internals = new String[register.internalIds.size()];
+		for (Entry<String, Integer> e : register.internalIds.entrySet()) {
+			internals[e.getValue()] = e.getKey();
+		}
 		return new ExecutableModel(res.toArray(new Frame[res.size()]), internals, widths, maxStack);
 	}
 

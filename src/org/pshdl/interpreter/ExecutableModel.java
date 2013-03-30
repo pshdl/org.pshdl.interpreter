@@ -4,7 +4,7 @@ import java.io.*;
 import java.util.*;
 
 import org.pshdl.interpreter.utils.*;
-import org.pshdl.interpreter.utils.Graph.*;
+import org.pshdl.interpreter.utils.Graph.Node;
 
 public class ExecutableModel implements Serializable {
 	public final int maxDataWidth;
@@ -27,8 +27,7 @@ public class ExecutableModel implements Serializable {
 		}
 		this.maxDataWidth = maxWidth;
 		List<Integer> regOuts = new ArrayList<Integer>();
-		for (int i = 0; i < frames.length; i++) {
-			Frame frame = frames[i];
+		for (Frame frame : frames) {
 			if (frame.isReg) {
 				regOuts.add(frame.outputId);
 			}
@@ -44,8 +43,9 @@ public class ExecutableModel implements Serializable {
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
 		builder.append("ExecutableModel [maxDataWidth=").append(maxDataWidth).append(", maxStackDepth=").append(maxStackDepth).append(", ");
-		if (frames != null)
+		if (frames != null) {
 			builder.append("frames=\n").append(Arrays.toString(frames)).append(", ");
+		}
 		builder.append("]");
 		return builder.toString();
 	}
@@ -63,8 +63,9 @@ public class ExecutableModel implements Serializable {
 			for (int intDep : node.object.internalDependencies) {
 				String string = internals[intDep];
 				Node<Frame> node2 = intProvider.get(string);
-				if (node2 != null)
+				if (node2 != null) {
 					node.reverseAddEdge(node2);
+				}
 			}
 		}
 		ArrayList<Node<Frame>> sortNodes = graph.sortNodes(nodes);
