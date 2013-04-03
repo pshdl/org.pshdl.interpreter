@@ -143,6 +143,52 @@ public final class HDLFrameInterpreter {
 
 	private static final Instruction[] values = Instruction.values();
 
+	private static final class InstructionCursor {
+		public InstructionCursor(byte[] instr) {
+			super();
+			this.instr = instr;
+		}
+
+		private final byte[] instr;
+		private int currentPos;
+
+		public int next() {
+			return instr[currentPos++] & 0xff;
+		}
+
+		public boolean hasMore() {
+			return currentPos < instr.length;
+		}
+
+		public int readVarInt() {
+			int tmp = 0;
+			if (((tmp = next()) & 0x80) == 0) {
+				return tmp;
+			}
+			int result = tmp & 0x7f;
+			if (((tmp = next()) & 0x80) == 0) {
+				result |= tmp << 7;
+			} else {
+				result |= (tmp & 0x7f) << 7;
+				if (((tmp = next()) & 0x80) == 0) {
+					result |= tmp << 14;
+				} else {
+					result |= (tmp & 0x7f) << 14;
+					if (((tmp = next()) & 0x80) == 0) {
+						result |= tmp << 21;
+					} else {
+						result |= (tmp & 0x7f) << 21;
+						result |= (tmp = next()) << 28;
+						if (tmp < 0) {
+							throw new IllegalArgumentException("Too many bits");
+						}
+					}
+				}
+			}
+			return result;
+		}
+	}
+
 	/*
 	 * SignedCastTest.main() cast (int<8>) -2 to (uint<16>) : FFFE
 	 * SignedCastTest.main() cast (int<8>) -2 to (int<16>) : FFFE
@@ -159,10 +205,9 @@ public final class HDLFrameInterpreter {
 			long stack[] = new long[model.maxStackDepth];
 			nextFrame: for (Frame f : model.frames) {
 				int stackPos = -1;
-				int execPos = 0;
-				byte[] inst = f.instructions;
+				InstructionCursor inst = new InstructionCursor(f.instructions);
 				do {
-					Instruction instruction = values[inst[execPos] & 0xff];
+					Instruction instruction = values[inst.next()];
 					switch (instruction) {
 					case noop:
 						break;
@@ -181,7 +226,7 @@ public final class HDLFrameInterpreter {
 						break;
 					}
 					case bitAccessSingle: {
-						int bit = inst[++execPos] & 0xff;
+						int bit = inst.next();
 						long current = stack[stackPos];
 						current >>= bit;
 						current &= 1;
@@ -189,17 +234,14 @@ public final class HDLFrameInterpreter {
 						break;
 					}
 					case bitAccessSingleRange: {
-						int lowBit = inst[++execPos] & 0xff;
-						int highBit = inst[++execPos] & 0xff;
+						int lowBit = inst.next();
+						int highBit = inst.next();
 						long current = stack[stackPos];
 						current >>= lowBit;
 						current &= (1 << ((highBit - lowBit) + 1)) - 1;
 						stack[stackPos] = current;
 						break;
 					}
-					case callFrame:
-						// Not implemented, not sure if I should keep it...
-						break;
 					case cast_int:
 						// Corner cases:
 						// value is 0xF (-1 int<4>)
@@ -207,8 +249,8 @@ public final class HDLFrameInterpreter {
 						// value is 0xA (-6 int<4>)
 						// cast to int<3> result should be 0xE (-2)
 						// Resize sign correctly to correct size
-						int targetSize = inst[++execPos] & 0xff;
-						int currentSize = inst[++execPos] & 0xff;
+						int targetSize = inst.next();
+						int currentSize = inst.next();
 						// Move the highest bit to the MSB
 						long temp = stack[stackPos] << (64 - currentSize);
 						// And move it back. As in Java everything is signed,
@@ -223,8 +265,8 @@ public final class HDLFrameInterpreter {
 					case cast_uint:
 						// There is nothing special about uints, so we just mask
 						// them
-						long mask = (1 << (inst[++execPos] & 0xff)) - 1;
-						++execPos; // We don't need current size
+						long mask = (1 << (inst.next())) - 1;
+						inst.next();
 						stack[stackPos] &= mask;
 						break;
 					case concat:
@@ -270,11 +312,10 @@ public final class HDLFrameInterpreter {
 						break;
 					}
 					case loadConstant:
-						stack[++stackPos] = f.constants[inst[++execPos] & 0xff].longValue();
+						stack[++stackPos] = f.constants[inst.next()].longValue();
 						break;
-					case loadInternal2:
-						int internal = (inst[++execPos] & 0xff) << 8;
-						internal |= (inst[++execPos] & 0xff) << 0;
+					case loadInternal:
+						int internal = inst.readVarInt();
 						stack[++stackPos] = internals[internal].getData();
 						break;
 					case logiAnd: {
@@ -352,9 +393,8 @@ public final class HDLFrameInterpreter {
 						stack[stackPos] = a ^ b;
 						break;
 					}
-					case isFallingEdgeInternal2: {
-						int off = (inst[++execPos] & 0xFF) << 8;
-						off |= inst[++execPos] & 0xFF;
+					case isFallingEdgeInternal: {
+						int off = inst.readVarInt();
 						long curr = internals[off].getData() & 1;
 						long prev = internals_prev[off].getData() & 1;
 						if (f.lastUpdate == deltaCycle) {
@@ -367,9 +407,8 @@ public final class HDLFrameInterpreter {
 						}
 						break;
 					}
-					case isRisingEdgeInternal2: {
-						int off = (inst[++execPos] & 0xFF) << 8;
-						off |= inst[++execPos] & 0xFF;
+					case isRisingEdgeInternal: {
+						int off = inst.readVarInt();
 						long curr = internals[off].getData() & 1;
 						long prev = internals_prev[off].getData() & 1;
 						if (f.lastUpdate == deltaCycle) {
@@ -382,9 +421,22 @@ public final class HDLFrameInterpreter {
 						}
 						break;
 					}
+					case posPredicate: {
+						int off = inst.readVarInt();
+						long curr = internals[off].getData();
+						if (curr == 0)
+							continue nextFrame;
+						break;
 					}
-					execPos++;
-				} while (execPos < inst.length);
+					case negPredicate: {
+						int off = inst.readVarInt();
+						long curr = internals[off].getData();
+						if (curr != 0)
+							continue nextFrame;
+						break;
+					}
+					}
+				} while (inst.hasMore());
 				internals[f.outputId & 0xff].setData(stack[0]);
 			}
 			if (regUpdated) {
