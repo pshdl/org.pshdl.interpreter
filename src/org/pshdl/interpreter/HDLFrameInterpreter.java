@@ -162,9 +162,8 @@ public final class HDLFrameInterpreter {
 
 		public int readVarInt() {
 			int tmp = 0;
-			if (((tmp = next()) & 0x80) == 0) {
+			if (((tmp = next()) & 0x80) == 0)
 				return tmp;
-			}
 			int result = tmp & 0x7f;
 			if (((tmp = next()) & 0x80) == 0) {
 				result |= tmp << 7;
@@ -179,9 +178,8 @@ public final class HDLFrameInterpreter {
 					} else {
 						result |= (tmp & 0x7f) << 21;
 						result |= (tmp = next()) << 28;
-						if (tmp < 0) {
+						if (tmp < 0)
 							throw new IllegalArgumentException("Too many bits");
-						}
 					}
 				}
 			}
@@ -424,15 +422,17 @@ public final class HDLFrameInterpreter {
 					case posPredicate: {
 						int off = inst.readVarInt();
 						long curr = internals[off].getData();
-						if (curr == 0)
+						if (curr == 0) {
 							continue nextFrame;
+						}
 						break;
 					}
 					case negPredicate: {
 						int off = inst.readVarInt();
 						long curr = internals[off].getData();
-						if (curr != 0)
+						if (curr != 0) {
 							continue nextFrame;
+						}
 						break;
 					}
 					}

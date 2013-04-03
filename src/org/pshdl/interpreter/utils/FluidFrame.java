@@ -151,8 +151,9 @@ public class FluidFrame {
 
 	public void addReferencedFrame(FluidFrame frame) {
 		widths.putAll(frame.widths);
-		if (frame.hasInstructions())
+		if (frame.hasInstructions()) {
 			references.add(frame);
+		}
 	}
 
 	public void addWith(String var, Integer width) {
@@ -183,8 +184,9 @@ public class FluidFrame {
 			}
 			name = ExecutableModel.stripReg(name);
 			Integer lID = lastID.get(name);
-			if (lID != null)
+			if (lID != null) {
 				frame.executionDep = lID;
+			}
 			lastID.put(name, frame.uniqueID);
 			maxStack = Math.max(maxStack, frame.maxStackDepth);
 		}
@@ -345,9 +347,8 @@ public class FluidFrame {
 	public static int readRawVarint32(List<Byte> inst) {
 		Iterator<Byte> iterator = inst.iterator();
 		byte tmp = iterator.next();
-		if (tmp >= 0) {
+		if (tmp >= 0)
 			return tmp;
-		}
 		int result = tmp & 0x7f;
 		if ((tmp = iterator.next()) >= 0) {
 			result |= tmp << 7;
@@ -362,9 +363,8 @@ public class FluidFrame {
 				} else {
 					result |= (tmp & 0x7f) << 21;
 					result |= (tmp = iterator.next()) << 28;
-					if (tmp < 0) {
+					if (tmp < 0)
 						throw new IllegalArgumentException("Too many bits");
-					}
 				}
 			}
 		}

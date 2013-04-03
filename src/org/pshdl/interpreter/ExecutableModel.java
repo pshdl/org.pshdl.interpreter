@@ -107,28 +107,29 @@ public class ExecutableModel implements Serializable {
 		for (int i = 0; i < frames.length; i++) {
 			String color = "black";
 			Frame frame = frames[i];
-			if (frame.instructions[0] == FluidFrame.Instruction.posPredicate.ordinal())
+			if (frame.instructions[0] == FluidFrame.Instruction.posPredicate.ordinal()) {
 				color = "green";
-			if (frame.instructions[0] == FluidFrame.Instruction.negPredicate.ordinal())
+			}
+			if (frame.instructions[0] == FluidFrame.Instruction.negPredicate.ordinal()) {
 				color = "red";
+			}
 			sb.append("node [shape = circle, color=" + color + ", label=\"").append(i).append("\"]");
 			sb.append(" frame").append(frame.uniqueID);
 			sb.append(";\n");
 		}
-		for (int i = 0; i < frames.length; i++) {
-			Frame frame = frames[i];
+		for (Frame frame : frames) {
 			String frameId = "frame" + frame.uniqueID;
 			for (int in : frame.internalDependencies) {
 				sb.append("int").append(in).append(" -> ").append(frameId);
-				for (int j = 0; j < frame.edgeDepRes.length; j++) {
-					int clk = frame.edgeDepRes[j];
-					if (in == clk)
+				for (int clk : frame.edgeDepRes) {
+					if (in == clk) {
 						sb.append(" [style=dotted]");
+					}
 				}
-				for (int j = 0; j < frame.predicateDepRes.length; j++) {
-					int pred = frame.predicateDepRes[j];
-					if (in == pred)
+				for (int pred : frame.predicateDepRes) {
+					if (in == pred) {
 						sb.append(" [color=blue]");
+					}
 				}
 				sb.append(";\n");
 			}
