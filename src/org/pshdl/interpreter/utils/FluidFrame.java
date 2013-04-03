@@ -228,33 +228,49 @@ public class FluidFrame {
 	private List<Frame> toFrame(FrameRegister register) {
 		List<Byte> instr = new LinkedList<>();
 		Set<Integer> internalDependencies = new LinkedHashSet<>();
-		Set<Integer> predicateDependencies = new LinkedHashSet<>();
-		Set<Integer> edgeDependencies = new LinkedHashSet<>();
 		List<BigInteger> constants = new LinkedList<>();
 		int stackCount = 0;
 		int maxStackCount = -1;
 		int constantIdCount = 0;
+		int posEdge = -1, negEdge = -1;
+		int posPred = -1, negPred = -1;
 		for (ArgumentedInstruction ai : instructions) {
 			int ordinal = ai.instruction.ordinal();
 			instr.add((byte) (ordinal & 0xff));
 			switch (ai.instruction) {
-			case negPredicate:
+			case negPredicate: {
+				Integer internalId = register.registerInternal("$Pred_" + toFullRef(ai));
+				if (internalId == null)
+					throw new IllegalArgumentException(ai.toString());
+				internalDependencies.add(internalId);
+				negPred = internalId;
+				writeVarInt32(instr, internalId);
+				break;
+			}
 			case posPredicate: {
 				Integer internalId = register.registerInternal("$Pred_" + toFullRef(ai));
 				if (internalId == null)
 					throw new IllegalArgumentException(ai.toString());
 				internalDependencies.add(internalId);
-				predicateDependencies.add(internalId);
+				posPred = internalId;
 				writeVarInt32(instr, internalId);
 				break;
 			}
-			case isFallingEdgeInternal:
+			case isFallingEdgeInternal: {
+				Integer internalId = register.registerInternal(toFullRef(ai));
+				if (internalId == null)
+					throw new IllegalArgumentException(ai.toString());
+				internalDependencies.add(internalId);
+				posEdge = internalId;
+				writeVarInt32(instr, internalId);
+				break;
+			}
 			case isRisingEdgeInternal: {
 				Integer internalId = register.registerInternal(toFullRef(ai));
 				if (internalId == null)
 					throw new IllegalArgumentException(ai.toString());
 				internalDependencies.add(internalId);
-				edgeDependencies.add(internalId);
+				negEdge = internalId;
 				writeVarInt32(instr, internalId);
 				break;
 			}
@@ -312,11 +328,9 @@ public class FluidFrame {
 			outputId = register.registerInternal(outputName);
 			byte[] instrRes = toByteArray(instr);
 			int[] internalDepRes = toIntArray(internalDependencies);
-			int[] edgeDepRes = toIntArray(edgeDependencies);
-			int[] predicateDepRes = toIntArray(predicateDependencies);
 			// XXX determine maxBitWidth
-			Frame frame = new Frame(instrRes, internalDepRes, predicateDepRes, edgeDepRes, outputId & 0xFFFF, 32, maxStackCount,
-					constants.toArray(new BigInteger[constants.size()]), outputName, isReg, id);
+			Frame frame = new Frame(instrRes, internalDepRes, posPred, negPred, posEdge, negEdge, outputId & 0xFFFF, 32, maxStackCount, constants.toArray(new BigInteger[constants
+					.size()]), outputName, isReg, id);
 			for (FluidFrame ff : references) {
 				ff.toFrame(register);
 			}

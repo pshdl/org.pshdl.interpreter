@@ -7,32 +7,32 @@ import java.util.*;
 public class Frame implements Serializable {
 	public final byte[] instructions;
 	public final int[] internalDependencies;
-	public final int[] predicateDepRes;
-	public final int[] edgeDepRes;
+	public final int predPosDepRes, predNegDepRes;
+	public final int edgePosDepRes, edgeNegDepRes;
 	public final BigInteger[] constants;
 	public final int outputId;
 	public final int maxDataWidth;
 	public final int maxStackDepth;
 	public final String id;
-	public final boolean isReg;
 	transient public int lastUpdate;
 	public int executionDep = -1;
 	public final int uniqueID;
 	private static final long serialVersionUID = -1690021519637432408L;
 
-	public Frame(byte[] instructions, int[] internalDependencies, int[] predicateDepRes, int[] edgeDepRes, int outputId, int maxDataWidth, int maxStackDepth,
-			BigInteger[] constants, String id, boolean isReg, int uniqueID) {
+	public Frame(byte[] instructions, int[] internalDependencies, int predPosDepRes, int predNegDepRes, int edgePosDepRes, int edgeNegDepRes, int outputId, int maxDataWidth,
+			int maxStackDepth, BigInteger[] constants, String id, boolean isReg, int uniqueID) {
 		super();
 		this.constants = constants;
 		this.instructions = instructions;
 		this.internalDependencies = internalDependencies;
-		this.predicateDepRes = predicateDepRes;
-		this.edgeDepRes = edgeDepRes;
 		this.outputId = outputId;
+		this.predNegDepRes = predNegDepRes;
+		this.predPosDepRes = predPosDepRes;
+		this.edgeNegDepRes = edgeNegDepRes;
+		this.edgePosDepRes = edgePosDepRes;
 		this.maxDataWidth = maxDataWidth;
 		this.maxStackDepth = maxStackDepth;
 		this.id = id;
-		this.isReg = isReg;
 		this.uniqueID = uniqueID;
 	}
 
@@ -56,5 +56,9 @@ public class Frame implements Serializable {
 		builder.append("executionDep=").append(executionDep);
 		builder.append("]\n");
 		return builder.toString();
+	}
+
+	public boolean isReg() {
+		return (edgeNegDepRes != -1) || (edgePosDepRes != -1);
 	}
 }

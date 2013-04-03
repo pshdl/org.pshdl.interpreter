@@ -2,6 +2,7 @@ package org.pshdl.interpreter;
 
 import java.io.*;
 import java.util.*;
+import java.util.regex.*;
 
 import org.pshdl.interpreter.utils.*;
 import org.pshdl.interpreter.utils.Graph.Node;
@@ -28,7 +29,7 @@ public class ExecutableModel implements Serializable {
 		this.maxDataWidth = maxWidth;
 		List<Integer> regOuts = new ArrayList<Integer>();
 		for (Frame frame : frames) {
-			if (frame.isReg) {
+			if (frame.isReg()) {
 				regOuts.add(frame.outputId);
 			}
 		}
@@ -108,7 +109,7 @@ public class ExecutableModel implements Serializable {
 			String color = "black";
 			Frame frame = frames[i];
 			if (frame.instructions[0] == FluidFrame.Instruction.posPredicate.ordinal()) {
-				color = "green";
+				color = "darkgreen";
 			}
 			if (frame.instructions[0] == FluidFrame.Instruction.negPredicate.ordinal()) {
 				color = "red";
@@ -121,15 +122,17 @@ public class ExecutableModel implements Serializable {
 			String frameId = "frame" + frame.uniqueID;
 			for (int in : frame.internalDependencies) {
 				sb.append("int").append(in).append(" -> ").append(frameId);
-				for (int clk : frame.edgeDepRes) {
-					if (in == clk) {
-						sb.append(" [style=dotted]");
-					}
+				if (in == frame.edgeNegDepRes) {
+					sb.append(" [style=dotted, color=red]");
 				}
-				for (int pred : frame.predicateDepRes) {
-					if (in == pred) {
-						sb.append(" [color=blue]");
-					}
+				if (in == frame.edgePosDepRes) {
+					sb.append(" [style=dotted, color=darkgreen]");
+				}
+				if (in == frame.predNegDepRes) {
+					sb.append(" [style=dotted, color=red]");
+				}
+				if (in == frame.predPosDepRes) {
+					sb.append(" [style=dotted, color=darkgreen]");
 				}
 				sb.append(";\n");
 			}
@@ -142,7 +145,7 @@ public class ExecutableModel implements Serializable {
 			sb.append(frameId).append(" -> ");
 			sb.append("int");
 			sb.append(frame.outputId);
-			sb.append(" [style=normal, color=black]");
+			sb.append(" [color=black]");
 			sb.append(";\n");
 		}
 		sb.append("}");
@@ -154,6 +157,20 @@ public class ExecutableModel implements Serializable {
 		if (integer == null) {
 			if (name.startsWith("$Pred_"))
 				return 1;
+			Matcher matcher = HDLFrameInterpreter.aiFormatName.matcher(name);
+			if (matcher.matches()) {
+				if (matcher.group(2) == null) {
+					throw new IllegalArgumentException("Unknown width of signal:" + name);
+				} else if (matcher.group(3) != null) {
+					int bitStart = Integer.parseInt(matcher.group(2));
+					int bitEnd = Integer.parseInt(matcher.group(3));
+					int actualWidth = (bitStart - bitEnd) + 1;
+					return actualWidth;
+				} else {
+					Integer.parseInt(matcher.group(2));
+					return 1;
+				}
+			}
 			throw new IllegalArgumentException("Unknown width of signal:" + name);
 		}
 		return integer;

@@ -11,7 +11,7 @@ public final class HDLFrameInterpreter {
 
 	protected final long storage[], storage_prev[];
 
-	protected static final Pattern aiFormatName = Pattern.compile("(.*?)(?:\\{(?:(\\d+)(?:\\:(\\d+))?)\\})?(\\$reg)?");
+	public static final Pattern aiFormatName = Pattern.compile("(.*?)(?:\\{(?:(\\d+)(?:\\:(\\d+))?)\\})?(\\$reg)?");
 
 	private final class EncapsulatedAccess {
 		public final int shift;
