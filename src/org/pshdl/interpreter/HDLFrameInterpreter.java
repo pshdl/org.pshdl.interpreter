@@ -4,6 +4,7 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.regex.*;
 
+import org.pshdl.interpreter.utils.*;
 import org.pshdl.interpreter.utils.FluidFrame.Instruction;
 
 public final class HDLFrameInterpreter {
@@ -11,7 +12,7 @@ public final class HDLFrameInterpreter {
 
 	protected final long storage[], storage_prev[];
 
-	public static final Pattern aiFormatName = Pattern.compile("(.*?)(?:\\{(?:(\\d+)(?:\\:(\\d+))?)\\})?(\\$reg)?");
+	public static final Pattern aiFormatName = Pattern.compile("(.*?)(?:\\{(?:(\\d+)(?:\\:(\\d+))?)\\})?(\\" + FluidFrame.REG_POSTFIX + ")?");
 
 	private final class EncapsulatedAccess {
 		public final int shift;
@@ -328,7 +329,7 @@ public final class HDLFrameInterpreter {
 						stack[stackPos] = ((a != 0) || (b != 0)) ? 1 : 0;
 						break;
 					}
-					case logic_neg: {
+					case logiNeg: {
 						long a = stack[stackPos];
 						if (a == 0) {
 							stack[stackPos] = 1;

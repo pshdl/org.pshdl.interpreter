@@ -8,6 +8,10 @@ import java.util.concurrent.atomic.*;
 import org.pshdl.interpreter.*;
 
 public class FluidFrame {
+	public static final String REG_POSTFIX = "$reg";
+
+	public static final String PRED_PREFIX = "$Pred_";
+
 	public static class ArgumentedInstruction {
 		public final String args[];
 		public final Instruction instruction;
@@ -60,39 +64,55 @@ public class FluidFrame {
 
 	public static enum Instruction {
 		noop(true, 0, "Does nothing"), //
-		and(false, 0, "A binary & operation"), //
-		arith_neg(false, 0, "Arithmetically negates"), //
-		bit_neg(false, 0, "Bit inverts"), //
+		// Bit Accesses
 		bitAccessSingle(false, 1, "Access a single bit"), //
 		bitAccessSingleRange(false, 2, "Access a bit range"), //
+		// Casts
 		cast_int(false, 2, "Re-interprets the operand as int and resizes it"), //
 		cast_uint(false, 2, "Re-interprets the operand as uint and resizes it"), //
-		concat(false, 0, "Concatenate bits"), //
+		// Load operations
+		loadConstant(false, 1, "Loads a value from the constant storage"), //
+		loadInternal(false, 1, "Loads a value from an internal"), //
+		// Concatenation
+		concat(false, 2, "Concatenate operands, assumes the width as indicated"), //
+		// Constants
 		const0(true, 0, "Loads a zero to the stack"), //
+		const1(true, 0, "Loads a 1 to the stack"), //
+		const2(true, 0, "Loads a 2 to the stack"), //
+		constAll1(false, 1, "Loads a all 1's constant to the stack with the given width"), //
+		// Execution control edges
+		isFallingEdgeInternal(false, 1, "Checks for an falling edge on from an internal signal"), //
+		isRisingEdgeInternal(false, 1, "Checks for an rising edge on from an internal signal"), //
+		// Execution control predicates
+		posPredicate(false, 1, "Checks if the given predicate has evaluated to true"), //
+		negPredicate(false, 1, "Checks if the given predicate has evaluated to false"), //
+		// Bit operations
+		and(false, 0, "A binary & operation"), //
+		or(false, 0, "A binary | operation"), //
+		xor(false, 0, "A binary ^ operation"), //
+		// Arithemetic operations
 		div(false, 0, "An arithmetic / operation"), //
+		minus(false, 0, "An arithmetic - operation"), //
+		mul(false, 0, "An arithmetic * operation"), //
+		plus(false, 0, "An arithmetic + operation"), //
+		// Equality operations
 		eq(false, 0, "An equality == operation"), //
 		greater(false, 0, "An equality > operation"), //
 		greater_eq(false, 0, "An equality >= operation"), //
-		isFallingEdgeInternal(false, 1, "Checks for an rising edge on from an internal signal"), //
-		isRisingEdgeInternal(false, 1, "Checks for an rising edge on from an internal signal"), //
 		less(false, 0, "An equality < operation"), //
 		less_eq(false, 0, "An equality <= operation"), //
-		loadConstant(false, 1, "Loads a value from the constant storage"), //
-		loadInternal(false, -1, "Loads a value from an internal. The first value is the input name, then followed by bit access indexes"), //
-		logiAnd(false, 0, "A logical && operation"), //
-		logic_neg(false, 0, "Logically negates"), //
-		logiOr(false, 0, "A logical || operation"), //
-		minus(false, 0, "An arithmetic - operation"), //
-		mul(false, 0, "An arithmetic * operation"), //
 		not_eq(false, 0, "An equality != operation"), //
-		or(false, 0, "A binary | operation"), //
-		plus(false, 0, "An arithmetic + operation"), //
-		posPredicate(false, 1, "Checks if the given predicate has evaluated to true"), //
-		negPredicate(false, 1, "Checks if the given predicate has evaluated to false"), //
+		// Logical operations
+		logiOr(false, 0, "A logical || operation"), //
+		logiAnd(false, 0, "A logical && operation"), //
+		logiNeg(false, 0, "Logically negates"), //
+		// Negation operations
+		arith_neg(false, 0, "Arithmetically negates"), //
+		bit_neg(false, 0, "Bit inverts"), //
+		// Shift operations
 		sll(false, 0, "A shift << operation"), //
 		sra(false, 0, "A shift >> operation"), //
 		srl(false, 0, "A shift >>> operation"), //
-		xor(false, 0, "A binary ^ operation"), //
 
 		;
 		final int argCount;
@@ -196,7 +216,7 @@ public class FluidFrame {
 	}
 
 	private void registerFrame(FrameRegister register) {
-		if (outputName.endsWith("$reg")) {
+		if (outputName.endsWith(REG_POSTFIX)) {
 			register.registerInternal(ExecutableModel.stripReg(outputName));
 		}
 		register.registerInternal(outputName);
@@ -237,7 +257,7 @@ public class FluidFrame {
 			instr.add((byte) (ordinal & 0xff));
 			switch (ai.instruction) {
 			case negPredicate: {
-				Integer internalId = register.registerInternal("$Pred_" + toFullRef(ai));
+				Integer internalId = register.registerInternal(PRED_PREFIX + toFullRef(ai));
 				if (internalId == null)
 					throw new IllegalArgumentException(ai.toString());
 				internalDependencies.add(internalId);
@@ -246,7 +266,7 @@ public class FluidFrame {
 				break;
 			}
 			case posPredicate: {
-				Integer internalId = register.registerInternal("$Pred_" + toFullRef(ai));
+				Integer internalId = register.registerInternal(PRED_PREFIX + toFullRef(ai));
 				if (internalId == null)
 					throw new IllegalArgumentException(ai.toString());
 				internalDependencies.add(internalId);

@@ -86,7 +86,7 @@ public class ExecutableModel implements Serializable {
 	}
 
 	public static String stripReg(String string) {
-		if (string.endsWith("$reg"))
+		if (string.endsWith(FluidFrame.REG_POSTFIX))
 			return string.substring(0, string.length() - 4);
 		return string;
 	}
@@ -98,11 +98,11 @@ public class ExecutableModel implements Serializable {
 			String label = internals[i];
 			String style = "solid";
 			String color;
-			if (label.startsWith("$Pred")) {
+			if (label.startsWith(FluidFrame.PRED_PREFIX)) {
 				color = "blue";
 				label = label.substring(6);
 			}
-			if (label.endsWith("$reg")) {
+			if (label.endsWith(FluidFrame.REG_POSTFIX)) {
 				color = "gray";
 				label = label.substring(0, label.length() - 4);
 				style = "bold";
@@ -170,7 +170,7 @@ public class ExecutableModel implements Serializable {
 	public int getWidth(String name) {
 		Integer integer = widths.get(stripReg(name));
 		if (integer == null) {
-			if (name.startsWith("$Pred_"))
+			if (name.startsWith(FluidFrame.PRED_PREFIX))
 				return 1;
 			Matcher matcher = HDLFrameInterpreter.aiFormatName.matcher(name);
 			if (matcher.matches()) {
