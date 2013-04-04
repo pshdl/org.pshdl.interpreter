@@ -16,13 +16,13 @@ public class ExecutableModel implements Serializable {
 	public final Map<String, Integer> widths;
 	private static final long serialVersionUID = 7515137334641792104L;
 
-	public ExecutableModel(Frame[] frames, String[] internals, Map<String, Integer> widths, int maxStackDepth) {
+	public ExecutableModel(Frame[] frames, String[] internals, Map<String, Integer> widths) {
 		super();
 		this.frames = frames;
 		this.internals = internals;
-		this.maxStackDepth = maxStackDepth;
 		this.widths = widths;
 		int maxWidth = -1;
+		int maxStack = -1;
 		for (Integer width : widths.values()) {
 			maxWidth = Math.max(width, maxWidth);
 		}
@@ -32,7 +32,9 @@ public class ExecutableModel implements Serializable {
 			if (frame.isReg()) {
 				regOuts.add(frame.outputId);
 			}
+			maxStack = Math.max(maxStack, frame.maxStackDepth);
 		}
+		this.maxStackDepth = maxStack;
 		int pos = 0;
 		this.registerOutputs = new int[regOuts.size()];
 		for (Integer integer : regOuts) {
@@ -54,8 +56,8 @@ public class ExecutableModel implements Serializable {
 	public ExecutableModel sortTopological() {
 		Graph<Frame> graph = new Graph<Frame>();
 		ArrayList<Node<Frame>> nodes = new ArrayList<Graph.Node<Frame>>();
-		Map<String, Node<Frame>> intProvider = new RandomHashMap<String, Graph.Node<Frame>>();
-		Map<Integer, Node<Frame>> outputIDMap = new RandomHashMap<Integer, Graph.Node<Frame>>();
+		Map<String, Node<Frame>> intProvider = new LinkedHashMap<String, Graph.Node<Frame>>();
+		Map<Integer, Node<Frame>> outputIDMap = new LinkedHashMap<Integer, Graph.Node<Frame>>();
 		for (Frame f : frames) {
 			Node<Frame> node = new Node<Frame>(f);
 			nodes.add(node);
@@ -94,27 +96,40 @@ public class ExecutableModel implements Serializable {
 		sb.append("digraph ExecutableModel {\n");
 		for (int i = 0; i < internals.length; i++) {
 			String label = internals[i];
+			String style = "solid";
 			String color;
 			if (label.startsWith("$Pred")) {
 				color = "blue";
 				label = label.substring(6);
+			}
+			if (label.endsWith("$reg")) {
+				color = "gray";
+				label = label.substring(0, label.length() - 4);
+				style = "bold";
 			} else {
 				color = "orange";
 			}
-			sb.append("node [shape = box, color=" + color + ", label=\"").append(label).append("\"]");
+			sb.append("node [shape = box, color=" + color + ", style=" + style + " label=\"").append(label).append("\"]");
 			sb.append(" int").append(i);
 			sb.append(";\n");
 		}
 		for (int i = 0; i < frames.length; i++) {
-			String color = "black";
 			Frame frame = frames[i];
-			if (frame.instructions[0] == FluidFrame.Instruction.posPredicate.ordinal()) {
+			String color = "black";
+			if (frame.predPosDepRes != -1) {
 				color = "darkgreen";
 			}
-			if (frame.instructions[0] == FluidFrame.Instruction.negPredicate.ordinal()) {
+			if (frame.predNegDepRes != -1) {
 				color = "red";
 			}
-			sb.append("node [shape = circle, color=" + color + ", label=\"").append(i).append("\"]");
+			String style = "solid";
+			if (frame.edgeNegDepRes != -1) {
+				style = "bold";
+			}
+			if (frame.edgePosDepRes != -1) {
+				style = "bold";
+			}
+			sb.append("node [shape = circle, color=" + color + ", style=" + style + ", label=\"").append(i).append("\"]");
 			sb.append(" frame").append(frame.uniqueID);
 			sb.append(";\n");
 		}
@@ -123,10 +138,10 @@ public class ExecutableModel implements Serializable {
 			for (int in : frame.internalDependencies) {
 				sb.append("int").append(in).append(" -> ").append(frameId);
 				if (in == frame.edgeNegDepRes) {
-					sb.append(" [style=dotted, color=red]");
+					sb.append(" [style=dotted, color=red, arrowType=empty]");
 				}
 				if (in == frame.edgePosDepRes) {
-					sb.append(" [style=dotted, color=darkgreen]");
+					sb.append(" [style=dotted, color=darkgreen, arrowType=empty]");
 				}
 				if (in == frame.predNegDepRes) {
 					sb.append(" [style=dotted, color=red]");
@@ -139,7 +154,7 @@ public class ExecutableModel implements Serializable {
 			if (frame.executionDep != -1) {
 				sb.append("frame" + frame.executionDep).append(" -> ");
 				sb.append(frameId);
-				sb.append(" [style=dashed, color=red]");
+				sb.append(" [style=dashed, color=blue]");
 				sb.append(";\n");
 			}
 			sb.append(frameId).append(" -> ");

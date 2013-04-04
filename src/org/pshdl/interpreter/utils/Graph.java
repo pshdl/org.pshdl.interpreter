@@ -6,13 +6,13 @@ public class Graph<T> {
 
 	public static class Node<T> {
 		public final T object;
-		public final RandomIterHashSet<Edge<T>> inEdges;
-		public final RandomIterHashSet<Edge<T>> outEdges;
+		public final LinkedHashSet<Edge<T>> inEdges;
+		public final LinkedHashSet<Edge<T>> outEdges;
 
 		public Node(T object) {
 			this.object = object;
-			inEdges = new RandomIterHashSet<Edge<T>>();
-			outEdges = new RandomIterHashSet<Edge<T>>();
+			inEdges = new LinkedHashSet<Edge<T>>();
+			outEdges = new LinkedHashSet<Edge<T>>();
 		}
 
 		public Node<T> addEdge(Node<T> node) {
@@ -105,7 +105,7 @@ public class Graph<T> {
 		ArrayList<Node<T>> L = new ArrayList<Node<T>>();
 
 		// S <- Set of all nodes with no incoming edges
-		RandomIterHashSet<Node<T>> S = new RandomIterHashSet<Node<T>>();
+		LinkedHashSet<Node<T>> S = new LinkedHashSet<Node<T>>();
 		for (Node<T> n : allNodes) {
 			if (n.inEdges.size() == 0) {
 				S.add(n);

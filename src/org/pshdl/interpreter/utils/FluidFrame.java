@@ -36,9 +36,9 @@ public class FluidFrame {
 	}
 
 	private static class FrameRegister {
-		public final Set<String> inputs = new RandomIterHashSet<String>();
+		public final Set<String> inputs = new LinkedHashSet<String>();
 		private int internalIdCounter = 0;
-		public final Map<String, Integer> internalIds = new RandomHashMap<String, Integer>();
+		public final Map<String, Integer> internalIds = new LinkedHashMap<String, Integer>();
 
 		public Integer getInternal(String in) {
 			return internalIds.get(in);
@@ -119,14 +119,14 @@ public class FluidFrame {
 	/**
 	 * All constants by name
 	 */
-	public final Map<String, BigInteger> constants = new RandomHashMap<String, BigInteger>();
+	public final Map<String, BigInteger> constants = new LinkedHashMap<String, BigInteger>();
 
 	public final LinkedList<ArgumentedInstruction> instructions = new LinkedList<ArgumentedInstruction>();
 	public String outputName;
 
 	public final Set<FluidFrame> references = new LinkedHashSet<FluidFrame>();
 
-	public final Map<String, Integer> widths = new RandomHashMap<String, Integer>();
+	public final Map<String, Integer> widths = new LinkedHashMap<String, Integer>();
 
 	public FluidFrame() {
 		this(null);
@@ -174,10 +174,13 @@ public class FluidFrame {
 			entry.registerFrame(register);
 		}
 		List<Frame> res = toFrame(register);
-		int maxStack = -1;
+		String[] internals = new String[register.internalIds.size()];
+		for (Entry<String, Integer> e : register.internalIds.entrySet()) {
+			internals[e.getValue()] = e.getKey();
+		}
 		Map<String, Integer> lastID = new HashMap<>();
 		for (Frame frame : res) {
-			String name = frame.id;
+			String name = internals[frame.outputId];
 			int brace = name.indexOf('{');
 			if (brace != -1) {
 				name = name.substring(0, brace);
@@ -188,13 +191,8 @@ public class FluidFrame {
 				frame.executionDep = lID;
 			}
 			lastID.put(name, frame.uniqueID);
-			maxStack = Math.max(maxStack, frame.maxStackDepth);
 		}
-		String[] internals = new String[register.internalIds.size()];
-		for (Entry<String, Integer> e : register.internalIds.entrySet()) {
-			internals[e.getValue()] = e.getKey();
-		}
-		return new ExecutableModel(res.toArray(new Frame[res.size()]), internals, widths, maxStack);
+		return new ExecutableModel(res.toArray(new Frame[res.size()]), internals, widths);
 	}
 
 	private void registerFrame(FrameRegister register) {
@@ -261,7 +259,7 @@ public class FluidFrame {
 				if (internalId == null)
 					throw new IllegalArgumentException(ai.toString());
 				internalDependencies.add(internalId);
-				posEdge = internalId;
+				negEdge = internalId;
 				writeVarInt32(instr, internalId);
 				break;
 			}
@@ -270,7 +268,7 @@ public class FluidFrame {
 				if (internalId == null)
 					throw new IllegalArgumentException(ai.toString());
 				internalDependencies.add(internalId);
-				negEdge = internalId;
+				posEdge = internalId;
 				writeVarInt32(instr, internalId);
 				break;
 			}
@@ -324,13 +322,12 @@ public class FluidFrame {
 		List<Frame> res = new LinkedList<>();
 		if (hasInstructions()) {
 			Integer outputId;
-			boolean isReg = outputName.endsWith("$reg");
 			outputId = register.registerInternal(outputName);
 			byte[] instrRes = toByteArray(instr);
 			int[] internalDepRes = toIntArray(internalDependencies);
 			// XXX determine maxBitWidth
 			Frame frame = new Frame(instrRes, internalDepRes, posPred, negPred, posEdge, negEdge, outputId & 0xFFFF, 32, maxStackCount, constants.toArray(new BigInteger[constants
-					.size()]), outputName, isReg, id);
+					.size()]), id);
 			for (FluidFrame ff : references) {
 				ff.toFrame(register);
 			}
@@ -442,5 +439,9 @@ public class FluidFrame {
 
 	public boolean hasInstructions() {
 		return !instructions.isEmpty();
+	}
+
+	public static void resetUniqueIDs() {
+		gid.set(0);
 	}
 }

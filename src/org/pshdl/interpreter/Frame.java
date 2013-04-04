@@ -13,14 +13,13 @@ public class Frame implements Serializable {
 	public final int outputId;
 	public final int maxDataWidth;
 	public final int maxStackDepth;
-	public final String id;
 	transient public int lastUpdate;
 	public int executionDep = -1;
 	public final int uniqueID;
 	private static final long serialVersionUID = -1690021519637432408L;
 
 	public Frame(byte[] instructions, int[] internalDependencies, int predPosDepRes, int predNegDepRes, int edgePosDepRes, int edgeNegDepRes, int outputId, int maxDataWidth,
-			int maxStackDepth, BigInteger[] constants, String id, boolean isReg, int uniqueID) {
+			int maxStackDepth, BigInteger[] constants, int uniqueID) {
 		super();
 		this.constants = constants;
 		this.instructions = instructions;
@@ -32,7 +31,6 @@ public class Frame implements Serializable {
 		this.edgePosDepRes = edgePosDepRes;
 		this.maxDataWidth = maxDataWidth;
 		this.maxStackDepth = maxStackDepth;
-		this.id = id;
 		this.uniqueID = uniqueID;
 	}
 
@@ -50,9 +48,6 @@ public class Frame implements Serializable {
 			builder.append("constants=").append(Arrays.toString(constants)).append(", ");
 		}
 		builder.append("outputId=").append(outputId).append(", maxDataWidth=").append(maxDataWidth).append(", maxStackDepth=").append(maxStackDepth).append(", ");
-		if (id != null) {
-			builder.append("id=").append(id).append(", ");
-		}
 		builder.append("executionDep=").append(executionDep);
 		builder.append("]\n");
 		return builder.toString();
