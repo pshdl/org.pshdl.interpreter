@@ -14,7 +14,21 @@ public final class HDLFrameInterpreter {
 
 	public static final Pattern aiFormatName = Pattern.compile("(.*?)(?:\\{(?:(\\d+)(?:\\:(\\d+))?)\\})?(\\" + FluidFrame.REG_POSTFIX + ")?");
 
-	private final class EncapsulatedAccess {
+	private class PrintingAccess extends EncapsulatedAccess {
+
+		public PrintingAccess(String name, int accessIndex, boolean prev) {
+			super(name, accessIndex, prev);
+		}
+
+		@Override
+		public void setData(long data, int deltaCycle, int epsCycle) {
+			super.setData(data, deltaCycle, epsCycle);
+			System.out.println("\t\tsetData()" + name + "{" + bitStart + ":" + bitEnd + "} " + storage[accessIndex] + " data:" + data);
+		}
+
+	}
+
+	private class EncapsulatedAccess {
 		public final int shift;
 		public final long mask;
 		public final long writeMask;
@@ -23,12 +37,14 @@ public final class HDLFrameInterpreter {
 		public final boolean prev;
 		public final int bitStart;
 		public final int bitEnd;
+		private boolean isPredicate;
 
 		public EncapsulatedAccess(String name, int accessIndex, boolean prev) {
 			super();
 			this.accessIndex = accessIndex;
 			this.prev = prev;
 			Matcher matcher = aiFormatName.matcher(name);
+			this.isPredicate = name.startsWith(FluidFrame.PRED_PREFIX);
 			if (matcher.matches()) {
 				this.name = matcher.group(1);
 				if (matcher.group(2) == null) {
@@ -70,19 +86,42 @@ public final class HDLFrameInterpreter {
 			return builder.toString();
 		}
 
-		public void setData(long data) {
+		public void setData(long data, int deltaCycle, int epsCycle) {
 			long initial;
 			initial = storage[accessIndex];
 			long current = initial & writeMask;
 			storage[accessIndex] = current | ((data & mask) << shift);
-			// System.out.println("setData()" + name + "{" + bitStart + ":" +
-			// bitEnd + "} " + storage[accessIndex] + " data:" + data);
+			if (isPredicate) {
+				deltaUpdates[accessIndex] = (deltaCycle << 16) | (epsCycle & 0xFFFF);
+			}
 		}
 
 		public long getData() {
 			if (prev)
 				return (storage_prev[accessIndex] >> shift) & mask;
 			return (storage[accessIndex] >> shift) & mask;
+		}
+
+		public void setLastUpdate(int deltaCycle, int epsCycle) {
+			deltaUpdates[accessIndex] = (deltaCycle << 16) | (epsCycle & 0xFFFF);
+		}
+
+		public boolean skip(int deltaCycle, int epsCycle) {
+			long local = deltaUpdates[accessIndex];
+			long dc = local >>> 16;
+			// Register was updated in previous delta cylce, that is ok
+			if (dc < deltaCycle)
+				return false;
+			// Register was updated in this delta cycle but it is the same eps,
+			// that is ok as well
+			if ((dc == deltaCycle) && ((local & 0xFFFF) == epsCycle))
+				return false;
+			// Don't update
+			return true;
+		}
+
+		public boolean isFresh(int deltaCycle) {
+			return (deltaUpdates[accessIndex] >>> 16) == deltaCycle;
 		}
 	}
 
@@ -91,7 +130,12 @@ public final class HDLFrameInterpreter {
 	private final Map<String, Integer> idx = new TreeMap<String, Integer>();
 	private int deltaCycle = 0;
 
-	public HDLFrameInterpreter(ExecutableModel model) {
+	private boolean printing;
+
+	private long[] deltaUpdates;
+
+	public HDLFrameInterpreter(ExecutableModel model, boolean printing) {
+		this.printing = printing;
 		this.model = model;
 		int currentIdx = 0;
 		this.internals = new EncapsulatedAccess[model.internals.length];
@@ -104,8 +148,13 @@ public final class HDLFrameInterpreter {
 				accessIndex = currentIdx++;
 				idx.put(basicName, accessIndex);
 			}
-			internals[i] = new EncapsulatedAccess(in, accessIndex, false);
-			internals_prev[i] = new EncapsulatedAccess(in, accessIndex, true);
+			if (printing) {
+				internals[i] = new PrintingAccess(in, accessIndex, false);
+				internals_prev[i] = new PrintingAccess(in, accessIndex, true);
+			} else {
+				internals[i] = new EncapsulatedAccess(in, accessIndex, false);
+				internals_prev[i] = new EncapsulatedAccess(in, accessIndex, true);
+			}
 		}
 		regIndex = new int[model.registerOutputs.length];
 		regIndexTarget = new int[model.registerOutputs.length];
@@ -117,6 +166,7 @@ public final class HDLFrameInterpreter {
 			regIndexTarget[i] = idx.get(ExecutableModel.stripReg(name));
 		}
 		storage = new long[currentIdx];
+		deltaUpdates = new long[currentIdx];
 		storage_prev = new long[currentIdx];
 	}
 
@@ -131,14 +181,14 @@ public final class HDLFrameInterpreter {
 	public void setInput(String name, long value) {
 		Integer integer = idx.get(name);
 		if (integer == null)
-			throw new IllegalArgumentException("Could not find an input named:" + name);
+			throw new IllegalArgumentException("Could not find a variable named:" + name);
 		storage[integer] = value;
 	}
 
 	public long getOutput(String name) {
 		Integer integer = idx.get(name);
 		if (integer == null)
-			throw new IllegalArgumentException("Could not find an input named:" + name);
+			throw new IllegalArgumentException("Could not find a variable named:" + name);
 		return storage[integer];
 	}
 
@@ -199,10 +249,18 @@ public final class HDLFrameInterpreter {
 	public void run() {
 		boolean regUpdated = false;
 		deltaCycle++;
+		int epsCycle = 0;
 		do {
+			epsCycle++;
+			if (printing) {
+				System.out.println("Starting cylce:" + deltaCycle + "." + epsCycle);
+			}
 			regUpdated = false;
 			long stack[] = new long[model.maxStackDepth];
 			nextFrame: for (Frame f : model.frames) {
+				if (printing) {
+					System.out.println("\tExecuting frame:" + f.uniqueID);
+				}
 				int stackPos = -1;
 				InstructionCursor inst = new InstructionCursor(f.instructions);
 				do {
@@ -225,7 +283,7 @@ public final class HDLFrameInterpreter {
 						break;
 					}
 					case bitAccessSingle: {
-						int bit = inst.next();
+						int bit = inst.readVarInt();
 						long current = stack[stackPos];
 						current >>= bit;
 						current &= 1;
@@ -233,8 +291,8 @@ public final class HDLFrameInterpreter {
 						break;
 					}
 					case bitAccessSingleRange: {
-						int lowBit = inst.next();
-						int highBit = inst.next();
+						int lowBit = inst.readVarInt();
+						int highBit = inst.readVarInt();
 						long current = stack[stackPos];
 						current >>= lowBit;
 						current &= (1 << ((highBit - lowBit) + 1)) - 1;
@@ -248,8 +306,8 @@ public final class HDLFrameInterpreter {
 						// value is 0xA (-6 int<4>)
 						// cast to int<3> result should be 0xE (-2)
 						// Resize sign correctly to correct size
-						int targetSize = inst.next();
-						int currentSize = inst.next();
+						int targetSize = inst.readVarInt();
+						int currentSize = inst.readVarInt();
 						// Move the highest bit to the MSB
 						long temp = stack[stackPos] << (64 - currentSize);
 						// And move it back. As in Java everything is signed,
@@ -264,8 +322,8 @@ public final class HDLFrameInterpreter {
 					case cast_uint:
 						// There is nothing special about uints, so we just mask
 						// them
-						long mask = (1 << (inst.next())) - 1;
-						inst.next();
+						long mask = (1 << (inst.readVarInt())) - 1;
+						inst.readVarInt();
 						stack[stackPos] &= mask;
 						break;
 					case concat:
@@ -273,6 +331,16 @@ public final class HDLFrameInterpreter {
 						break;
 					case const0:
 						stack[++stackPos] = 0;
+						break;
+					case const1:
+						stack[++stackPos] = 1;
+						break;
+					case const2:
+						stack[++stackPos] = 2;
+						break;
+					case constAll1:
+						int width = inst.readVarInt();
+						stack[++stackPos] = (1 << width) - 1;
 						break;
 					case div: {
 						long b = stack[stackPos--];
@@ -311,11 +379,10 @@ public final class HDLFrameInterpreter {
 						break;
 					}
 					case loadConstant:
-						stack[++stackPos] = f.constants[inst.next()].longValue();
+						stack[++stackPos] = f.constants[inst.readVarInt()].longValue();
 						break;
 					case loadInternal:
-						int internal = inst.readVarInt();
-						stack[++stackPos] = internals[internal].getData();
+						stack[++stackPos] = internals[inst.readVarInt()].getData();
 						break;
 					case logiAnd: {
 						long b = stack[stackPos--];
@@ -392,53 +459,89 @@ public final class HDLFrameInterpreter {
 						stack[stackPos] = a ^ b;
 						break;
 					}
-					case isFallingEdgeInternal: {
+					case isFallingEdge: {
 						int off = inst.readVarInt();
-						long curr = internals[off].getData() & 1;
-						long prev = internals_prev[off].getData() & 1;
-						if (f.lastUpdate == deltaCycle) {
-							continue nextFrame;
-						} else if ((prev == 1) && (curr == 0)) {
-							f.lastUpdate = deltaCycle;
-							regUpdated = true;
-						} else {
+						EncapsulatedAccess access = internals[off];
+						if (access.skip(deltaCycle, epsCycle)) {
+							if (printing) {
+								System.out.println("\t\tSkipped: falling edge already handled");
+							}
 							continue nextFrame;
 						}
+						long curr = internals[off].getData();
+						long prev = internals_prev[off].getData();
+						if ((prev != 1) || (curr != 0)) {
+							if (printing) {
+								System.out.println("\t\tSkipped: not a falling edge");
+							}
+							continue nextFrame;
+						}
+						access.setLastUpdate(deltaCycle, epsCycle);
+						regUpdated = true;
 						break;
 					}
-					case isRisingEdgeInternal: {
+					case isRisingEdge: {
 						int off = inst.readVarInt();
-						long curr = internals[off].getData() & 1;
-						long prev = internals_prev[off].getData() & 1;
-						if (f.lastUpdate == deltaCycle) {
-							continue nextFrame;
-						} else if ((prev == 0) && (curr == 1)) {
-							f.lastUpdate = deltaCycle;
-							regUpdated = true;
-						} else {
+						EncapsulatedAccess access = internals[off];
+						if (access.skip(deltaCycle, epsCycle)) {
+							if (printing) {
+								System.out.println("\t\tSkipped: rising edge already handled");
+							}
 							continue nextFrame;
 						}
+						long curr = internals[off].getData();
+						long prev = internals_prev[off].getData();
+						if ((prev != 0) || (curr != 1)) {
+							if (printing) {
+								System.out.println("\t\tSkipped: Not a rising edge");
+							}
+							continue nextFrame;
+						}
+						access.setLastUpdate(deltaCycle, epsCycle);
+						regUpdated = true;
 						break;
 					}
 					case posPredicate: {
 						int off = inst.readVarInt();
-						long curr = internals[off].getData();
-						if (curr == 0) {
+						EncapsulatedAccess access = internals[off];
+						// If data is not from this deltaCycle it was not
+						// updated that means prior predicates failed
+						if (!access.isFresh(deltaCycle)) {
+							if (printing) {
+								System.out.println("\t\tSkipped: predicate not fresh enough");
+							}
+							continue nextFrame;
+						}
+						if (access.getData() == 0) {
+							if (printing) {
+								System.out.println("\t\tSkipped: predicate not positive");
+							}
 							continue nextFrame;
 						}
 						break;
 					}
 					case negPredicate: {
 						int off = inst.readVarInt();
-						long curr = internals[off].getData();
-						if (curr != 0) {
+						EncapsulatedAccess access = internals[off];
+						// If data is not from this deltaCycle it was not
+						// updated that means prior predicates failed
+						if (!access.isFresh(deltaCycle)) {
+							if (printing) {
+								System.out.println("\t\tSkipped: predicate not fresh enough");
+							}
+							continue nextFrame;
+						}
+						if (access.getData() != 0) {
+							if (printing) {
+								System.out.println("\t\tSkipped: predicate not negative");
+							}
 							continue nextFrame;
 						}
 						break;
 					}
 					}
 				} while (inst.hasMore());
-				internals[f.outputId & 0xff].setData(stack[0]);
+				internals[f.outputId & 0xff].setData(stack[0], deltaCycle, epsCycle);
 			}
 			if (regUpdated) {
 				for (int i = 0; i < regIndex.length; i++) {

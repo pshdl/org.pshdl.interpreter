@@ -63,65 +63,67 @@ public class FluidFrame {
 	}
 
 	public static enum Instruction {
-		noop(true, 0, "Does nothing"), //
+		noop(0, 0, 0, "Does nothing"), //
 		// Bit Accesses
-		bitAccessSingle(false, 1, "Access a single bit"), //
-		bitAccessSingleRange(false, 2, "Access a bit range"), //
+		bitAccessSingle(1, 1, 1, "Access a single bit", "bit"), //
+		bitAccessSingleRange(2, 1, 1, "Access a bit range", "from", "to"), //
 		// Casts
-		cast_int(false, 2, "Re-interprets the operand as int and resizes it"), //
-		cast_uint(false, 2, "Re-interprets the operand as uint and resizes it"), //
+		cast_int(2, 1, 1, "Re-interprets the operand as int and resizes it", "targetSize", "currentSize"), //
+		cast_uint(2, 1, 1, "Re-interprets the operand as uint and resizes it", "targetSize", "currentSize"), //
 		// Load operations
-		loadConstant(false, 1, "Loads a value from the constant storage"), //
-		loadInternal(false, 1, "Loads a value from an internal"), //
+		loadConstant(1, 0, 1, "Loads a value from the constant storage", "constantIdx"), //
+		loadInternal(1, 0, 1, "Loads a value from an internal", "inernalIdx"), //
 		// Concatenation
-		concat(false, 2, "Concatenate operands, assumes the width as indicated"), //
+		concat(2, 2, 1, "Concatenate operands, assumes the width as indicated", "widthLeft", "widthRight"), //
 		// Constants
-		const0(true, 0, "Loads a zero to the stack"), //
-		const1(true, 0, "Loads a 1 to the stack"), //
-		const2(true, 0, "Loads a 2 to the stack"), //
-		constAll1(false, 1, "Loads a all 1's constant to the stack with the given width"), //
+		const0(0, 0, 1, "Loads a zero to the stack"), //
+		const1(0, 0, 1, "Loads a 1 to the stack"), //
+		const2(0, 0, 1, "Loads a 2 to the stack"), //
+		constAll1(1, 0, 1, "Loads a all 1's constant to the stack with the given width", "width"), //
 		// Execution control edges
-		isFallingEdgeInternal(false, 1, "Checks for an falling edge on from an internal signal"), //
-		isRisingEdgeInternal(false, 1, "Checks for an rising edge on from an internal signal"), //
+		isFallingEdge(1, 0, 0, "Checks for an falling edge on from an internal signal", "inernalIdx"), //
+		isRisingEdge(1, 0, 0, "Checks for an rising edge on from an internal signal", "inernalIdx"), //
 		// Execution control predicates
-		posPredicate(false, 1, "Checks if the given predicate has evaluated to true"), //
-		negPredicate(false, 1, "Checks if the given predicate has evaluated to false"), //
+		posPredicate(1, 0, 0, "Checks if the given predicate has evaluated to true", "inernalIdx"), //
+		negPredicate(1, 0, 0, "Checks if the given predicate has evaluated to false", "inernalIdx"), //
 		// Bit operations
-		and(false, 0, "A binary & operation"), //
-		or(false, 0, "A binary | operation"), //
-		xor(false, 0, "A binary ^ operation"), //
+		and(0, 2, 1, "A binary & operation"), //
+		or(0, 2, 1, "A binary | operation"), //
+		xor(0, 2, 1, "A binary ^ operation"), //
 		// Arithemetic operations
-		div(false, 0, "An arithmetic / operation"), //
-		minus(false, 0, "An arithmetic - operation"), //
-		mul(false, 0, "An arithmetic * operation"), //
-		plus(false, 0, "An arithmetic + operation"), //
+		div(0, 2, 1, "An arithmetic / operation"), //
+		minus(0, 2, 1, "An arithmetic - operation"), //
+		mul(0, 2, 1, "An arithmetic * operation"), //
+		plus(0, 2, 1, "An arithmetic + operation"), //
 		// Equality operations
-		eq(false, 0, "An equality == operation"), //
-		greater(false, 0, "An equality > operation"), //
-		greater_eq(false, 0, "An equality >= operation"), //
-		less(false, 0, "An equality < operation"), //
-		less_eq(false, 0, "An equality <= operation"), //
-		not_eq(false, 0, "An equality != operation"), //
+		eq(0, 2, 1, "An equality == operation"), //
+		greater(0, 2, 1, "An equality > operation"), //
+		greater_eq(0, 2, 1, "An equality >= operation"), //
+		less(0, 2, 1, "An equality < operation"), //
+		less_eq(0, 2, 1, "An equality <= operation"), //
+		not_eq(0, 2, 1, "An equality != operation"), //
 		// Logical operations
-		logiOr(false, 0, "A logical || operation"), //
-		logiAnd(false, 0, "A logical && operation"), //
-		logiNeg(false, 0, "Logically negates"), //
+		logiOr(0, 2, 1, "A logical || operation"), //
+		logiAnd(0, 2, 1, "A logical && operation"), //
+		logiNeg(0, 1, 1, "Logically negates"), //
 		// Negation operations
-		arith_neg(false, 0, "Arithmetically negates"), //
-		bit_neg(false, 0, "Bit inverts"), //
+		arith_neg(0, 1, 1, "Arithmetically negates"), //
+		bit_neg(0, 1, 1, "Bit inverts"), //
 		// Shift operations
-		sll(false, 0, "A shift << operation"), //
-		sra(false, 0, "A shift >> operation"), //
-		srl(false, 0, "A shift >>> operation"), //
+		sll(0, 2, 1, "A shift << operation"), //
+		sra(0, 2, 1, "A shift >> operation"), //
+		srl(0, 2, 1, "A shift >>> operation"), //
 
 		;
-		final int argCount;
-		final String description;
-		final boolean immediate;
+		public final int argCount;
+		public final String description;
+		public final int push;
+		public final int pop;
 
-		Instruction(boolean immediate, int argCount, String desc) {
+		Instruction(int argCount, int pop, int push, String desc, String... args) {
 			this.argCount = argCount;
-			this.immediate = immediate;
+			this.push = push;
+			this.pop = pop;
 			this.description = desc;
 		}
 	}
@@ -173,10 +175,14 @@ public class FluidFrame {
 		widths.putAll(frame.widths);
 		if (frame.hasInstructions()) {
 			references.add(frame);
+		} else {
+			references.addAll(frame.references);
 		}
 	}
 
 	public void addWith(String var, Integer width) {
+		if (width == null)
+			throw new IllegalArgumentException("Null is not a valid width for var:" + var);
 		widths.put(var, width);
 	}
 
@@ -251,17 +257,19 @@ public class FluidFrame {
 		int maxStackCount = -1;
 		int constantIdCount = 0;
 		int posEdge = -1, negEdge = -1;
-		int posPred = -1, negPred = -1;
+		List<Integer> posPred = new LinkedList<>(), negPred = new LinkedList<>();
 		for (ArgumentedInstruction ai : instructions) {
-			int ordinal = ai.instruction.ordinal();
-			instr.add((byte) (ordinal & 0xff));
+			stackCount += ai.instruction.push;
+			stackCount -= ai.instruction.pop;
+			maxStackCount = Math.max(maxStackCount, stackCount);
+			instr.add((byte) (ai.instruction.ordinal() & 0xff));
 			switch (ai.instruction) {
 			case negPredicate: {
 				Integer internalId = register.registerInternal(PRED_PREFIX + toFullRef(ai));
 				if (internalId == null)
 					throw new IllegalArgumentException(ai.toString());
 				internalDependencies.add(internalId);
-				negPred = internalId;
+				negPred.add(internalId);
 				writeVarInt32(instr, internalId);
 				break;
 			}
@@ -270,11 +278,11 @@ public class FluidFrame {
 				if (internalId == null)
 					throw new IllegalArgumentException(ai.toString());
 				internalDependencies.add(internalId);
-				posPred = internalId;
+				posPred.add(internalId);
 				writeVarInt32(instr, internalId);
 				break;
 			}
-			case isFallingEdgeInternal: {
+			case isFallingEdge: {
 				Integer internalId = register.registerInternal(toFullRef(ai));
 				if (internalId == null)
 					throw new IllegalArgumentException(ai.toString());
@@ -283,7 +291,7 @@ public class FluidFrame {
 				writeVarInt32(instr, internalId);
 				break;
 			}
-			case isRisingEdgeInternal: {
+			case isRisingEdge: {
 				Integer internalId = register.registerInternal(toFullRef(ai));
 				if (internalId == null)
 					throw new IllegalArgumentException(ai.toString());
@@ -293,8 +301,6 @@ public class FluidFrame {
 				break;
 			}
 			case loadInternal:
-				stackCount++;
-				maxStackCount = Math.max(maxStackCount, stackCount);
 				Integer internalId = register.getInternal(toFullRef(ai));
 				if (internalId != null) {
 					internalDependencies.add(internalId);
@@ -303,7 +309,7 @@ public class FluidFrame {
 					internalId = register.getInternal(ai.args[0]);
 					if (internalId == null) {
 						internalId = register.registerInput(ai.args[0]);
-						System.out.println("FluidFrame.toFrame() Registering supected input:" + ai);
+						System.out.println("FluidFrame.toFrame() Registering suspected input:" + ai);
 					}
 					internalDependencies.add(internalId);
 					writeVarInt32(instr, internalId);
@@ -311,32 +317,25 @@ public class FluidFrame {
 						if (ai.args[1].indexOf(':') != -1) {
 							String[] split = ai.args[1].split(":");
 							instr.add((byte) (Instruction.bitAccessSingleRange.ordinal() & 0xFF));
-							instr.add(Byte.parseByte(split[0]));
-							instr.add(Byte.parseByte(split[1]));
+							writeVarInt32(instr, Integer.parseInt(split[0]));
+							writeVarInt32(instr, Integer.parseInt(split[1]));
 						} else {
 							instr.add((byte) (Instruction.bitAccessSingle.ordinal() & 0xFF));
-							instr.add(Byte.parseByte(ai.args[1]));
+							writeVarInt32(instr, Integer.parseInt(ai.args[1]));
 						}
 					}
 				}
 				break;
-			case const0:
-				stackCount++;
-				maxStackCount = Math.max(maxStackCount, stackCount);
-				break;
 			case loadConstant:
-				stackCount++;
-				maxStackCount = Math.max(maxStackCount, stackCount);
 				constants.add(this.constants.get(ai.args[0]));
-				instr.add((byte) constantIdCount++);
+				writeVarInt32(instr, constantIdCount++);
 				break;
 			case cast_uint:
 			case cast_int:
-				instr.add(Byte.parseByte(ai.args[0]));
-				instr.add(Byte.parseByte(ai.args[1]));
+				writeVarInt32(instr, Integer.parseInt(ai.args[0]));
+				writeVarInt32(instr, Integer.parseInt(ai.args[1]));
 				break;
 			default:
-				stackCount--;
 			}
 		}
 		List<Frame> res = new LinkedList<>();
@@ -346,8 +345,8 @@ public class FluidFrame {
 			byte[] instrRes = toByteArray(instr);
 			int[] internalDepRes = toIntArray(internalDependencies);
 			// XXX determine maxBitWidth
-			Frame frame = new Frame(instrRes, internalDepRes, posPred, negPred, posEdge, negEdge, outputId & 0xFFFF, 32, maxStackCount, constants.toArray(new BigInteger[constants
-					.size()]), id);
+			Frame frame = new Frame(instrRes, internalDepRes, toIntArray(posPred), toIntArray(negPred), posEdge, negEdge, outputId & 0xFFFF, 32, maxStackCount,
+					constants.toArray(new BigInteger[constants.size()]), id);
 			for (FluidFrame ff : references) {
 				ff.toFrame(register);
 			}
@@ -463,5 +462,10 @@ public class FluidFrame {
 
 	public static void resetUniqueIDs() {
 		gid.set(0);
+	}
+
+	public void addConstant(String refName, BigInteger bVal) {
+		constants.put(refName, bVal);
+		instructions.add(new ArgumentedInstruction(Instruction.loadConstant, refName));
 	}
 }

@@ -7,7 +7,8 @@ import java.util.*;
 public class Frame implements Serializable {
 	public final byte[] instructions;
 	public final int[] internalDependencies;
-	public final int predPosDepRes, predNegDepRes;
+	public final int[] predPosDepRes;
+	public final int[] predNegDepRes;
 	public final int edgePosDepRes, edgeNegDepRes;
 	public final BigInteger[] constants;
 	public final int outputId;
@@ -18,7 +19,7 @@ public class Frame implements Serializable {
 	public final int uniqueID;
 	private static final long serialVersionUID = -1690021519637432408L;
 
-	public Frame(byte[] instructions, int[] internalDependencies, int predPosDepRes, int predNegDepRes, int edgePosDepRes, int edgeNegDepRes, int outputId, int maxDataWidth,
+	public Frame(byte[] instructions, int[] internalDependencies, int[] predPosDepRes, int[] predNegDepRes, int edgePosDepRes, int edgeNegDepRes, int outputId, int maxDataWidth,
 			int maxStackDepth, BigInteger[] constants, int uniqueID) {
 		super();
 		this.constants = constants;

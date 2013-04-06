@@ -101,8 +101,7 @@ public class ExecutableModel implements Serializable {
 			if (label.startsWith(FluidFrame.PRED_PREFIX)) {
 				color = "blue";
 				label = label.substring(6);
-			}
-			if (label.endsWith(FluidFrame.REG_POSTFIX)) {
+			} else if (label.endsWith(FluidFrame.REG_POSTFIX)) {
 				color = "gray";
 				label = label.substring(0, label.length() - 4);
 				style = "bold";
@@ -113,13 +112,12 @@ public class ExecutableModel implements Serializable {
 			sb.append(" int").append(i);
 			sb.append(";\n");
 		}
-		for (int i = 0; i < frames.length; i++) {
-			Frame frame = frames[i];
+		for (Frame frame : frames) {
 			String color = "black";
-			if (frame.predPosDepRes != -1) {
+			if ((frame.predPosDepRes != null) && (frame.predPosDepRes.length > 0)) {
 				color = "darkgreen";
 			}
-			if (frame.predNegDepRes != -1) {
+			if ((frame.predNegDepRes != null) && (frame.predNegDepRes.length > 0)) {
 				color = "red";
 			}
 			String style = "solid";
@@ -129,7 +127,7 @@ public class ExecutableModel implements Serializable {
 			if (frame.edgePosDepRes != -1) {
 				style = "bold";
 			}
-			sb.append("node [shape = circle, color=" + color + ", style=" + style + ", label=\"").append(i).append("\"]");
+			sb.append("node [shape = circle, color=" + color + ", style=" + style + ", label=\"").append(frame.uniqueID).append("\"]");
 			sb.append(" frame").append(frame.uniqueID);
 			sb.append(";\n");
 		}
@@ -143,11 +141,17 @@ public class ExecutableModel implements Serializable {
 				if (in == frame.edgePosDepRes) {
 					sb.append(" [style=dotted, color=darkgreen, arrowType=empty]");
 				}
-				if (in == frame.predNegDepRes) {
-					sb.append(" [style=dotted, color=red]");
+				if (frame.predNegDepRes != null) {
+					for (int p : frame.predNegDepRes)
+						if (in == p) {
+							sb.append(" [style=dotted, color=red]");
+						}
 				}
-				if (in == frame.predPosDepRes) {
-					sb.append(" [style=dotted, color=darkgreen]");
+				if (frame.predPosDepRes != null) {
+					for (int p : frame.predPosDepRes)
+						if (in == p) {
+							sb.append(" [style=dotted, color=darkgreen]");
+						}
 				}
 				sb.append(";\n");
 			}
@@ -174,9 +178,9 @@ public class ExecutableModel implements Serializable {
 				return 1;
 			Matcher matcher = HDLFrameInterpreter.aiFormatName.matcher(name);
 			if (matcher.matches()) {
-				if (matcher.group(2) == null) {
+				if (matcher.group(2) == null)
 					throw new IllegalArgumentException("Unknown width of signal:" + name);
-				} else if (matcher.group(3) != null) {
+				else if (matcher.group(3) != null) {
 					int bitStart = Integer.parseInt(matcher.group(2));
 					int bitEnd = Integer.parseInt(matcher.group(3));
 					int actualWidth = (bitStart - bitEnd) + 1;

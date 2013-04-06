@@ -26,16 +26,23 @@ public class IOUtil {
 		}
 
 		public static TLV read(DataInputStream is, Enum<?> e[]) throws IOException {
-			int type = is.read();
-			if (type == -1)
-				return null;
-			if ((type & 0x80) != 0)
-				type &= 0x7F;
+			int len = 0;
+			int type = -1;
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			do {
+				type = is.read();
+				if (type == -1)
+					return null;
+				if ((type & 0x80) != 0) {
+					type &= 0x7F;
+				}
+				len = is.readShort() & 0xFFFF;
+				byte data[] = new byte[len];
+				is.readFully(data);
+				baos.write(data);
+			} while (len == 0xFFFF);
 			Enum<?> ne = e[type];
-			int len = is.readShort() & 0xFFFF;
-			byte data[] = new byte[len];
-			is.readFully(data);
-			return new TLV(ne, data);
+			return new TLV(ne, baos.toByteArray());
 		}
 
 	}
@@ -61,8 +68,9 @@ public class IOUtil {
 			ModelTypes type = (ModelTypes) tlv.type;
 			switch (type) {
 			case date:
-				if (verbose)
+				if (verbose) {
 					System.out.printf("Created on: %1$F %1$T\n" + new Date(asLong(tlv.value)));
+				}
 				break;
 			case frame:
 				frameList.add(asFrame(tlv.value, verbose));
@@ -71,12 +79,14 @@ public class IOUtil {
 				internals = asStringArray(tlv.value);
 				break;
 			case maxDataWidth:
-				if (verbose)
+				if (verbose) {
 					System.out.println("Max data width:" + asInt(tlv.value));
+				}
 				break;
 			case maxStackDepth:
-				if (verbose)
+				if (verbose) {
 					System.out.println("Max Stack depth:" + asInt(tlv.value));
+				}
 				break;
 			case registers:
 				if (verbose) {
@@ -89,13 +99,15 @@ public class IOUtil {
 				}
 				break;
 			case src:
-				if (verbose)
+				if (verbose) {
 					// Don't use the terminating 0 in Java
 					System.out.println("Generated from resource:" + new String(tlv.value, 0, tlv.value.length - 1));
+				}
 				break;
 			case version:
-				if (verbose)
+				if (verbose) {
 					System.out.printf("Compiled with version: %d.%d.%d\n", tlv.value[0], tlv.value[1], tlv.value[2]);
+				}
 				break;
 			case widths:
 				widths = asIntArray(tlv.value);
@@ -104,7 +116,7 @@ public class IOUtil {
 				throw new IllegalArgumentException("The type:" + type + " is not handled");
 			}
 		}
-		Frame[] frames = (Frame[]) frameList.toArray(new Frame[frameList.size()]);
+		Frame[] frames = frameList.toArray(new Frame[frameList.size()]);
 		Map<String, Integer> widthMap = new HashMap<String, Integer>();
 		for (int i = 0; i < internals.length; i++) {
 			String s = internals[i];
@@ -118,7 +130,8 @@ public class IOUtil {
 		TLV tlv = null;
 		BigInteger consts[] = new BigInteger[0];
 		int edgeNegDep = -1, edgePosDep = -1;
-		int predNegDep = -1, predPosDep = -1;
+		int[] predNegDep = null;
+		int[] predPosDep = null;
 		int executionDep = -1;
 		int maxDataWidth = -1, maxStackDepth = -1;
 		int outputID = -1, uniqueID = -1;
@@ -160,10 +173,10 @@ public class IOUtil {
 				outputID = asInt(tlv.value);
 				break;
 			case predNegDep:
-				predNegDep = asInt(tlv.value);
+				predNegDep = asIntArray(tlv.value);
 				break;
 			case predPosDep:
-				predPosDep = asInt(tlv.value);
+				predPosDep = asIntArray(tlv.value);
 				break;
 			case uniqueID:
 				uniqueID = asInt(tlv.value);
@@ -217,8 +230,9 @@ public class IOUtil {
 		oos.write("PSEX".getBytes());
 		writeTLV(obj, ModelTypes.version, new byte[] { 0, 2, 0 });
 		writeTLV(obj, ModelTypes.src, source);
-		if (date != -1)
+		if (date != -1) {
 			writeTLV(obj, ModelTypes.date, date);
+		}
 		writeTLV(obj, ModelTypes.maxDataWidth, model.maxDataWidth);
 		writeTLV(obj, ModelTypes.maxStackDepth, model.maxStackDepth);
 		writeTLV(obj, ModelTypes.internals, model.internals);
@@ -243,16 +257,21 @@ public class IOUtil {
 		writeTLV(obj, FrameTypes.outputID, f.outputId);
 		writeTLV(obj, FrameTypes.internalDep, f.internalDependencies);
 		// Only write if they are set
-		if (f.edgeNegDepRes != -1)
+		if (f.edgeNegDepRes != -1) {
 			writeTLV(obj, FrameTypes.edgeNegDep, f.edgeNegDepRes);
-		if (f.edgePosDepRes != -1)
+		}
+		if (f.edgePosDepRes != -1) {
 			writeTLV(obj, FrameTypes.edgePosDep, f.edgePosDepRes);
-		if (f.predNegDepRes != -1)
+		}
+		if ((f.predNegDepRes != null) && (f.predNegDepRes.length > 0)) {
 			writeTLV(obj, FrameTypes.predNegDep, f.predNegDepRes);
-		if (f.predPosDepRes != -1)
+		}
+		if ((f.predPosDepRes != null) && (f.predPosDepRes.length > 0)) {
 			writeTLV(obj, FrameTypes.predPosDep, f.predPosDepRes);
-		if (f.executionDep != -1)
+		}
+		if (f.executionDep != -1) {
 			writeTLV(obj, FrameTypes.executionDep, f.executionDep);
+		}
 		String[] consts = new String[f.constants.length];
 		for (int i = 0; i < consts.length; i++) {
 			consts[i] = f.constants[i].toString(16); // Represent as hex String
@@ -304,19 +323,22 @@ public class IOUtil {
 	}
 
 	public static void writeHeader(DataOutputStream obj, Enum<?> e, int len) throws IOException {
-		if (e instanceof FrameTypes)
+		if (e instanceof FrameTypes) {
 			obj.writeByte(e.ordinal() | 0x80); // Write 1 byte type field
-		else
+		} else {
 			obj.writeByte(e.ordinal()); // Write 1 byte type field
+		}
 		obj.writeShort(len); // Write 2 byte length field
 	}
 
 	public static void main(String[] args) {
 		System.out.println("Model types:");
-		for (ModelTypes type : ModelTypes.values())
+		for (ModelTypes type : ModelTypes.values()) {
 			System.out.printf("%15s=%02x\n", type.name(), type.ordinal());
+		}
 		System.out.println("Frame types:");
-		for (FrameTypes type : FrameTypes.values())
+		for (FrameTypes type : FrameTypes.values()) {
 			System.out.printf("0x%02x | %-15s\n", 0x80 | type.ordinal(), type.name());
+		}
 	}
 }
