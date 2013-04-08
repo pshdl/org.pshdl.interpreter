@@ -5,6 +5,7 @@ import java.math.*;
 import java.util.*;
 
 import org.pshdl.interpreter.*;
+import org.pshdl.interpreter.HDLFrameInterpreter.InstructionCursor;
 
 public class IOUtil {
 	private static enum ModelTypes {
@@ -37,6 +38,8 @@ public class IOUtil {
 					type &= 0x7F;
 				}
 				len = is.readShort() & 0xFFFF;
+				// System.out.println("IOUtil.TLV.read()Reading type:" + e[type]
+				// + " with len:" + len);
 				byte data[] = new byte[len];
 				is.readFully(data);
 				baos.write(data);
@@ -198,20 +201,18 @@ public class IOUtil {
 	}
 
 	private static int[] asIntArray(byte[] value) {
-		int num = value.length / 4;
-		int[] res = new int[num];
-		for (int i = 0; i < num; i++) {
-			res[i] = asInt(value, i * 4);
+		InstructionCursor cursor = new HDLFrameInterpreter.InstructionCursor(value);
+		int amount = cursor.readVarInt();
+		int res[] = new int[amount];
+		for (int i = 0; i < amount; i++) {
+			res[i] = cursor.readVarInt();
 		}
 		return res;
 	}
 
-	private static int asInt(byte[] value, int off) {
-		return ((value[0 + off] << 24) + (value[1 + off] << 16) + (value[2 + off] << 8) + (value[3 + off] << 0));
-	}
-
 	private static int asInt(byte[] value) {
-		return ((value[0] << 24) + (value[1] << 16) + (value[2] << 8) + (value[3] << 0));
+		InstructionCursor cursor = new HDLFrameInterpreter.InstructionCursor(value);
+		return cursor.readVarInt();
 	}
 
 	private static long asLong(byte[] readBuffer) {
@@ -228,22 +229,22 @@ public class IOUtil {
 	public static void writeExecutableModel(String source, long date, ExecutableModel model, OutputStream oos) throws IOException {
 		DataOutputStream obj = new DataOutputStream(oos);
 		oos.write("PSEX".getBytes());
-		writeTLV(obj, ModelTypes.version, new byte[] { 0, 2, 0 });
-		writeTLV(obj, ModelTypes.src, source);
+		writeTLVByteArray(obj, ModelTypes.version, new byte[] { 0, 2, 0 });
+		writeTLVString(obj, ModelTypes.src, source);
 		if (date != -1) {
-			writeTLV(obj, ModelTypes.date, date);
+			writeTLVSingleLong(obj, ModelTypes.date, date);
 		}
-		writeTLV(obj, ModelTypes.maxDataWidth, model.maxDataWidth);
-		writeTLV(obj, ModelTypes.maxStackDepth, model.maxStackDepth);
-		writeTLV(obj, ModelTypes.internals, model.internals);
+		writeTLVSingleInt(obj, ModelTypes.maxDataWidth, model.maxDataWidth);
+		writeTLVSingleInt(obj, ModelTypes.maxStackDepth, model.maxStackDepth);
+		writeTLVString(obj, ModelTypes.internals, model.internals);
 		int[] widths = new int[model.internals.length];
 		for (int i = 0; i < widths.length; i++) {
 			// Transform map into sequence of width with same ordering as
 			// internals
 			widths[i] = model.getWidth(model.internals[i]);
 		}
-		writeTLV(obj, ModelTypes.widths, widths);
-		writeTLV(obj, ModelTypes.registers, model.registerOutputs);
+		writeTLVIntArray(obj, ModelTypes.widths, widths);
+		writeTLVIntArray(obj, ModelTypes.registers, model.registerOutputs);
 		for (Frame f : model.frames) {
 			writeFrame(obj, f);
 		}
@@ -253,63 +254,89 @@ public class IOUtil {
 	private static void writeFrame(DataOutputStream modelOO, Frame f) throws IOException {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DataOutputStream obj = new DataOutputStream(baos);
-		writeTLV(obj, FrameTypes.uniqueID, f.uniqueID);
-		writeTLV(obj, FrameTypes.outputID, f.outputId);
-		writeTLV(obj, FrameTypes.internalDep, f.internalDependencies);
+		writeTLVSingleInt(obj, FrameTypes.uniqueID, f.uniqueID);
+		writeTLVSingleInt(obj, FrameTypes.outputID, f.outputId);
+		writeTLVIntArray(obj, FrameTypes.internalDep, f.internalDependencies);
 		// Only write if they are set
 		if (f.edgeNegDepRes != -1) {
-			writeTLV(obj, FrameTypes.edgeNegDep, f.edgeNegDepRes);
+			writeTLVSingleInt(obj, FrameTypes.edgeNegDep, f.edgeNegDepRes);
 		}
 		if (f.edgePosDepRes != -1) {
-			writeTLV(obj, FrameTypes.edgePosDep, f.edgePosDepRes);
+			writeTLVSingleInt(obj, FrameTypes.edgePosDep, f.edgePosDepRes);
 		}
 		if ((f.predNegDepRes != null) && (f.predNegDepRes.length > 0)) {
-			writeTLV(obj, FrameTypes.predNegDep, f.predNegDepRes);
+			writeTLVIntArray(obj, FrameTypes.predNegDep, f.predNegDepRes);
 		}
 		if ((f.predPosDepRes != null) && (f.predPosDepRes.length > 0)) {
-			writeTLV(obj, FrameTypes.predPosDep, f.predPosDepRes);
+			writeTLVIntArray(obj, FrameTypes.predPosDep, f.predPosDepRes);
 		}
 		if (f.executionDep != -1) {
-			writeTLV(obj, FrameTypes.executionDep, f.executionDep);
+			writeTLVSingleInt(obj, FrameTypes.executionDep, f.executionDep);
 		}
 		String[] consts = new String[f.constants.length];
 		for (int i = 0; i < consts.length; i++) {
 			consts[i] = f.constants[i].toString(16); // Represent as hex String
 		}
-		writeTLV(obj, FrameTypes.constants, consts);
-		writeTLV(obj, FrameTypes.instructions, f.instructions);
-		writeTLV(obj, FrameTypes.maxDataWidth, f.maxDataWidth);
-		writeTLV(obj, FrameTypes.maxStackDepth, f.maxStackDepth);
+		writeTLVString(obj, FrameTypes.constants, consts);
+		writeTLVByteArray(obj, FrameTypes.instructions, f.instructions);
+		writeTLVSingleInt(obj, FrameTypes.maxDataWidth, f.maxDataWidth);
+		writeTLVSingleInt(obj, FrameTypes.maxStackDepth, f.maxStackDepth);
 
-		writeTLV(modelOO, ModelTypes.frame, baos.toByteArray());
+		writeTLVByteArray(modelOO, ModelTypes.frame, baos.toByteArray());
 		obj.close();
 	}
 
-	private static void writeTLV(DataOutputStream obj, Enum<?> e, int... data) throws IOException {
-		writeHeader(obj, e, 4 * data.length);
-		for (int i : data) {
-			obj.writeInt(i);
-		}
+	/**
+	 * Simple TLV for single integers. No preceeding items count
+	 */
+	private static void writeTLVSingleInt(DataOutputStream obj, Enum<?> e, int data) throws IOException {
+		writeTLVByteArray(obj, e, getVarInt(data));
 	}
 
-	private static void writeTLV(DataOutputStream obj, Enum<?> e, String... data) throws IOException {
+	private static byte[] getVarInt(int val) throws IOException {
+		int num = val;
+		int t = 0;
+		ByteArrayOutputStream os = new ByteArrayOutputStream(5);
+		while (num > 127) {
+			t = 0x80 | (num & 0x7F);
+			os.write(t);
+			num >>= 7;
+		}
+		t = num & 0x7F;
+		os.write(t);
+		return os.toByteArray();
+	}
+
+	private static void writeTLVIntArray(DataOutputStream obj, Enum<?> e, int... data) throws IOException {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		for (int i : data) {
+			baos.write(getVarInt(i));
+		}
+		byte[] lenHeader = getVarInt(data.length);
+		byte[] varIntArray = baos.toByteArray();
+		writeHeader(obj, e, varIntArray.length + lenHeader.length);
+		obj.write(lenHeader); // Write the number of elements
+		obj.write(varIntArray); // Write all VarInts
+	}
+
+	private static void writeTLVString(DataOutputStream obj, Enum<?> e, String... data) throws IOException {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		for (String string : data) {
 			byte[] bytes = string.getBytes();
 			baos.write(bytes);
 			baos.write(0); // Make null terminated strings
 		}
-		writeTLV(obj, e, baos.toByteArray());
+		writeTLVByteArray(obj, e, baos.toByteArray());
 	}
 
-	private static void writeTLV(DataOutputStream obj, Enum<?> e, long... data) throws IOException {
+	private static void writeTLVSingleLong(DataOutputStream obj, Enum<?> e, long... data) throws IOException {
 		writeHeader(obj, e, 8 * data.length);
 		for (long l : data) {
 			obj.writeLong(l);
 		}
 	}
 
-	private static void writeTLV(DataOutputStream obj, Enum<?> e, byte[] bytes) throws IOException {
+	private static void writeTLVByteArray(DataOutputStream obj, Enum<?> e, byte[] bytes) throws IOException {
 		int len = bytes.length;
 		int off = 0;
 		while (len >= 0xFFFF) {

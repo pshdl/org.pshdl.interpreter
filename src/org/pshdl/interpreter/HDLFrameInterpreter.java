@@ -194,7 +194,7 @@ public final class HDLFrameInterpreter {
 
 	private static final Instruction[] values = Instruction.values();
 
-	private static final class InstructionCursor {
+	public static final class InstructionCursor {
 		public InstructionCursor(byte[] instr) {
 			super();
 			this.instr = instr;
