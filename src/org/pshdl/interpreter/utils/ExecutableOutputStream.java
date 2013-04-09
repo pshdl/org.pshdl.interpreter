@@ -16,7 +16,7 @@ public class ExecutableOutputStream extends DataOutputStream {
 		writeByteArray(ModelTypes.version, new byte[] { 0, 2, 0 });
 		writeString(ModelTypes.src, source);
 		if (date != -1) {
-			writeSingleLong(ModelTypes.date, date);
+			writeLong(ModelTypes.date, date);
 		}
 		writeInt(ModelTypes.maxDataWidth, model.maxDataWidth);
 		writeInt(ModelTypes.maxStackDepth, model.maxStackDepth);
@@ -127,7 +127,7 @@ public class ExecutableOutputStream extends DataOutputStream {
 		writeByteArray(e, baos.toByteArray());
 	}
 
-	public void writeSingleLong(Enum<?> e, long data) throws IOException {
+	public void writeLong(Enum<?> e, long data) throws IOException {
 		writeHeader(e, 8);
 		writeLong(data);
 	}

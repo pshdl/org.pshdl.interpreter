@@ -192,12 +192,12 @@ public class ExecutableInputStream extends DataInputStream {
 		int amount = readVarInt();
 		String[] res = new String[amount];
 		for (int i = 0; i < amount; i++) {
-			res[i] = readString();
+			res[i] = readSubString();
 		}
 		return res;
 	}
 
-	public String readString() throws IOException {
+	public String readSubString() throws IOException {
 		int len = readVarInt();
 		byte[] buf = new byte[len];
 		readFully(buf);
