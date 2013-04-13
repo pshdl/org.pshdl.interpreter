@@ -5,7 +5,8 @@ import java.math.*;
 import java.util.*;
 
 import org.pshdl.interpreter.*;
-import org.pshdl.interpreter.utils.IOUtil.*;
+import org.pshdl.interpreter.utils.IOUtil.FrameTypes;
+import org.pshdl.interpreter.utils.IOUtil.ModelTypes;
 
 public class ExecutableInputStream extends DataInputStream {
 

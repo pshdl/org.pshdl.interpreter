@@ -3,7 +3,8 @@ package org.pshdl.interpreter.utils;
 import java.io.*;
 
 import org.pshdl.interpreter.*;
-import org.pshdl.interpreter.utils.IOUtil.*;
+import org.pshdl.interpreter.utils.IOUtil.FrameTypes;
+import org.pshdl.interpreter.utils.IOUtil.ModelTypes;
 
 public class ExecutableOutputStream extends DataOutputStream {
 
