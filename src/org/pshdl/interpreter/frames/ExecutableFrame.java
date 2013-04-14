@@ -1,5 +1,7 @@
-package org.pshdl.interpreter;
+package org.pshdl.interpreter.frames;
 
+import org.pshdl.interpreter.*;
+import org.pshdl.interpreter.access.*;
 import org.pshdl.interpreter.utils.FluidFrame.Instruction;
 
 public abstract class ExecutableFrame {

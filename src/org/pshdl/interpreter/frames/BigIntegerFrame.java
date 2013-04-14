@@ -1,12 +1,14 @@
-package org.pshdl.interpreter;
+package org.pshdl.interpreter.frames;
 
 import static java.math.BigInteger.*;
 
 import java.math.*;
 
+import org.pshdl.interpreter.*;
+import org.pshdl.interpreter.access.*;
 import org.pshdl.interpreter.utils.FluidFrame.Instruction;
 
-public class BigIntegerFrame extends ExecutableFrame {
+public final class BigIntegerFrame extends ExecutableFrame {
 	private final BigInteger stack[];
 	private final BigInteger constants[];
 

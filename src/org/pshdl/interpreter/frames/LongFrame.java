@@ -1,10 +1,12 @@
-package org.pshdl.interpreter;
+package org.pshdl.interpreter.frames;
 
 import java.math.*;
 
+import org.pshdl.interpreter.*;
+import org.pshdl.interpreter.access.*;
 import org.pshdl.interpreter.utils.FluidFrame.Instruction;
 
-public class LongFrame extends ExecutableFrame {
+public final class LongFrame extends ExecutableFrame {
 	private final long stack[];
 	private final long constants[];
 

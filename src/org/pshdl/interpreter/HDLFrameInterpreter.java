@@ -3,20 +3,17 @@ package org.pshdl.interpreter;
 import java.math.*;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.regex.*;
-
-import org.pshdl.interpreter.utils.*;
+import org.pshdl.interpreter.access.*;
+import org.pshdl.interpreter.frames.*;
 
 public final class HDLFrameInterpreter {
 	private static final int BIG_MARKER = 0x80000000;
 	private static final int BIG_MASK = BIG_MARKER - 1;
 
-	protected final ExecutableModel model;
+	public final ExecutableModel model;
 
-	protected final long storage[], storage_prev[];
-	protected final BigInteger big_storage[], big_storage_prev[];
-
-	public static final Pattern aiFormatName = Pattern.compile("(.*?)(?:\\{(?:(\\d+)(?:\\:(\\d+))?)\\})?(\\" + FluidFrame.REG_POSTFIX + ")?");
+	public final long storage[], storage_prev[];
+	public final BigInteger big_storage[], big_storage_prev[];
 
 	private final EncapsulatedAccess[] internals, internals_prev;
 	private final int[] regIndex, regIndexTarget;
@@ -25,7 +22,7 @@ public final class HDLFrameInterpreter {
 
 	private boolean printing;
 
-	long[] deltaUpdates;
+	public final long[] deltaUpdates;
 	private final ExecutableFrame frames[];
 
 	public HDLFrameInterpreter(ExecutableModel model, boolean printing) {
@@ -35,33 +32,23 @@ public final class HDLFrameInterpreter {
 		this.internals = new EncapsulatedAccess[model.internals.length];
 		this.internals_prev = new EncapsulatedAccess[model.internals.length];
 		for (int i = 0; i < model.internals.length; i++) {
-			String in = model.internals[i];
-			String basicName = ExecutableModel.getBasicName(in, false);
-			int width = model.getWidth(in);
-			Integer accessIndex = idx.get(basicName);
+			int width = model.getWidth(model.internals[i]);
+			InternalInformation ii = new InternalInformation(model.internals[i], width);
+			Integer accessIndex = idx.get(ii.baseNameWithReg());
 			if (accessIndex == null) {
 				if ((width > 64)) {
 					accessIndex = currentIdx++ | BIG_MARKER;
 				} else {
 					accessIndex = currentIdx++;
 				}
-				idx.put(basicName, accessIndex);
+				idx.put(ii.baseNameWithReg(), accessIndex);
 			}
 			if (((accessIndex & BIG_MARKER) == BIG_MARKER)) {
-				if (model.getRealWidth(in) == 1) {
-					internals[i] = new SingleBigAccess(this, in, accessIndex & BIG_MASK, false);
-					internals_prev[i] = new SingleBigAccess(this, in, accessIndex & BIG_MASK, true);
-				} else if (in.indexOf('{') == -1) {
-					internals[i] = new DirectBigAccess(this, in, accessIndex & BIG_MASK, false, width);
-					internals_prev[i] = new DirectBigAccess(this, in, accessIndex & BIG_MASK, true, width);
-				} else {
-					System.out.println("HDLFrameInterpreter.HDLFrameInterpreter() Using rangeBitAccess for:" + in);
-					internals[i] = new RangeBigAccess(this, in, accessIndex & BIG_MASK, false, width);
-					internals_prev[i] = new RangeBigAccess(this, in, accessIndex & BIG_MASK, true, width);
-				}
+				internals[i] = BigAccesses.getInternal(ii, accessIndex & BIG_MASK, false, this);
+				internals_prev[i] = BigAccesses.getInternal(ii, accessIndex & BIG_MASK, true, this);
 			} else {
-				internals[i] = new LongAccess(this, in, accessIndex, false);
-				internals_prev[i] = new LongAccess(this, in, accessIndex, true);
+				internals[i] = LongAccesses.getInternal(ii, accessIndex, false, this);
+				internals_prev[i] = LongAccesses.getInternal(ii, accessIndex, true, this);
 			}
 		}
 		regIndex = new int[model.registerOutputs.length];
@@ -70,7 +57,7 @@ public final class HDLFrameInterpreter {
 			int ridx = model.registerOutputs[i];
 			String name = model.internals[ridx];
 			regIndex[i] = idx.get(ExecutableModel.getBasicName(name, false));
-			regIndexTarget[i] = idx.get(ExecutableModel.getBasicName(ExecutableModel.stripReg(name), false));
+			regIndexTarget[i] = idx.get(ExecutableModel.getBasicName(name, true));
 		}
 		storage = new long[currentIdx];
 		storage_prev = new long[currentIdx];

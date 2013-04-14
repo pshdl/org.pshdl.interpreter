@@ -1,42 +1,24 @@
-package org.pshdl.interpreter;
+package org.pshdl.interpreter.access;
 
 import java.math.*;
-import java.util.regex.*;
-
-import org.pshdl.interpreter.utils.*;
+import org.pshdl.interpreter.*;
 
 public abstract class EncapsulatedAccess {
 	/**
 	 * 
 	 */
 	private final HDLFrameInterpreter hdlFrameInterpreter;
-	public final String name;
+	public final InternalInformation name;
 	public final int accessIndex;
 	public final boolean prev;
-	protected boolean isPredicate;
-	public final int bitStart;
-	public final int bitEnd;
 
-	public EncapsulatedAccess(HDLFrameInterpreter hdlFrameInterpreter, String name, int accessIndex, boolean prev) {
+	public EncapsulatedAccess(HDLFrameInterpreter hdlFrameInterpreter, InternalInformation name, int accessIndex, boolean prev) {
 		super();
 		this.hdlFrameInterpreter = hdlFrameInterpreter;
 		this.accessIndex = accessIndex;
 		this.prev = prev;
-		this.isPredicate = name.startsWith(FluidFrame.PRED_PREFIX);
-		Matcher matcher = HDLFrameInterpreter.aiFormatName.matcher(name);
-		if (matcher.matches()) {
-			this.name = matcher.group(1);
-			if (matcher.group(2) == null) {
-				bitStart = -1;
-				bitEnd = -1;
-			} else if (matcher.group(3) != null) {
-				bitStart = Integer.parseInt(matcher.group(2));
-				bitEnd = Integer.parseInt(matcher.group(3));
-			} else {
-				bitStart = bitEnd = Integer.parseInt(matcher.group(2));
-			}
-		} else
-			throw new IllegalArgumentException("Name:" + name + " is not valid!");
+		this.name = name;
+
 	}
 
 	public void setLastUpdate(int deltaCycle, int epsCycle) {
