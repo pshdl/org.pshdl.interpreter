@@ -85,6 +85,19 @@ public class ExecutableModel implements Serializable {
 		return this;
 	}
 
+	public static String getBasicName(String inName, boolean stripReg) {
+		String name = inName;
+		int openBrace = name.indexOf('{');
+		if (openBrace != -1) {
+			name = name.substring(0, openBrace);
+			if (inName.endsWith(FluidFrame.REG_POSTFIX) && !stripReg)
+				return name + FluidFrame.REG_POSTFIX;
+		}
+		if (stripReg)
+			return stripReg(name);
+		return name;
+	}
+
 	public static String stripReg(String string) {
 		if (string.endsWith(FluidFrame.REG_POSTFIX))
 			return string.substring(0, string.length() - 4);
@@ -171,27 +184,48 @@ public class ExecutableModel implements Serializable {
 		return sb.toString();
 	}
 
+	/**
+	 * Returns the width of the whole signals
+	 * 
+	 * @param name
+	 *            an internal name
+	 * @return
+	 */
 	public int getWidth(String name) {
-		Integer integer = widths.get(stripReg(name));
+		Integer integer = widths.get(getBasicName(name, true));
 		if (integer == null) {
 			if (name.startsWith(FluidFrame.PRED_PREFIX))
 				return 1;
-			Matcher matcher = HDLFrameInterpreter.aiFormatName.matcher(name);
-			if (matcher.matches()) {
-				if (matcher.group(2) == null)
-					throw new IllegalArgumentException("Unknown width of signal:" + name);
-				else if (matcher.group(3) != null) {
-					int bitStart = Integer.parseInt(matcher.group(2));
-					int bitEnd = Integer.parseInt(matcher.group(3));
-					int actualWidth = (bitStart - bitEnd) + 1;
-					return actualWidth;
-				} else {
-					Integer.parseInt(matcher.group(2));
-					return 1;
-				}
-			}
 			throw new IllegalArgumentException("Unknown width of signal:" + name);
 		}
 		return integer;
+	}
+
+	/**
+	 * Returns the width of the internal considering bit accesses
+	 * 
+	 * @param name
+	 * @return
+	 */
+	public int getRealWidth(String name) {
+		if (name.startsWith(FluidFrame.PRED_PREFIX))
+			return 1;
+		Matcher matcher = HDLFrameInterpreter.aiFormatName.matcher(name);
+		if (matcher.matches()) {
+			if (matcher.group(2) == null) {
+				Integer res = widths.get(getBasicName(name, true));
+				if (res == null)
+					throw new IllegalArgumentException("Unknown width of signal:" + name);
+				return res;
+			} else if (matcher.group(3) != null) {
+				int bitStart = Integer.parseInt(matcher.group(2));
+				int bitEnd = Integer.parseInt(matcher.group(3));
+				int actualWidth = (bitStart - bitEnd) + 1;
+				return actualWidth;
+			} else {
+				return 1;
+			}
+		}
+		throw new IllegalArgumentException("Unknown width of signal:" + name);
 	}
 }

@@ -40,8 +40,8 @@ public class RangeBigAccess extends EncapsulatedAccess {
 	@Override
 	public BigInteger getDataBig() {
 		if (prev)
-			return (this.hdlFrameInterpreter.big_storage_prev[accessIndex].shiftLeft(shift)).and(mask);
-		return (this.hdlFrameInterpreter.big_storage[accessIndex].shiftLeft(shift)).and(mask);
+			return (this.hdlFrameInterpreter.big_storage_prev[accessIndex].shiftRight(shift)).and(mask);
+		return (this.hdlFrameInterpreter.big_storage[accessIndex].shiftRight(shift)).and(mask);
 	}
 
 	@Override
@@ -52,8 +52,9 @@ public class RangeBigAccess extends EncapsulatedAccess {
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		builder.append("RangeBigAccess [width=").append(width).append(", writeMask=").append(writeMask.toString(16)).append(", mask=").append(mask.toString(16)).append(", shift=")
-				.append(shift).append("]");
+		builder.append("RangeBigAccess [hdlFrameInterpreter=").append(hdlFrameInterpreter).append(", width=").append(width).append(", writeMask=").append(writeMask)
+				.append(", mask=").append(mask).append(", shift=").append(shift).append(", name=").append(name).append(", accessIndex=").append(accessIndex).append(", bitStart=")
+				.append(bitStart).append(", bitEnd=").append(bitEnd).append("]");
 		return builder.toString();
 	}
 

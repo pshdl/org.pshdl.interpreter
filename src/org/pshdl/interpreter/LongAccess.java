@@ -16,6 +16,8 @@ public class LongAccess extends EncapsulatedAccess {
 		this.intr = hdlFrameInterpreter;
 		if ((bitStart == -1) && (bitEnd == -1)) {
 			int width = this.intr.model.getWidth(name);
+			if (width > 64)
+				throw new IllegalArgumentException("Unsupported bitWidth:" + width);
 			this.shift = 0;
 			if (width == 64) {
 				this.mask = 0xFFFFFFFFFFFFFFFFL;
@@ -25,6 +27,8 @@ public class LongAccess extends EncapsulatedAccess {
 			this.writeMask = 0;
 		} else if (bitEnd != bitStart) {
 			int actualWidth = (bitStart - bitEnd) + 1;
+			if (actualWidth > 64)
+				throw new IllegalArgumentException("Unsupported bitWidth:" + actualWidth);
 			this.shift = bitEnd;
 			this.mask = (1l << actualWidth) - 1;
 			this.writeMask = ~(mask << shift);

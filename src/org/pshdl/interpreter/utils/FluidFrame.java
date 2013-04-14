@@ -149,6 +149,7 @@ public class FluidFrame {
 	public final Set<FluidFrame> references = new LinkedHashSet<FluidFrame>();
 
 	public final Map<String, Integer> widths = new LinkedHashMap<String, Integer>();
+	public final Map<String, Integer> baseWidths = new LinkedHashMap<String, Integer>();
 
 	public FluidFrame() {
 		this(null);
@@ -183,7 +184,7 @@ public class FluidFrame {
 	public void addWith(String var, Integer width) {
 		if (width == null)
 			throw new IllegalArgumentException("Null is not a valid width for var:" + var);
-		widths.put(var, width);
+		widths.put(ExecutableModel.getBasicName(var, true), width);
 	}
 
 	public FluidFrame append(FluidFrame frame) {
@@ -255,6 +256,7 @@ public class FluidFrame {
 		List<BigInteger> constants = new LinkedList<>();
 		int stackCount = 0;
 		int maxStackCount = -1;
+		int maxDataWidth = 0;
 		int constantIdCount = 0;
 		int posEdge = -1, negEdge = -1;
 		List<Integer> posPred = new LinkedList<>(), negPred = new LinkedList<>();
@@ -271,6 +273,7 @@ public class FluidFrame {
 				internalDependencies.add(internalId);
 				negPred.add(internalId);
 				writeVarInt32(instr, internalId);
+				maxDataWidth = Math.max(1, maxDataWidth);
 				break;
 			}
 			case posPredicate: {
@@ -279,6 +282,7 @@ public class FluidFrame {
 					throw new IllegalArgumentException(ai.toString());
 				internalDependencies.add(internalId);
 				posPred.add(internalId);
+				maxDataWidth = Math.max(1, maxDataWidth);
 				writeVarInt32(instr, internalId);
 				break;
 			}
@@ -288,6 +292,7 @@ public class FluidFrame {
 					throw new IllegalArgumentException(ai.toString());
 				internalDependencies.add(internalId);
 				negEdge = internalId;
+				maxDataWidth = Math.max(1, maxDataWidth);
 				writeVarInt32(instr, internalId);
 				break;
 			}
@@ -297,6 +302,7 @@ public class FluidFrame {
 					throw new IllegalArgumentException(ai.toString());
 				internalDependencies.add(internalId);
 				posEdge = internalId;
+				maxDataWidth = Math.max(1, maxDataWidth);
 				writeVarInt32(instr, internalId);
 				break;
 			}
@@ -327,7 +333,9 @@ public class FluidFrame {
 				}
 				break;
 			case loadConstant:
-				constants.add(this.constants.get(ai.args[0]));
+				BigInteger c = this.constants.get(ai.args[0]);
+				maxDataWidth = Math.max(c.bitLength(), maxDataWidth);
+				constants.add(c);
 				writeVarInt32(instr, constantIdCount++);
 				break;
 			case cast_uint:
@@ -338,14 +346,16 @@ public class FluidFrame {
 			default:
 			}
 		}
+		for (Integer w : widths.values()) {
+			maxDataWidth = Math.max(w, maxDataWidth);
+		}
 		List<Frame> res = new LinkedList<>();
 		if (hasInstructions()) {
 			Integer outputId;
 			outputId = register.registerInternal(outputName);
 			byte[] instrRes = toByteArray(instr);
 			int[] internalDepRes = toIntArray(internalDependencies);
-			// XXX determine maxBitWidth
-			Frame frame = new Frame(instrRes, internalDepRes, toIntArray(posPred), toIntArray(negPred), posEdge, negEdge, outputId & 0xFFFF, 32, maxStackCount,
+			Frame frame = new Frame(instrRes, internalDepRes, toIntArray(posPred), toIntArray(negPred), posEdge, negEdge, outputId, maxDataWidth, maxStackCount,
 					constants.toArray(new BigInteger[constants.size()]), id);
 			for (FluidFrame ff : references) {
 				ff.toFrame(register);
@@ -368,37 +378,6 @@ public class FluidFrame {
 		}
 		t = num & 0x7F;
 		instr.add((byte) t);
-	}
-
-	/**
-	 * Read a raw Varint from the stream. If larger than 32 bits, discard the
-	 * upper bits.
-	 */
-	public static int readRawVarint32(List<Byte> inst) {
-		Iterator<Byte> iterator = inst.iterator();
-		byte tmp = iterator.next();
-		if (tmp >= 0)
-			return tmp;
-		int result = tmp & 0x7f;
-		if ((tmp = iterator.next()) >= 0) {
-			result |= tmp << 7;
-		} else {
-			result |= (tmp & 0x7f) << 7;
-			if ((tmp = iterator.next()) >= 0) {
-				result |= tmp << 14;
-			} else {
-				result |= (tmp & 0x7f) << 14;
-				if ((tmp = iterator.next()) >= 0) {
-					result |= tmp << 21;
-				} else {
-					result |= (tmp & 0x7f) << 21;
-					result |= (tmp = iterator.next()) << 28;
-					if (tmp < 0)
-						throw new IllegalArgumentException("Too many bits");
-				}
-			}
-		}
-		return result;
 	}
 
 	private String toFullRef(ArgumentedInstruction ai) {

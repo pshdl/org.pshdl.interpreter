@@ -302,7 +302,10 @@ public class LongFrame extends ExecutableFrame {
 			}
 			}
 		} while (hasMore());
-		internals[outputID].setData(stack[0], deltaCycle, epsCycle);
+		EncapsulatedAccess ea = internals[outputID];
+		ea.setData(stack[0], deltaCycle, epsCycle);
+		// System.out.println("LongFrame.execute()" + ea + " Value:" + stack[0]
+		// + " read:" + ea.getDataLong());
 		return;
 	}
 }

@@ -117,7 +117,7 @@ public class ExecutableInputStream extends DataInputStream {
 		Map<String, Integer> widthMap = new HashMap<String, Integer>();
 		for (int i = 0; i < internals.length; i++) {
 			String s = internals[i];
-			widthMap.put(s, widths[i]);
+			widthMap.put(ExecutableModel.getBasicName(s, true), widths[i]);
 		}
 		return new ExecutableModel(frames, internals, widthMap);
 	}

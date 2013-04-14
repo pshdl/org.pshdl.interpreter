@@ -8,6 +8,9 @@ import java.util.regex.*;
 import org.pshdl.interpreter.utils.*;
 
 public final class HDLFrameInterpreter {
+	private static final int BIG_MARKER = 0x80000000;
+	private static final int BIG_MASK = BIG_MARKER - 1;
+
 	protected final ExecutableModel model;
 
 	protected final long storage[], storage_prev[];
@@ -33,29 +36,28 @@ public final class HDLFrameInterpreter {
 		this.internals_prev = new EncapsulatedAccess[model.internals.length];
 		for (int i = 0; i < model.internals.length; i++) {
 			String in = model.internals[i];
-			String basicName = getBasicName(in);
+			String basicName = ExecutableModel.getBasicName(in, false);
 			int width = model.getWidth(in);
 			Integer accessIndex = idx.get(basicName);
 			if (accessIndex == null) {
-				if (width > 64) {
-					accessIndex = -(currentIdx++);
+				if ((width > 64)) {
+					accessIndex = currentIdx++ | BIG_MARKER;
 				} else {
 					accessIndex = currentIdx++;
 				}
 				idx.put(basicName, accessIndex);
 			}
-			if (accessIndex < 0) {
-				// System.out.println("HDLFrameInterpreter.HDLFrameInterpreter() Using RangeBigAccess for:"
-				// + in);
-				if (width == 1) {
-					internals[i] = new SingleBigAccess(this, in, -accessIndex, false);
-					internals_prev[i] = new SingleBigAccess(this, in, -accessIndex, true);
+			if (((accessIndex & BIG_MARKER) == BIG_MARKER)) {
+				if (model.getRealWidth(in) == 1) {
+					internals[i] = new SingleBigAccess(this, in, accessIndex & BIG_MASK, false);
+					internals_prev[i] = new SingleBigAccess(this, in, accessIndex & BIG_MASK, true);
 				} else if (in.indexOf('{') == -1) {
-					internals[i] = new DirectBigAccess(this, in, -accessIndex, false, width);
-					internals_prev[i] = new DirectBigAccess(this, in, -accessIndex, true, width);
+					internals[i] = new DirectBigAccess(this, in, accessIndex & BIG_MASK, false, width);
+					internals_prev[i] = new DirectBigAccess(this, in, accessIndex & BIG_MASK, true, width);
 				} else {
-					internals[i] = new RangeBigAccess(this, in, -accessIndex, false, width);
-					internals_prev[i] = new RangeBigAccess(this, in, -accessIndex, true, width);
+					System.out.println("HDLFrameInterpreter.HDLFrameInterpreter() Using rangeBitAccess for:" + in);
+					internals[i] = new RangeBigAccess(this, in, accessIndex & BIG_MASK, false, width);
+					internals_prev[i] = new RangeBigAccess(this, in, accessIndex & BIG_MASK, true, width);
 				}
 			} else {
 				internals[i] = new LongAccess(this, in, accessIndex, false);
@@ -67,8 +69,8 @@ public final class HDLFrameInterpreter {
 		for (int i = 0; i < model.registerOutputs.length; i++) {
 			int ridx = model.registerOutputs[i];
 			String name = model.internals[ridx];
-			regIndex[i] = idx.get(getBasicName(name));
-			regIndexTarget[i] = idx.get(getBasicName(ExecutableModel.stripReg(name)));
+			regIndex[i] = idx.get(ExecutableModel.getBasicName(name, false));
+			regIndexTarget[i] = idx.get(ExecutableModel.getBasicName(ExecutableModel.stripReg(name), false));
 		}
 		storage = new long[currentIdx];
 		storage_prev = new long[currentIdx];
@@ -82,7 +84,7 @@ public final class HDLFrameInterpreter {
 		Frame[] frames = model.frames;
 		this.frames = new ExecutableFrame[frames.length];
 		for (int i = 0; i < frames.length; i++) {
-			if (frames[i].maxDataWidth > 64) {
+			if ((frames[i].maxDataWidth > 64)) {
 				// System.out.println("HDLFrameInterpreter.HDLFrameInterpreter() Using BigFrame for:"
 				// + frames[i].uniqueID);
 				this.frames[i] = new BigIntegerFrame(frames[i], printing, internals, internals_prev);
@@ -92,23 +94,12 @@ public final class HDLFrameInterpreter {
 		}
 	}
 
-	private String getBasicName(String inName) {
-		String name = inName;
-		int openBrace = name.indexOf('{');
-		if (openBrace != -1) {
-			name = name.substring(0, openBrace);
-		}
-		if (inName.endsWith(FluidFrame.REG_POSTFIX))
-			return name + FluidFrame.REG_POSTFIX;
-		return name;
-	}
-
 	public void setInput(String name, BigInteger value) {
 		Integer integer = idx.get(name);
 		if (integer == null)
 			throw new IllegalArgumentException("Could not find a variable named:" + name);
-		if (integer < 0) {
-			big_storage[-integer] = value;
+		if ((integer & BIG_MARKER) == BIG_MARKER) {
+			big_storage[integer & BIG_MASK] = value;
 		} else {
 			storage[integer] = value.longValue();
 		}
@@ -118,8 +109,8 @@ public final class HDLFrameInterpreter {
 		Integer integer = idx.get(name);
 		if (integer == null)
 			throw new IllegalArgumentException("Could not find a variable named:" + name);
-		if (integer < 0) {
-			big_storage[-integer] = BigInteger.valueOf(value);
+		if ((integer & BIG_MARKER) == BIG_MARKER) {
+			big_storage[integer & BIG_MASK] = BigInteger.valueOf(value);
 		} else {
 			storage[integer] = value;
 		}
@@ -129,18 +120,32 @@ public final class HDLFrameInterpreter {
 		Integer integer = idx.get(name);
 		if (integer == null)
 			throw new IllegalArgumentException("Could not find a variable named:" + name);
-		if (integer < 0)
-			return big_storage[-integer].longValue();
-		return storage[integer];
+		long res;
+		if ((integer & BIG_MARKER) == BIG_MARKER)
+			res = big_storage[integer & BIG_MASK].longValue();
+		else
+			res = storage[integer];
+		// System.out.println("HDLFrameInterpreter.getOutputLong()name:" + name
+		// + " is:" + res);
+		int width = model.getWidth(name);
+		if (width < 64) {
+			long mask = (1l << width) - 1;
+			return res & mask;
+		}
+		return res;
 	}
 
 	public BigInteger getOutputBig(String name) {
 		Integer integer = idx.get(name);
 		if (integer == null)
 			throw new IllegalArgumentException("Could not find a variable named:" + name);
-		if (integer < 0)
-			return big_storage[-integer];
-		return BigInteger.valueOf(storage[integer]);
+		BigInteger res;
+		if ((integer & BIG_MARKER) == BIG_MARKER)
+			res = big_storage[integer & BIG_MASK];
+		res = BigInteger.valueOf(storage[integer]);
+		int width = model.getWidth(name);
+		BigInteger mask = BigInteger.ONE.shiftLeft(width).subtract(BigInteger.ONE);
+		return res.and(mask);
 	}
 
 	/*
@@ -173,10 +178,10 @@ public final class HDLFrameInterpreter {
 			if (regUpdated) {
 				for (int i = 0; i < regIndex.length; i++) {
 					int j = regIndex[i];
-					if (j >= 0) {
-						storage[regIndexTarget[i]] = storage[j];
+					if ((j & BIG_MARKER) == BIG_MARKER) {
+						big_storage[regIndexTarget[i] & BIG_MASK] = big_storage[j & BIG_MASK];
 					} else {
-						big_storage[-regIndexTarget[i]] = big_storage[-j];
+						storage[regIndexTarget[i]] = storage[j];
 					}
 				}
 			}

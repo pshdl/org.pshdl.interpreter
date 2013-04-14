@@ -55,13 +55,23 @@ public class BigIntegerFrame extends ExecutableFrame {
 				break;
 			}
 			case cast_int: {
-				BigInteger targetMask = getWidthMask();
+				int targetWidth = readVarInt();
 				int currWidth = readVarInt();
-				BigInteger curr = stack[stackPos];
-				if (curr.signum() < 0) {
-					stack[stackPos] = stack[stackPos].and(targetMask);
+				if (targetWidth >= currWidth) {
+					// Do nothing
 				} else {
-					stack[stackPos] = stack[stackPos];
+					BigInteger mask = BigInteger.ONE.shiftLeft(targetWidth).subtract(BigInteger.ONE);
+					System.out.println("BigIntegerFrame.execute() cast int<" + currWidth + "> to int<" + targetWidth + "> masking with:" + mask.toString(16));
+					BigInteger t = stack[stackPos];
+					t = t.and(mask);
+					if (t.testBit(targetWidth - 1)) { // MSB is set
+						if (t.signum() > 0) // Sign is +
+							t = t.negate();
+					} else {
+						if (t.signum() < 0) // Sign is -
+							t = t.negate();
+					}
+					stack[stackPos] = t;
 				}
 				break;
 			}
