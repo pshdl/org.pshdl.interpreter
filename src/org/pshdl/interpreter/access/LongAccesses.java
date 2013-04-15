@@ -5,6 +5,7 @@ import java.math.*;
 import org.pshdl.interpreter.*;
 
 public class LongAccesses {
+
 	private static final class LongAccess extends EncapsulatedAccess {
 		/**
 		 * 
@@ -43,10 +44,8 @@ public class LongAccesses {
 		}
 
 		@Override
-		public void setData(BigInteger data, int deltaCycle, int epsCycle) {
-			long initial;
-			initial = this.intr.storage[accessIndex];
-			long current = initial & writeMask;
+		public void setDataBig(BigInteger data, int deltaCycle, int epsCycle) {
+			long current = intr.storage[accessIndex] & writeMask;
 			this.intr.storage[accessIndex] = current | ((data.longValue() & mask) << shift);
 			if (name.isPred) {
 				this.intr.deltaUpdates[accessIndex] = (deltaCycle << 16) | (epsCycle & 0xFFFF);
@@ -54,10 +53,8 @@ public class LongAccesses {
 		}
 
 		@Override
-		public void setData(long data, int deltaCycle, int epsCycle) {
-			long initial;
-			initial = this.intr.storage[accessIndex];
-			long current = initial & writeMask;
+		public void setDataLong(long data, int deltaCycle, int epsCycle) {
+			long current = intr.storage[accessIndex] & writeMask;
 			this.intr.storage[accessIndex] = current | ((data & mask) << shift);
 			if (name.isPred) {
 				this.intr.deltaUpdates[accessIndex] = (deltaCycle << 16) | (epsCycle & 0xFFFF);
@@ -67,15 +64,15 @@ public class LongAccesses {
 		@Override
 		public BigInteger getDataBig() {
 			if (prev)
-				return BigInteger.valueOf((this.intr.storage_prev[accessIndex] >> shift) & mask);
-			return BigInteger.valueOf((this.intr.storage[accessIndex] >> shift) & mask);
+				return BigInteger.valueOf((intr.storage_prev[accessIndex] >> shift) & mask);
+			return BigInteger.valueOf((intr.storage[accessIndex] >> shift) & mask);
 		}
 
 		@Override
 		public long getDataLong() {
 			if (prev)
-				return (this.intr.storage_prev[accessIndex] >> shift) & mask;
-			return (this.intr.storage[accessIndex] >> shift) & mask;
+				return (intr.storage_prev[accessIndex] >> shift) & mask;
+			return (intr.storage[accessIndex] >> shift) & mask;
 		}
 
 		@Override

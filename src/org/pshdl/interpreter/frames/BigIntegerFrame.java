@@ -297,7 +297,7 @@ public final class BigIntegerFrame extends ExecutableFrame {
 			}
 			}
 		} while (hasMore());
-		internals[outputID].setData(stack[0], deltaCycle, epsCycle);
+		internals[outputID].setDataBig(stack[0], deltaCycle, epsCycle);
 		return;
 	}
 

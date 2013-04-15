@@ -15,7 +15,7 @@ public class BigAccesses {
 		}
 
 		@Override
-		public void setData(BigInteger data, int deltaCycle, int epsCycle) {
+		public void setDataBig(BigInteger data, int deltaCycle, int epsCycle) {
 			this.hdlFrameInterpreter.big_storage[accessIndex] = data;
 			if (name.isPred) {
 				this.hdlFrameInterpreter.deltaUpdates[accessIndex] = (deltaCycle << 16) | (epsCycle & 0xFFFF);
@@ -23,9 +23,9 @@ public class BigAccesses {
 		}
 
 		@Override
-		public void setData(long dataIn, int deltaCycle, int epsCycle) {
+		public void setDataLong(long dataIn, int deltaCycle, int epsCycle) {
 			BigInteger data = BigInteger.valueOf(dataIn);
-			setData(data, deltaCycle, epsCycle);
+			setDataBig(data, deltaCycle, epsCycle);
 		}
 
 		@Override
@@ -62,7 +62,7 @@ public class BigAccesses {
 		}
 
 		@Override
-		public void setData(BigInteger data, int deltaCycle, int epsCycle) {
+		public void setDataBig(BigInteger data, int deltaCycle, int epsCycle) {
 			BigInteger initial = this.hdlFrameInterpreter.big_storage[accessIndex];
 			if (BigInteger.ZERO.equals(data.and(BigInteger.ONE))) {
 				this.hdlFrameInterpreter.big_storage[accessIndex] = initial.clearBit(bit);
@@ -75,9 +75,9 @@ public class BigAccesses {
 		}
 
 		@Override
-		public void setData(long dataIn, int deltaCycle, int epsCycle) {
+		public void setDataLong(long dataIn, int deltaCycle, int epsCycle) {
 			BigInteger data = BigInteger.valueOf(dataIn);
-			setData(data, deltaCycle, epsCycle);
+			setDataBig(data, deltaCycle, epsCycle);
 		}
 
 		@Override
@@ -116,7 +116,7 @@ public class BigAccesses {
 		}
 
 		@Override
-		public void setData(BigInteger data, int deltaCycle, int epsCycle) {
+		public void setDataBig(BigInteger data, int deltaCycle, int epsCycle) {
 			BigInteger initial = this.hdlFrameInterpreter.big_storage[accessIndex];
 			BigInteger current = initial.and(writeMask);
 			this.hdlFrameInterpreter.big_storage[accessIndex] = current.or(data.and(mask).shiftLeft(shift));
@@ -126,9 +126,9 @@ public class BigAccesses {
 		}
 
 		@Override
-		public void setData(long dataIn, int deltaCycle, int epsCycle) {
+		public void setDataLong(long dataIn, int deltaCycle, int epsCycle) {
 			BigInteger data = BigInteger.valueOf(dataIn);
-			setData(data, deltaCycle, epsCycle);
+			setDataBig(data, deltaCycle, epsCycle);
 		}
 
 		@Override

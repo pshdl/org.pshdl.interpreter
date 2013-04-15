@@ -1,14 +1,29 @@
 package org.pshdl.interpreter.frames;
 
 import java.math.*;
+import java.util.*;
 
 import org.pshdl.interpreter.*;
 import org.pshdl.interpreter.access.*;
 import org.pshdl.interpreter.utils.FluidFrame.Instruction;
 
 public final class LongFrame extends ExecutableFrame {
+
+	private static class FastInstruction {
+		public final Instruction inst;
+		public final int arg1, arg2;
+
+		public FastInstruction(Instruction inst, int arg1, int arg2) {
+			super();
+			this.inst = inst;
+			this.arg1 = arg1;
+			this.arg2 = arg2;
+		}
+	}
+
 	private final long stack[];
 	private final long constants[];
+	private final FastInstruction[] instructions;
 
 	public LongFrame(Frame f, boolean printing, EncapsulatedAccess internals[], EncapsulatedAccess internals_prev[]) {
 		super(f, printing, internals, internals_prev);
@@ -19,6 +34,18 @@ public final class LongFrame extends ExecutableFrame {
 			BigInteger bi = f.constants[i];
 			constants[i] = bi.longValue();
 		}
+		List<FastInstruction> instr = new LinkedList<>();
+		do {
+			Instruction instruction = values[next()];
+			int arg1 = 0;
+			int arg2 = 0;
+			if (instruction.argCount > 0)
+				arg1 = readVarInt();
+			if (instruction.argCount > 1)
+				arg2 = readVarInt();
+			instr.add(new FastInstruction(instruction, arg1, arg2));
+		} while (hasMore());
+		instructions = (FastInstruction[]) instr.toArray(new FastInstruction[instr.size()]);
 	}
 
 	@Override
@@ -26,9 +53,8 @@ public final class LongFrame extends ExecutableFrame {
 		int stackPos = -1;
 		currentPos = 0;
 		regUpdated = false;
-		do {
-			Instruction instruction = values[next()];
-			switch (instruction) {
+		for (FastInstruction fi : instructions) {
+			switch (fi.inst) {
 			case noop:
 				break;
 			case and: {
@@ -46,7 +72,7 @@ public final class LongFrame extends ExecutableFrame {
 				break;
 			}
 			case bitAccessSingle: {
-				int bit = readVarInt();
+				int bit = fi.arg1;
 				long current = stack[stackPos];
 				current >>= bit;
 				current &= 1;
@@ -54,8 +80,8 @@ public final class LongFrame extends ExecutableFrame {
 				break;
 			}
 			case bitAccessSingleRange: {
-				int lowBit = readVarInt();
-				int highBit = readVarInt();
+				int lowBit = fi.arg1;
+				int highBit = fi.arg2;
 				long current = stack[stackPos];
 				current >>= lowBit;
 				current &= (1 << ((highBit - lowBit) + 1)) - 1;
@@ -69,8 +95,8 @@ public final class LongFrame extends ExecutableFrame {
 				// value is 0xA (-6 int<4>)
 				// cast to int<3> result should be 0xE (-2)
 				// Resize sign correctly to correct size
-				int targetSize = readVarInt();
-				int currentSize = readVarInt();
+				int targetSize = fi.arg1;
+				int currentSize = fi.arg2;
 				// Move the highest bit to the MSB
 				long temp = stack[stackPos] << (64 - currentSize);
 				// And move it back. As in Java everything is signed,
@@ -85,8 +111,7 @@ public final class LongFrame extends ExecutableFrame {
 			case cast_uint:
 				// There is nothing special about uints, so we just mask
 				// them
-				long mask = (1 << (readVarInt())) - 1;
-				readVarInt();
+				long mask = (1 << (fi.arg1)) - 1;
 				stack[stackPos] &= mask;
 				break;
 			case concat:
@@ -102,7 +127,7 @@ public final class LongFrame extends ExecutableFrame {
 				stack[++stackPos] = 2;
 				break;
 			case constAll1:
-				int width = readVarInt();
+				int width = fi.arg1;
 				stack[++stackPos] = (1 << width) - 1;
 				break;
 			case div: {
@@ -142,10 +167,10 @@ public final class LongFrame extends ExecutableFrame {
 				break;
 			}
 			case loadConstant:
-				stack[++stackPos] = constants[readVarInt()];
+				stack[++stackPos] = constants[fi.arg1];
 				break;
 			case loadInternal:
-				stack[++stackPos] = internals[readVarInt()].getDataLong();
+				stack[++stackPos] = internals[fi.arg1].getDataLong();
 				break;
 			case logiAnd: {
 				long b = stack[stackPos--];
@@ -223,7 +248,7 @@ public final class LongFrame extends ExecutableFrame {
 				break;
 			}
 			case isFallingEdge: {
-				int off = readVarInt();
+				int off = fi.arg1;
 				EncapsulatedAccess access = internals[off];
 				if (access.skip(deltaCycle, epsCycle)) {
 					if (printing) {
@@ -244,7 +269,7 @@ public final class LongFrame extends ExecutableFrame {
 				break;
 			}
 			case isRisingEdge: {
-				int off = readVarInt();
+				int off = fi.arg1;
 				EncapsulatedAccess access = internals[off];
 				if (access.skip(deltaCycle, epsCycle)) {
 					if (printing) {
@@ -265,7 +290,7 @@ public final class LongFrame extends ExecutableFrame {
 				break;
 			}
 			case posPredicate: {
-				int off = readVarInt();
+				int off = fi.arg1;
 				EncapsulatedAccess access = internals[off];
 				// If data is not from this deltaCycle it was not
 				// updated that means prior predicates failed
@@ -284,7 +309,7 @@ public final class LongFrame extends ExecutableFrame {
 				break;
 			}
 			case negPredicate: {
-				int off = readVarInt();
+				int off = fi.arg1;
 				EncapsulatedAccess access = internals[off];
 				// If data is not from this deltaCycle it was not
 				// updated that means prior predicates failed
@@ -303,9 +328,9 @@ public final class LongFrame extends ExecutableFrame {
 				break;
 			}
 			}
-		} while (hasMore());
+		}
 		EncapsulatedAccess ea = internals[outputID];
-		ea.setData(stack[0], deltaCycle, epsCycle);
+		ea.setDataLong(stack[0], deltaCycle, epsCycle);
 		// System.out.println("LongFrame.execute()" + ea + " Value:" + stack[0]
 		// + " read:" + ea.getDataLong());
 		return;
