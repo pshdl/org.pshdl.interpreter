@@ -6,7 +6,6 @@ import java.math.*;
 
 import org.pshdl.interpreter.*;
 import org.pshdl.interpreter.access.*;
-import org.pshdl.interpreter.utils.FluidFrame.Instruction;
 
 public final class BigIntegerFrame extends ExecutableFrame {
 	private final BigInteger stack[];
@@ -23,9 +22,8 @@ public final class BigIntegerFrame extends ExecutableFrame {
 		int stackPos = -1;
 		currentPos = 0;
 		regUpdated = false;
-		do {
-			Instruction instruction = values[next()];
-			switch (instruction) {
+		for (FastInstruction f : instructions) {
+			switch (f.inst) {
 			case noop:
 				break;
 			case and: {
@@ -43,22 +41,22 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				break;
 			}
 			case bitAccessSingle: {
-				int bit = readVarInt();
+				int bit = f.arg1;
 				BigInteger current = stack[stackPos].shiftRight(bit).and(BigInteger.ONE);
 				stack[stackPos] = current;
 				break;
 			}
 			case bitAccessSingleRange: {
-				int lowBit = readVarInt();
-				int highBit = readVarInt();
+				int lowBit = f.arg1;
+				int highBit = f.arg2;
 				BigInteger mask = BigInteger.ONE.shiftLeft((highBit - lowBit) + 1).subtract(BigInteger.ONE);
 				BigInteger current = stack[stackPos].shiftRight(lowBit).and(mask);
 				stack[stackPos] = current;
 				break;
 			}
 			case cast_int: {
-				int targetWidth = readVarInt();
-				int currWidth = readVarInt();
+				int targetWidth = f.arg1;
+				int currWidth = f.arg2;
 				if (targetWidth >= currWidth) {
 					// Do nothing
 				} else {
@@ -78,8 +76,7 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				break;
 			}
 			case cast_uint: {
-				BigInteger mask = getWidthMask();
-				readVarInt();// Ignore currentSize
+				BigInteger mask = BigInteger.ONE.shiftLeft(f.arg1).subtract(BigInteger.ONE);
 				stack[stackPos] = stack[stackPos].and(mask);
 				break;
 			}
@@ -96,7 +93,7 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				stack[++stackPos] = BigInteger.valueOf(2);
 				break;
 			case constAll1:
-				stack[++stackPos] = getWidthMask();
+				stack[++stackPos] = BigInteger.ONE.shiftLeft(f.arg1).subtract(BigInteger.ONE);
 				break;
 			case div: {
 				BigInteger b = stack[stackPos--];
@@ -135,10 +132,10 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				break;
 			}
 			case loadConstant:
-				stack[++stackPos] = constants[readVarInt()];
+				stack[++stackPos] = constants[f.arg1];
 				break;
 			case loadInternal:
-				stack[++stackPos] = internals[readVarInt()].getDataBig();
+				stack[++stackPos] = internals[f.arg1].getDataBig();
 				break;
 			case logiAnd: {
 				BigInteger b = stack[stackPos--];
@@ -216,7 +213,7 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				break;
 			}
 			case isFallingEdge: {
-				int off = readVarInt();
+				int off = f.arg1;
 				EncapsulatedAccess access = internals[off];
 				if (access.skip(deltaCycle, epsCycle)) {
 					if (printing) {
@@ -237,7 +234,7 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				break;
 			}
 			case isRisingEdge: {
-				int off = readVarInt();
+				int off = f.arg1;
 				EncapsulatedAccess access = internals[off];
 				if (access.skip(deltaCycle, epsCycle)) {
 					if (printing) {
@@ -258,7 +255,7 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				break;
 			}
 			case posPredicate: {
-				int off = readVarInt();
+				int off = f.arg1;
 				EncapsulatedAccess access = internals[off];
 				// If data is not from this deltaCycle it was not
 				// updated that means prior predicates failed
@@ -277,7 +274,7 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				break;
 			}
 			case negPredicate: {
-				int off = readVarInt();
+				int off = f.arg1;
 				EncapsulatedAccess access = internals[off];
 				// If data is not from this deltaCycle it was not
 				// updated that means prior predicates failed
@@ -296,13 +293,9 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				break;
 			}
 			}
-		} while (hasMore());
+		}
 		internals[outputID].setDataBig(stack[0], deltaCycle, epsCycle);
 		return;
-	}
-
-	private BigInteger getWidthMask() {
-		return BigInteger.ONE.shiftLeft(readVarInt()).subtract(BigInteger.ONE);
 	}
 
 	public static BigInteger srl(BigInteger l, int width, int shiftBy) {

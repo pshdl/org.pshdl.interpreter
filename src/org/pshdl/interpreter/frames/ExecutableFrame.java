@@ -1,39 +1,106 @@
 package org.pshdl.interpreter.frames;
 
+import java.util.*;
+
 import org.pshdl.interpreter.*;
 import org.pshdl.interpreter.access.*;
 import org.pshdl.interpreter.utils.FluidFrame.Instruction;
 
 public abstract class ExecutableFrame {
-	protected static final Instruction[] values = Instruction.values();
+
+	protected static final int noop = 0;
+	protected static final int bitAccessSingle = 1;
+	protected static final int bitAccessSingleRange = 2;
+	protected static final int cast_int = 3;
+	protected static final int cast_uint = 4;
+	protected static final int loadConstant = 5;
+	protected static final int loadInternal = 6;
+	protected static final int concat = 7;
+	protected static final int const0 = 8;
+	protected static final int const1 = 9;
+	protected static final int const2 = 10;
+	protected static final int constAll1 = 11;
+	protected static final int isFallingEdge = 12;
+	protected static final int isRisingEdge = 13;
+	protected static final int posPredicate = 14;
+	protected static final int negPredicate = 15;
+	protected static final int and = 16;
+	protected static final int or = 17;
+	protected static final int xor = 18;
+	protected static final int div = 19;
+	protected static final int minus = 20;
+	protected static final int mul = 21;
+	protected static final int plus = 22;
+	protected static final int eq = 23;
+	protected static final int greater = 24;
+	protected static final int greater_eq = 25;
+	protected static final int less = 26;
+	protected static final int less_eq = 27;
+	protected static final int not_eq = 28;
+	protected static final int logiOr = 29;
+	protected static final int logiAnd = 30;
+	protected static final int logiNeg = 31;
+	protected static final int arith_neg = 32;
+	protected static final int bit_neg = 33;
+	protected static final int sll = 34;
+	protected static final int sra = 35;
+	protected static final int srl = 36;
+
+	protected static class FastInstruction {
+		public final int inst;
+		public final int arg1, arg2;
+
+		public FastInstruction(Instruction inst, int arg1, int arg2) {
+			super();
+			this.inst = inst.ordinal();
+			this.arg1 = arg1;
+			this.arg2 = arg2;
+		}
+	}
+
+	protected final FastInstruction[] instructions;
+
 	protected int currentPos = 0;
-	private byte[] instr;
 	protected final EncapsulatedAccess internals[], internals_prev[];
 
-	protected int outputID;
+	protected final int outputID;
 
 	protected final boolean printing;
 	public boolean regUpdated;
 	public final int uniqueID;
+	private final byte[] instr;
 
 	public ExecutableFrame(Frame f, boolean printing, EncapsulatedAccess[] internals, EncapsulatedAccess[] internals_prev) {
-		this.instr = f.instructions;
 		this.printing = printing;
 		this.internals = internals;
 		this.internals_prev = internals_prev;
 		this.outputID = f.outputId;
 		this.uniqueID = f.uniqueID;
+		List<FastInstruction> instr = new LinkedList<>();
+		this.instr = f.instructions;
+		Instruction[] values = Instruction.values();
+		do {
+			Instruction instruction = values[next()];
+			int arg1 = 0;
+			int arg2 = 0;
+			if (instruction.argCount > 0)
+				arg1 = readVarInt();
+			if (instruction.argCount > 1)
+				arg2 = readVarInt();
+			instr.add(new FastInstruction(instruction, arg1, arg2));
+		} while (hasMore());
+		instructions = (FastInstruction[]) instr.toArray(new FastInstruction[instr.size()]);
 	}
 
-	public boolean hasMore() {
+	private boolean hasMore() {
 		return currentPos < instr.length;
 	}
 
-	public int next() {
+	private int next() {
 		return instr[currentPos++] & 0xff;
 	}
 
-	public int readVarInt() {
+	private int readVarInt() {
 		int tmp = 0;
 		if (((tmp = next()) & 0x80) == 0)
 			return tmp;
@@ -60,4 +127,10 @@ public abstract class ExecutableFrame {
 	}
 
 	public abstract void execute(int deltaCycle, int epsCycle);
+
+	public static void main(String[] args) {
+		for (Instruction i : Instruction.values()) {
+			System.out.println("protected static final int " + i.name() + "=" + i.ordinal() + ";");
+		}
+	}
 }

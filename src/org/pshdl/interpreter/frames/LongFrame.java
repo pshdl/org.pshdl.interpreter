@@ -1,29 +1,13 @@
 package org.pshdl.interpreter.frames;
 
 import java.math.*;
-import java.util.*;
-
 import org.pshdl.interpreter.*;
 import org.pshdl.interpreter.access.*;
-import org.pshdl.interpreter.utils.FluidFrame.Instruction;
 
 public final class LongFrame extends ExecutableFrame {
 
-	private static class FastInstruction {
-		public final Instruction inst;
-		public final int arg1, arg2;
-
-		public FastInstruction(Instruction inst, int arg1, int arg2) {
-			super();
-			this.inst = inst;
-			this.arg1 = arg1;
-			this.arg2 = arg2;
-		}
-	}
-
 	private final long stack[];
 	private final long constants[];
-	private final FastInstruction[] instructions;
 
 	public LongFrame(Frame f, boolean printing, EncapsulatedAccess internals[], EncapsulatedAccess internals_prev[]) {
 		super(f, printing, internals, internals_prev);
@@ -34,18 +18,7 @@ public final class LongFrame extends ExecutableFrame {
 			BigInteger bi = f.constants[i];
 			constants[i] = bi.longValue();
 		}
-		List<FastInstruction> instr = new LinkedList<>();
-		do {
-			Instruction instruction = values[next()];
-			int arg1 = 0;
-			int arg2 = 0;
-			if (instruction.argCount > 0)
-				arg1 = readVarInt();
-			if (instruction.argCount > 1)
-				arg2 = readVarInt();
-			instr.add(new FastInstruction(instruction, arg1, arg2));
-		} while (hasMore());
-		instructions = (FastInstruction[]) instr.toArray(new FastInstruction[instr.size()]);
+
 	}
 
 	@Override
@@ -63,14 +36,12 @@ public final class LongFrame extends ExecutableFrame {
 				stack[stackPos] = a & b;
 				break;
 			}
-			case arith_neg: {
+			case arith_neg:
 				stack[stackPos] = -stack[stackPos];
 				break;
-			}
-			case bit_neg: {
+			case bit_neg:
 				stack[stackPos] = ~stack[stackPos];
 				break;
-			}
 			case bitAccessSingle: {
 				int bit = fi.arg1;
 				long current = stack[stackPos];
@@ -335,4 +306,5 @@ public final class LongFrame extends ExecutableFrame {
 		// + " read:" + ea.getDataLong());
 		return;
 	}
+
 }
