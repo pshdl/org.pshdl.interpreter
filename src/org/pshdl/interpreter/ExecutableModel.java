@@ -2,29 +2,31 @@ package org.pshdl.interpreter;
 
 import java.io.*;
 import java.util.*;
+
 import org.pshdl.interpreter.utils.*;
 import org.pshdl.interpreter.utils.Graph.Node;
 
 public class ExecutableModel implements Serializable {
 	public final int maxDataWidth;
+	public final int maxExecutionWidth;
 	public final int maxStackDepth;
 	public final Frame[] frames;
-	public final String[] internals;
+	public final InternalInformation[] internals;
 	public final int[] registerOutputs;
-	public final Map<String, Integer> widths;
 	private static final long serialVersionUID = 7515137334641792104L;
 
-	public ExecutableModel(Frame[] frames, String[] internals, Map<String, Integer> widths) {
+	public ExecutableModel(Frame[] frames, InternalInformation[] internals) {
 		super();
 		this.frames = frames;
 		this.internals = internals;
-		this.widths = widths;
-		int maxWidth = -1;
+		int maxWidth = -1, maxExecWidth = -1;
 		int maxStack = -1;
-		for (Integer width : widths.values()) {
-			maxWidth = Math.max(width, maxWidth);
+		for (InternalInformation ii : internals) {
+			maxWidth = Math.max(ii.baseWidth, maxWidth);
+			maxExecWidth = Math.max(ii.actualWidth, maxExecWidth);
 		}
 		this.maxDataWidth = maxWidth;
+		this.maxExecutionWidth = maxExecWidth;
 		List<Integer> regOuts = new ArrayList<Integer>();
 		for (Frame frame : frames) {
 			if (frame.isReg()) {
@@ -60,7 +62,7 @@ public class ExecutableModel implements Serializable {
 			Node<Frame> node = new Node<Frame>(f);
 			nodes.add(node);
 			outputIDMap.put(f.uniqueID, node);
-			intProvider.put(internals[f.outputId], node);
+			intProvider.put(internals[f.outputId].fullName, node);
 		}
 		for (Node<Frame> node : nodes) {
 			if (node.object.executionDep != -1) {
@@ -68,7 +70,7 @@ public class ExecutableModel implements Serializable {
 				node.reverseAddEdge(preNode);
 			}
 			for (int intDep : node.object.internalDependencies) {
-				String string = internals[intDep];
+				String string = internals[intDep].fullName;
 				Node<Frame> node2 = intProvider.get(string);
 				if (node2 != null) {
 					node.reverseAddEdge(node2);
@@ -106,7 +108,7 @@ public class ExecutableModel implements Serializable {
 		StringBuilder sb = new StringBuilder();
 		sb.append("digraph ExecutableModel {\n");
 		for (int i = 0; i < internals.length; i++) {
-			String label = internals[i];
+			String label = internals[i].fullName;
 			String style = "solid";
 			String color;
 			if (label.startsWith(FluidFrame.PRED_PREFIX)) {
@@ -180,23 +182,6 @@ public class ExecutableModel implements Serializable {
 		}
 		sb.append("}");
 		return sb.toString();
-	}
-
-	/**
-	 * Returns the width of the whole signals
-	 * 
-	 * @param name
-	 *            an internal name
-	 * @return
-	 */
-	public int getWidth(String name) {
-		Integer integer = widths.get(getBasicName(name, true));
-		if (integer == null) {
-			if (name.startsWith(FluidFrame.PRED_PREFIX))
-				return 1;
-			throw new IllegalArgumentException("Unknown width of signal:" + name);
-		}
-		return integer;
 	}
 
 }

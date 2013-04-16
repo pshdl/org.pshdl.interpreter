@@ -4,6 +4,8 @@ import java.io.*;
 
 import org.pshdl.interpreter.*;
 import org.pshdl.interpreter.utils.IOUtil.FrameTypes;
+import org.pshdl.interpreter.utils.IOUtil.IDType;
+import org.pshdl.interpreter.utils.IOUtil.InternalTypes;
 import org.pshdl.interpreter.utils.IOUtil.ModelTypes;
 
 public class ExecutableOutputStream extends DataOutputStream {
@@ -21,18 +23,32 @@ public class ExecutableOutputStream extends DataOutputStream {
 		}
 		writeInt(ModelTypes.maxDataWidth, model.maxDataWidth);
 		writeInt(ModelTypes.maxStackDepth, model.maxStackDepth);
-		writeStringArray(ModelTypes.internals, model.internals);
-		int[] widths = new int[model.internals.length];
-		for (int i = 0; i < widths.length; i++) {
-			// Transform map into sequence of width with same ordering as
-			// internals
-			widths[i] = model.getWidth(model.internals[i]);
+		for (InternalInformation ii : model.internals) {
+			writeInternal(ii);
 		}
-		writeIntArray(ModelTypes.widths, widths);
 		writeIntArray(ModelTypes.registers, model.registerOutputs);
 		for (Frame f : model.frames) {
 			writeFrame(f);
 		}
+	}
+
+	private void writeInternal(InternalInformation ii) throws IOException {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		ExecutableOutputStream obj = new ExecutableOutputStream(baos);
+		obj.writeString(InternalTypes.baseName, ii.baseName);
+		if (ii.arrayIdx.length > 0) {
+			obj.writeIntArray(InternalTypes.arrayDims, ii.arrayIdx);
+		}
+		obj.writeInt(InternalTypes.baseWidth, ii.baseWidth);
+		if (ii.bitStart != -1) {
+			obj.writeInt(InternalTypes.bitStart, ii.bitStart);
+		}
+		if (ii.bitEnd != -1) {
+			obj.writeInt(InternalTypes.bitEnd, ii.bitEnd);
+		}
+		obj.writeInt(InternalTypes.flags, (ii.isPred ? IOUtil.PRED_FLAG : 0) | (ii.isReg ? IOUtil.REG_FLAG : 0));
+		writeByteArray(ModelTypes.internal, baos.toByteArray());
+		obj.close();
 	}
 
 	public void writeFrame(Frame f) throws IOException {
@@ -73,7 +89,7 @@ public class ExecutableOutputStream extends DataOutputStream {
 	/**
 	 * Simple TLV for single integers. No preceeding items count
 	 */
-	public void writeInt(Enum<?> e, int data) throws IOException {
+	public void writeInt(IDType<?> e, int data) throws IOException {
 		writeByteArray(e, getVarInt(data));
 	}
 
@@ -98,7 +114,7 @@ public class ExecutableOutputStream extends DataOutputStream {
 		}
 	}
 
-	public void writeIntArray(Enum<?> e, int... data) throws IOException {
+	public void writeIntArray(IDType<?> e, int... data) throws IOException {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		for (int i : data) {
 			baos.write(getVarInt(i));
@@ -110,14 +126,14 @@ public class ExecutableOutputStream extends DataOutputStream {
 		write(varIntArray); // Write all VarInts
 	}
 
-	public void writeString(Enum<?> e, String data) throws IOException {
+	public void writeString(IDType<?> e, String data) throws IOException {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		byte[] bytes = data.getBytes("UTF-8");
 		baos.write(bytes);
 		writeByteArray(e, data.getBytes("UTF-8"));
 	}
 
-	public void writeStringArray(Enum<?> e, String... data) throws IOException {
+	public void writeStringArray(IDType<?> e, String... data) throws IOException {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		baos.write(getVarInt(data.length));
 		for (String string : data) {
@@ -128,23 +144,19 @@ public class ExecutableOutputStream extends DataOutputStream {
 		writeByteArray(e, baos.toByteArray());
 	}
 
-	public void writeLong(Enum<?> e, long data) throws IOException {
+	public void writeLong(IDType<?> e, long data) throws IOException {
 		writeHeader(e, 8);
 		writeLong(data);
 	}
 
-	public void writeByteArray(Enum<?> e, byte[] bytes) throws IOException {
+	public void writeByteArray(IDType<?> e, byte[] bytes) throws IOException {
 		int len = bytes.length;
 		writeHeader(e, len);
 		write(bytes, 0, len); // Write data
 	}
 
-	private void writeHeader(Enum<?> e, int len) throws IOException {
-		if (e instanceof FrameTypes) {
-			writeByte(e.ordinal() | 0x80); // Write 1 byte type field
-		} else {
-			writeByte(e.ordinal()); // Write 1 byte type field
-		}
+	private void writeHeader(IDType<?> e, int len) throws IOException {
+		writeByte(e.getID()); // Write 1 byte type field
 		write(getVarInt(len)); // Write 2 byte length field
 	}
 

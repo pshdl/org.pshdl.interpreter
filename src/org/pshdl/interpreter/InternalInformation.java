@@ -1,18 +1,93 @@
 package org.pshdl.interpreter;
 
+import java.util.*;
 import java.util.regex.*;
 
 import org.pshdl.interpreter.utils.*;
 
 public class InternalInformation {
-	public static final Pattern aiFormatName = Pattern.compile("(.*?)(?:\\{(?:(\\d+)(?:\\:(\\d+))?)\\})?(\\" + FluidFrame.REG_POSTFIX + ")?");
+	public static final Pattern aiFormatName = Pattern.compile("(.*?)" // baseName
+			+ "((?:\\[\\d+\\])*)" // arrays
+			+ "(?:\\{(?:(\\d+)" // first Digit if range
+			+ "(?:\\:(\\d+))?)\\})?" // second Digit if range
+			+ "(\\" + FluidFrame.REG_POSTFIX + ")?");
+	public static final Pattern array = Pattern.compile("\\[(.*?)\\]");
 
+	/**
+	 * The basename is the name of the variable, it may contain
+	 * {@link FluidFrame#PRED_PREFIX} and arrays
+	 */
 	public final String baseName;
+
+	/**
+	 * The full name is the base name, but also includes bit accesses and
+	 * {@link FluidFrame#REG_POSTFIX}
+	 */
 	public final String fullName;
+
+	/**
+	 * If <code>true</code> this internal is the shadow register
+	 */
 	public final boolean isReg;
+
+	/**
+	 * If <code>true</code> this internal is a predicate
+	 */
 	public final boolean isPred;
+
+	/**
+	 * bitStart indicates the largest bit index of that access, while bitEnd
+	 * indicates the lowest bit index. Both values can be -1 to indicate that no
+	 * bit access is given. For single bit accesses both values are the same
+	 */
 	public final int bitStart, bitEnd;
+
+	/**
+	 * The baseWidth represents the width of the variable, whereas actualWidth
+	 * represents the width as given by the bit accesses
+	 */
 	public final int baseWidth, actualWidth;
+
+	/**
+	 * The parsed values for array indices. Those are already included in the
+	 * basename.
+	 */
+	public final int arrayIdx[];
+
+	public InternalInformation(String baseName, boolean isReg, boolean isPred, int bitStart, int bitEnd, int baseWidth, int[] arrayIdx) {
+		super();
+		this.isReg = isReg;
+		this.isPred = isPred;
+		this.bitStart = bitStart;
+		this.bitEnd = bitEnd;
+		this.baseWidth = baseWidth;
+		this.arrayIdx = arrayIdx;
+		StringBuilder sb = new StringBuilder();
+		if (isPred) {
+			sb.append(FluidFrame.PRED_PREFIX);
+		}
+		sb.append(baseName);
+		for (int idx : arrayIdx) {
+			sb.append('[').append(idx).append(']');
+		}
+		this.baseName = sb.toString();
+		if ((bitStart != -1) && (bitEnd != -1)) {
+			this.actualWidth = (bitEnd - bitStart) + 1;
+			sb.append('{');
+			if (bitEnd == bitStart) {
+				sb.append(bitStart);
+			} else {
+				sb.append(bitStart).append(':').append(bitEnd);
+			}
+			sb.append('}');
+		} else {
+			this.actualWidth = baseWidth;
+		}
+		if (isReg) {
+			sb.append(FluidFrame.REG_POSTFIX);
+		}
+		this.fullName = sb.toString();
+	}
 
 	public InternalInformation(String fullName, int baseWidth) {
 		super();
@@ -21,22 +96,31 @@ public class InternalInformation {
 		this.baseWidth = baseWidth;
 		this.isPred = fullName.startsWith(FluidFrame.PRED_PREFIX);
 		Matcher matcher = aiFormatName.matcher(fullName);
+		List<Integer> dims = new LinkedList<>();
 		if (matcher.matches()) {
 			this.baseName = matcher.group(1);
-			if (matcher.group(2) == null) {
+			if (matcher.group(3) == null) {
 				this.bitStart = -1;
 				this.bitEnd = -1;
 				this.actualWidth = baseWidth;
-			} else if (matcher.group(3) != null) {
-				this.bitStart = Integer.parseInt(matcher.group(2));
-				this.bitEnd = Integer.parseInt(matcher.group(3));
+			} else if (matcher.group(4) != null) {
+				this.bitStart = Integer.parseInt(matcher.group(3));
+				this.bitEnd = Integer.parseInt(matcher.group(4));
 				this.actualWidth = (bitEnd - bitStart) + 1;
 			} else {
-				this.bitStart = this.bitEnd = Integer.parseInt(matcher.group(2));
+				this.bitStart = this.bitEnd = Integer.parseInt(matcher.group(3));
 				this.actualWidth = 1;
+			}
+			Matcher m = array.matcher(matcher.group(2));
+			while (m.find()) {
+				dims.add(Integer.parseInt(m.group(1)));
 			}
 		} else
 			throw new IllegalArgumentException("Name:" + fullName + " is not valid!");
+		arrayIdx = new int[dims.size()];
+		for (int i = 0; i < arrayIdx.length; i++) {
+			arrayIdx[i] = dims.get(i);
+		}
 	}
 
 	@Override
@@ -90,11 +174,8 @@ public class InternalInformation {
 
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("InternalInformation [baseName=").append(baseName).append(", fullName=").append(fullName).append(", isReg=").append(isReg).append(", isPred=")
-				.append(isPred).append(", bitStart=").append(bitStart).append(", bitEnd=").append(bitEnd).append(", baseWidth=").append(baseWidth).append(", actualWidth=")
-				.append(actualWidth).append("]");
-		return builder.toString();
+		return "InternalInformation [baseName=" + baseName + ", fullName=" + fullName + ", isReg=" + isReg + ", isPred=" + isPred + ", bitStart=" + bitStart + ", bitEnd=" + bitEnd
+				+ ", baseWidth=" + baseWidth + ", actualWidth=" + actualWidth + ", arrayDim=" + Arrays.toString(arrayIdx) + "]";
 	}
 
 	public String baseNameWithReg() {

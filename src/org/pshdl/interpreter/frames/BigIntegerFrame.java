@@ -65,11 +65,13 @@ public final class BigIntegerFrame extends ExecutableFrame {
 					BigInteger t = stack[stackPos];
 					t = t.and(mask);
 					if (t.testBit(targetWidth - 1)) { // MSB is set
-						if (t.signum() > 0) // Sign is +
+						if (t.signum() > 0) {
 							t = t.negate();
+						}
 					} else {
-						if (t.signum() < 0) // Sign is -
+						if (t.signum() < 0) {
 							t = t.negate();
+						}
 					}
 					stack[stackPos] = t;
 				}

@@ -6,6 +6,8 @@ import java.util.*;
 
 import org.pshdl.interpreter.*;
 import org.pshdl.interpreter.utils.IOUtil.FrameTypes;
+import org.pshdl.interpreter.utils.IOUtil.IDType;
+import org.pshdl.interpreter.utils.IOUtil.InternalTypes;
 import org.pshdl.interpreter.utils.IOUtil.ModelTypes;
 
 public class ExecutableInputStream extends DataInputStream {
@@ -26,21 +28,16 @@ public class ExecutableInputStream extends DataInputStream {
 
 	}
 
-	public TLV readTLV(Enum<?> e[]) throws IOException {
+	public TLV readTLV(IDType<?> e) throws IOException {
 		int len = 0;
 		int type = -1;
 		type = read();
 		if (type == -1)
 			return null;
-		if ((type & 0x80) != 0) {
-			type &= 0x7F;
-		}
+		Enum<?> ne = e.getFromID(type);
 		len = readVarInt();
-		// System.out.println("IOUtil.TLV.read()Reading type:" + e[type] +
-		// " with len:" + len);
 		byte data[] = new byte[len];
 		readFully(data);
-		Enum<?> ne = e[type];
 		return new TLV(ne, data);
 	}
 
@@ -50,10 +47,9 @@ public class ExecutableInputStream extends DataInputStream {
 		readFully(header);
 		if (!"PSEX".equals(new String(header)))
 			throw new IllegalArgumentException("Not a PS Executable: Missing or wrong header!");
-		int[] widths = new int[0];
-		String[] internals = new String[0];
+		List<InternalInformation> internals = new LinkedList<InternalInformation>();
 		List<Frame> frameList = new LinkedList<Frame>();
-		while ((tlv = readTLV(ModelTypes.values())) != null) {
+		while ((tlv = readTLV(ModelTypes.date)) != null) {
 			ModelTypes type = (ModelTypes) tlv.type;
 			ExecutableInputStream ex = new ExecutableInputStream(new ByteArrayInputStream(tlv.value));
 			switch (type) {
@@ -66,8 +62,8 @@ public class ExecutableInputStream extends DataInputStream {
 			case frame:
 				frameList.add(ex.readFrame(verbose));
 				break;
-			case internals:
-				internals = ex.readStringArray();
+			case internal:
+				internals.add(ex.readInternal());
 				break;
 			case maxDataWidth:
 				if (verbose) {
@@ -86,7 +82,7 @@ public class ExecutableInputStream extends DataInputStream {
 					int[] asIntArray = ex.readIntArray();
 					StringBuilder sb = new StringBuilder();
 					for (int i : asIntArray) {
-						sb.append(' ').append(internals[i]);
+						sb.append(' ').append(internals.get(i).fullName);
 					}
 					System.out.println("The following internals are registers:" + sb);
 				}
@@ -104,9 +100,6 @@ public class ExecutableInputStream extends DataInputStream {
 					System.out.printf("Compiled with version: %d.%d.%d\n", version[0], version[1], version[2]);
 				}
 				break;
-			case widths:
-				widths = ex.readIntArray();
-				break;
 			default:
 				ex.close();
 				throw new IllegalArgumentException("The type:" + type + " is not handled");
@@ -114,12 +107,53 @@ public class ExecutableInputStream extends DataInputStream {
 			ex.close();
 		}
 		Frame[] frames = frameList.toArray(new Frame[frameList.size()]);
-		Map<String, Integer> widthMap = new HashMap<String, Integer>();
-		for (int i = 0; i < internals.length; i++) {
-			String s = internals[i];
-			widthMap.put(ExecutableModel.getBasicName(s, true), widths[i]);
+		InternalInformation[] iis = internals.toArray(new InternalInformation[internals.size()]);
+		return new ExecutableModel(frames, iis);
+	}
+
+	private void printHex(byte[] value) {
+		for (byte b : value) {
+			System.out.printf("%02X ", b);
 		}
-		return new ExecutableModel(frames, internals, widthMap);
+		System.out.println();
+	}
+
+	private InternalInformation readInternal() throws IOException {
+		TLV tlv = null;
+		int[] dims = new int[0];
+		String baseName = null;
+		int baseWidth = -1;
+		int bitStart = -1, bitEnd = -1;
+		int flags = 0;
+		while ((tlv = readTLV(InternalTypes.baseName)) != null) {
+			ExecutableInputStream ex = new ExecutableInputStream(new ByteArrayInputStream(tlv.value));
+			InternalTypes it = (InternalTypes) tlv.type;
+			switch (it) {
+			case arrayDims:
+				dims = ex.readIntArray();
+				break;
+			case baseName:
+				baseName = new String(tlv.value, "UTF-8");
+				break;
+			case baseWidth:
+				baseWidth = ex.readVarInt();
+				break;
+			case bitEnd:
+				bitEnd = ex.readVarInt();
+				break;
+			case bitStart:
+				bitStart = ex.readVarInt();
+				break;
+			case flags:
+				flags = ex.readVarInt();
+				break;
+			}
+			ex.close();
+		}
+		boolean isPred = (flags & IOUtil.PRED_FLAG) == IOUtil.PRED_FLAG;
+		boolean isReg = (flags & IOUtil.REG_FLAG) == IOUtil.REG_FLAG;
+		InternalInformation ii = new InternalInformation(baseName, isReg, isPred, bitStart, bitEnd, baseWidth, dims);
+		return ii;
 	}
 
 	public Frame readFrame(boolean verbose) throws IOException {
@@ -133,7 +167,7 @@ public class ExecutableInputStream extends DataInputStream {
 		int outputID = -1, uniqueID = -1;
 		byte[] instructions = new byte[0];
 		int[] intDeps = new int[0];
-		while ((tlv = readTLV(FrameTypes.values())) != null) {
+		while ((tlv = readTLV(FrameTypes.constants)) != null) {
 			ExecutableInputStream ex = new ExecutableInputStream(new ByteArrayInputStream(tlv.value));
 			FrameTypes type = (FrameTypes) tlv.type;
 			switch (type) {

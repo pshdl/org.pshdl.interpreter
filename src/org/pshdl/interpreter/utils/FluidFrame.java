@@ -201,25 +201,22 @@ public class FluidFrame {
 			entry.registerFrame(register);
 		}
 		List<Frame> res = toFrame(register);
-		String[] internals = new String[register.internalIds.size()];
+		InternalInformation[] internals = new InternalInformation[register.internalIds.size()];
 		for (Entry<String, Integer> e : register.internalIds.entrySet()) {
-			internals[e.getValue()] = e.getKey();
+			String name = e.getKey();
+			Integer baseWidth = widths.get(ExecutableModel.getBasicName(name, true));
+			internals[e.getValue()] = new InternalInformation(name, baseWidth);
 		}
 		Map<String, Integer> lastID = new HashMap<>();
 		for (Frame frame : res) {
-			String name = internals[frame.outputId];
-			int brace = name.indexOf('{');
-			if (brace != -1) {
-				name = name.substring(0, brace);
-			}
-			name = ExecutableModel.stripReg(name);
-			Integer lID = lastID.get(name);
+			InternalInformation ii = internals[frame.outputId];
+			Integer lID = lastID.get(ii.baseName);
 			if (lID != null) {
 				frame.executionDep = lID;
 			}
-			lastID.put(name, frame.uniqueID);
+			lastID.put(ii.baseName, frame.uniqueID);
 		}
-		return new ExecutableModel(res.toArray(new Frame[res.size()]), internals, widths);
+		return new ExecutableModel(res.toArray(new Frame[res.size()]), internals);
 	}
 
 	private void registerFrame(FrameRegister register) {

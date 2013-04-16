@@ -5,12 +5,55 @@ import java.io.*;
 import org.pshdl.interpreter.*;
 
 public class IOUtil {
-	public static enum ModelTypes {
-		version, src, date, maxDataWidth, maxStackDepth, internals, widths, registers, frame
+	public static int PRED_FLAG = 0x01;
+	public static int REG_FLAG = 0x02;
+
+	public static interface IDType<T extends Enum<T>> {
+		public int getID();
+
+		public T getFromID(int id);
 	}
 
-	public static enum FrameTypes {
-		uniqueID, outputID, internalDep, edgePosDep, edgeNegDep, predPosDep, predNegDep, executionDep, constants, instructions, maxDataWidth, maxStackDepth
+	public static enum ModelTypes implements IDType<ModelTypes> {
+		version, src, date, maxDataWidth, maxStackDepth, internal, registers, frame;
+
+		@Override
+		public int getID() {
+			return ordinal();
+		}
+
+		@Override
+		public ModelTypes getFromID(int id) {
+			return values()[id];
+		}
+	}
+
+	public static enum FrameTypes implements IDType<FrameTypes> {
+		uniqueID, outputID, internalDep, edgePosDep, edgeNegDep, predPosDep, predNegDep, executionDep, constants, instructions, maxDataWidth, maxStackDepth;
+
+		@Override
+		public int getID() {
+			return ordinal() | 0x80;
+		}
+
+		@Override
+		public FrameTypes getFromID(int id) {
+			return values()[id & 0x7F];
+		}
+	}
+
+	public static enum InternalTypes implements IDType<InternalTypes> {
+		baseName, baseWidth, bitStart, bitEnd, arrayDims, flags;
+
+		@Override
+		public int getID() {
+			return ordinal() | 0x40;
+		}
+
+		@Override
+		public InternalTypes getFromID(int id) {
+			return values()[id & 0x3F];
+		}
 	}
 
 	public static ExecutableModel readExecutableModel(File source, boolean verbose) throws IOException {
