@@ -1,3 +1,29 @@
+/*******************************************************************************
+ * PSHDL is a library and (trans-)compiler for PSHDL input. It generates
+ *     output suitable for implementation or simulation of it.
+ *     
+ *     Copyright (C) 2013 Karsten Becker (feedback (at) pshdl (dot) org)
+ * 
+ *     This program is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ * 
+ *     This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ * 
+ *     You should have received a copy of the GNU General Public License
+ *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ *     This License does not grant permission to use the trade names, trademarks,
+ *     service marks, or product names of the Licensor, except as required for 
+ *     reasonable and customary use in describing the origin of the Work.
+ * 
+ * Contributors:
+ *     Karsten Becker - initial API and implementation
+ ******************************************************************************/
 package org.pshdl.interpreter;
 
 import java.util.*;
@@ -54,7 +80,9 @@ public class InternalInformation {
 	 */
 	public final int arrayIdx[];
 
-	public InternalInformation(String baseName, boolean isReg, boolean isPred, int bitStart, int bitEnd, int baseWidth, int[] arrayIdx) {
+	public final int arrayStart[], arrayEnd[];
+
+	public InternalInformation(String baseName, boolean isReg, boolean isPred, int bitStart, int bitEnd, int baseWidth, int[] arrayIdx, int[] arrayStart, int[] arrayEnd) {
 		super();
 		this.isReg = isReg;
 		this.isPred = isPred;
@@ -62,6 +90,8 @@ public class InternalInformation {
 		this.bitEnd = bitEnd;
 		this.baseWidth = baseWidth;
 		this.arrayIdx = arrayIdx;
+		this.arrayStart = arrayStart;
+		this.arrayEnd = arrayEnd;
 		StringBuilder sb = new StringBuilder();
 		if (isPred) {
 			sb.append(FluidFrame.PRED_PREFIX);
@@ -117,9 +147,14 @@ public class InternalInformation {
 			}
 		} else
 			throw new IllegalArgumentException("Name:" + fullName + " is not valid!");
+		arrayStart = new int[dims.size()];
+		arrayEnd = new int[dims.size()];
 		arrayIdx = new int[dims.size()];
 		for (int i = 0; i < arrayIdx.length; i++) {
-			arrayIdx[i] = dims.get(i);
+			Integer d = dims.get(i);
+			arrayIdx[i] = d;
+			arrayStart[i] = d;
+			arrayEnd[i] = d;
 		}
 	}
 

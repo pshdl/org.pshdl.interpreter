@@ -1,3 +1,29 @@
+/*******************************************************************************
+ * PSHDL is a library and (trans-)compiler for PSHDL input. It generates
+ *     output suitable for implementation or simulation of it.
+ *     
+ *     Copyright (C) 2013 Karsten Becker (feedback (at) pshdl (dot) org)
+ * 
+ *     This program is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ * 
+ *     This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ * 
+ *     You should have received a copy of the GNU General Public License
+ *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ *     This License does not grant permission to use the trade names, trademarks,
+ *     service marks, or product names of the Licensor, except as required for 
+ *     reasonable and customary use in describing the origin of the Work.
+ * 
+ * Contributors:
+ *     Karsten Becker - initial API and implementation
+ ******************************************************************************/
 package org.pshdl.interpreter.utils;
 
 import java.io.*;
@@ -43,7 +69,7 @@ public class IOUtil {
 	}
 
 	public static enum InternalTypes implements IDType<InternalTypes> {
-		baseName, baseWidth, bitStart, bitEnd, arrayDims, flags;
+		baseName, baseWidth, bitStart, bitEnd, arrayIdx, flags, arrayStart, arrayEnd;
 
 		@Override
 		public int getID() {
@@ -72,11 +98,15 @@ public class IOUtil {
 	public static void main(String[] args) {
 		System.out.println("Model types:");
 		for (ModelTypes type : ModelTypes.values()) {
-			System.out.printf("%15s=%02x\n", type.name(), type.ordinal());
+			System.out.printf("0x%02x | %-15s\n", type.getID(), type.name());
 		}
 		System.out.println("Frame types:");
 		for (FrameTypes type : FrameTypes.values()) {
-			System.out.printf("0x%02x | %-15s\n", 0x80 | type.ordinal(), type.name());
+			System.out.printf("0x%02x | %-15s\n", type.getID(), type.name());
+		}
+		System.out.println("Internal types:");
+		for (InternalTypes type : InternalTypes.values()) {
+			System.out.printf("0x%02x | %-15s\n", type.getID(), type.name());
 		}
 	}
 }
