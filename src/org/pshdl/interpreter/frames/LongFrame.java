@@ -53,39 +53,38 @@ public final class LongFrame extends ExecutableFrame {
 		int stackPos = -1;
 		currentPos = 0;
 		regUpdated = false;
+		long a = 0;
+		long b = 0;
 		for (FastInstruction fi : instructions) {
+			if (fi.popA)
+				a = stack[stackPos--];
+			if (fi.popB)
+				b = stack[stackPos--];
 			switch (fi.inst) {
 			case noop:
 				break;
-			case and: {
-				long b = stack[stackPos--];
-				long a = stack[stackPos];
-				stack[stackPos] = a & b;
+			case and:
+				stack[++stackPos] = b & a;
 				break;
-			}
 			case arith_neg:
-				stack[stackPos] = -stack[stackPos];
+				stack[++stackPos] = -a;
 				break;
 			case bit_neg:
-				stack[stackPos] = ~stack[stackPos];
+				stack[++stackPos] = ~a;
 				break;
-			case bitAccessSingle: {
+			case bitAccessSingle:
 				int bit = fi.arg1;
-				long current = stack[stackPos];
-				current >>= bit;
-				current &= 1;
-				stack[stackPos] = current;
+				a >>= bit;
+				a &= 1;
+				stack[++stackPos] = a;
 				break;
-			}
-			case bitAccessSingleRange: {
+			case bitAccessSingleRange:
 				int lowBit = fi.arg1;
 				int highBit = fi.arg2;
-				long current = stack[stackPos];
-				current >>= lowBit;
-				current &= (1 << ((highBit - lowBit) + 1)) - 1;
-				stack[stackPos] = current;
+				a >>= lowBit;
+				a &= (1 << ((highBit - lowBit) + 1)) - 1;
+				stack[++stackPos] = a;
 				break;
-			}
 			case cast_int:
 				// Corner cases:
 				// value is 0xF (-1 int<4>)
@@ -94,23 +93,16 @@ public final class LongFrame extends ExecutableFrame {
 				// cast to int<3> result should be 0xE (-2)
 				// Resize sign correctly to correct size
 				int targetSize = fi.arg1;
-				int currentSize = fi.arg2;
-				// Move the highest bit to the MSB
-				long temp = stack[stackPos] << (64 - currentSize);
-				// And move it back. As in Java everything is signed,
-				// the sign extension is done correctly. We now have a
-				// fully signed value
-				temp = (temp >> (64 - currentSize));
 				// Throw away unnecessary bits (only needed when
 				// targetsize>currentSize)
-				temp = stack[stackPos] << (64 - targetSize);
-				stack[stackPos] = (temp >> (64 - targetSize));
+				long temp = a << (64 - targetSize);
+				stack[++stackPos] = (temp >> (64 - targetSize));
 				break;
 			case cast_uint:
 				// There is nothing special about uints, so we just mask
 				// them
 				long mask = (1 << (fi.arg1)) - 1;
-				stack[stackPos] &= mask;
+				stack[++stackPos] = a & mask;
 				break;
 			case concat:
 				// Implement somewhen...
@@ -128,123 +120,66 @@ public final class LongFrame extends ExecutableFrame {
 				int width = fi.arg1;
 				stack[++stackPos] = (1 << width) - 1;
 				break;
-			case div: {
-				long b = stack[stackPos--];
-				long a = stack[stackPos];
-				stack[stackPos] = a / b;
+			case div:
+				stack[++stackPos] = b / a;
 				break;
-			}
-			case eq: {
-				long b = stack[stackPos--];
-				long a = stack[stackPos];
-				stack[stackPos] = a == b ? 1 : 0;
+			case eq:
+				stack[++stackPos] = b == a ? 1 : 0;
 				break;
-			}
-			case greater: {
-				long b = stack[stackPos--];
-				long a = stack[stackPos];
-				stack[stackPos] = a > b ? 1 : 0;
+			case greater:
+				stack[++stackPos] = b > a ? 1 : 0;
 				break;
-			}
-			case greater_eq: {
-				long b = stack[stackPos--];
-				long a = stack[stackPos];
-				stack[stackPos] = a >= b ? 1 : 0;
+			case greater_eq:
+				stack[++stackPos] = b >= a ? 1 : 0;
 				break;
-			}
-			case less: {
-				long b = stack[stackPos--];
-				long a = stack[stackPos];
-				stack[stackPos] = a < b ? 1 : 0;
+			case less:
+				stack[++stackPos] = b < a ? 1 : 0;
 				break;
-			}
-			case less_eq: {
-				long b = stack[stackPos--];
-				long a = stack[stackPos];
-				stack[stackPos] = a <= b ? 1 : 0;
+			case less_eq:
+				stack[++stackPos] = b <= a ? 1 : 0;
 				break;
-			}
 			case loadConstant:
 				stack[++stackPos] = constants[fi.arg1];
 				break;
 			case loadInternal:
 				stack[++stackPos] = internals[fi.arg1].getDataLong();
 				break;
-			case logiAnd: {
-				long b = stack[stackPos--];
-				long a = stack[stackPos];
-				stack[stackPos] = ((a != 0) && (b != 0)) ? 1 : 0;
+			case logiAnd:
+				stack[++stackPos] = ((a != 0) && (b != 0)) ? 1 : 0;
 				break;
-			}
-			case logiOr: {
-				long b = stack[stackPos--];
-				long a = stack[stackPos];
-				stack[stackPos] = ((a != 0) || (b != 0)) ? 1 : 0;
+			case logiOr:
+				stack[++stackPos] = ((a != 0) || (b != 0)) ? 1 : 0;
 				break;
-			}
-			case logiNeg: {
-				long a = stack[stackPos];
-				if (a == 0) {
-					stack[stackPos] = 1;
-				} else {
-					stack[stackPos] = 0;
-				}
+			case logiNeg:
+				stack[++stackPos] = a == 0 ? 1 : 0;
 				break;
-			}
-			case minus: {
-				long b = stack[stackPos--];
-				long a = stack[stackPos];
-				stack[stackPos] = a - b;
+			case minus:
+				stack[++stackPos] = b - a;
 				break;
-			}
-			case mul: {
-				long b = stack[stackPos--];
-				long a = stack[stackPos];
-				stack[stackPos] = a * b;
+			case mul:
+				stack[++stackPos] = b * a;
 				break;
-			}
-			case not_eq: {
-				long b = stack[stackPos--];
-				long a = stack[stackPos];
-				stack[stackPos] = a != b ? 1 : 0;
+			case not_eq:
+				stack[++stackPos] = b != a ? 1 : 0;
 				break;
-			}
-			case or: {
-				long b = stack[stackPos--];
-				long a = stack[stackPos];
-				stack[stackPos] = a | b;
+			case or:
+				stack[++stackPos] = b | a;
 				break;
-			}
-			case plus: {
-				long b = stack[stackPos--];
-				long a = stack[stackPos];
-				stack[stackPos] = a + b;
+			case plus:
+				stack[++stackPos] = b + a;
 				break;
-			}
-			case sll: {
-				long b = stack[stackPos--];
-				long a = stack[stackPos];
-				stack[stackPos] = a << b;
+			case sll:
+				stack[++stackPos] = b << a;
 				break;
-			}
-			case sra: {
-				long b = stack[stackPos--];
-				long a = stack[stackPos];
-				stack[stackPos] = a >> b;
+			case sra:
+				stack[++stackPos] = b >> a;
 				break;
-			}
-			case srl: {
-				long b = stack[stackPos--];
-				long a = stack[stackPos];
-				stack[stackPos] = a >>> b;
+			case srl:
+				stack[++stackPos] = b >>> a;
 				break;
-			}
-			case xor: {
-				long b = stack[stackPos--];
-				long a = stack[stackPos];
-				stack[stackPos] = a ^ b;
+			case xor:
+				stack[++stackPos] = b ^ a;
 				break;
-			}
 			case isFallingEdge: {
 				int off = fi.arg1;
 				EncapsulatedAccess access = internals[off];

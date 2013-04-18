@@ -77,12 +77,21 @@ public abstract class ExecutableFrame {
 	protected static class FastInstruction {
 		public final int inst;
 		public final int arg1, arg2;
+		public final boolean popA;
+		public final boolean popB;
 
 		public FastInstruction(Instruction inst, int arg1, int arg2) {
 			super();
 			this.inst = inst.ordinal();
 			this.arg1 = arg1;
 			this.arg2 = arg2;
+			popA = inst.pop > 0;
+			popB = inst.pop > 1;
+		}
+
+		@Override
+		public String toString() {
+			return "FastInstruction [inst=" + inst + ", arg1=" + arg1 + ", arg2=" + arg2 + ", popA=" + popA + ", popB=" + popB + "]";
 		}
 	}
 
