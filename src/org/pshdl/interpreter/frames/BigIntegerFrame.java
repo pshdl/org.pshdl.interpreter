@@ -48,6 +48,7 @@ public final class BigIntegerFrame extends ExecutableFrame {
 		int stackPos = -1;
 		currentPos = 0;
 		regUpdated = false;
+		int arrayPos = -1;
 		for (FastInstruction f : instructions) {
 			switch (f.inst) {
 			case noop:
@@ -163,7 +164,8 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				stack[++stackPos] = constants[f.arg1];
 				break;
 			case loadInternal:
-				stack[++stackPos] = internals[f.arg1].getDataBig();
+				stack[++stackPos] = getInternal(f.arg1, arrayPos).getDataBig();
+				arrayPos = -1;
 				break;
 			case logiAnd: {
 				BigInteger b = stack[stackPos--];
@@ -242,15 +244,18 @@ public final class BigIntegerFrame extends ExecutableFrame {
 			}
 			case isFallingEdge: {
 				int off = f.arg1;
-				EncapsulatedAccess access = internals[off];
+				EncapsulatedAccess access = getInternal(off, arrayPos);
+				arrayPos = -1;
 				if (access.skip(deltaCycle, epsCycle)) {
 					if (printing) {
 						System.out.println("\t\tSkipped: falling edge already handled");
 					}
 					return;
 				}
-				long curr = internals[off].getDataLong();
-				long prev = internals_prev[off].getDataLong();
+				long curr = access.getDataLong();
+				EncapsulatedAccess prevAccess = internals_prev[off];
+				prevAccess.offset = access.offset;
+				long prev = prevAccess.getDataLong();
 				if ((prev != 1) || (curr != 0)) {
 					if (printing) {
 						System.out.println("\t\tSkipped: not a falling edge");
@@ -263,15 +268,18 @@ public final class BigIntegerFrame extends ExecutableFrame {
 			}
 			case isRisingEdge: {
 				int off = f.arg1;
-				EncapsulatedAccess access = internals[off];
+				EncapsulatedAccess access = getInternal(off, arrayPos);
+				arrayPos = -1;
 				if (access.skip(deltaCycle, epsCycle)) {
 					if (printing) {
 						System.out.println("\t\tSkipped: rising edge already handled");
 					}
 					return;
 				}
-				long curr = internals[off].getDataLong();
-				long prev = internals_prev[off].getDataLong();
+				long curr = access.getDataLong();
+				EncapsulatedAccess prevAccess = internals_prev[off];
+				prevAccess.offset = access.offset;
+				long prev = prevAccess.getDataLong();
 				if ((prev != 0) || (curr != 1)) {
 					if (printing) {
 						System.out.println("\t\tSkipped: Not a rising edge");
@@ -282,9 +290,13 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				regUpdated = true;
 				break;
 			}
+			case pushAddIndex:
+				writeIndex[++arrayPos] = stack[stackPos--].intValue();
+				break;
 			case posPredicate: {
 				int off = f.arg1;
-				EncapsulatedAccess access = internals[off];
+				EncapsulatedAccess access = getInternal(off, arrayPos);
+				arrayPos = -1;
 				// If data is not from this deltaCycle it was not
 				// updated that means prior predicates failed
 				if (!access.isFresh(deltaCycle)) {
@@ -303,7 +315,8 @@ public final class BigIntegerFrame extends ExecutableFrame {
 			}
 			case negPredicate: {
 				int off = f.arg1;
-				EncapsulatedAccess access = internals[off];
+				EncapsulatedAccess access = getInternal(off, arrayPos);
+				arrayPos = -1;
 				// If data is not from this deltaCycle it was not
 				// updated that means prior predicates failed
 				if (!access.isFresh(deltaCycle)) {
@@ -322,8 +335,19 @@ public final class BigIntegerFrame extends ExecutableFrame {
 			}
 			}
 		}
-		internals[outputID].setDataBig(stack[0], deltaCycle, epsCycle);
+		if (arrayPos != -1) {
+			outputAccess.setOffset(writeIndex);
+		}
+		outputAccess.setDataBig(stack[0], deltaCycle, epsCycle);
 		return;
+	}
+
+	public EncapsulatedAccess getInternal(int off, int arrayPos) {
+		EncapsulatedAccess res = internals[off];
+		if (arrayPos != -1) {
+			res.setOffset(writeIndex);
+		}
+		return res;
 	}
 
 	public static BigInteger srl(BigInteger l, int width, int shiftBy) {

@@ -137,7 +137,7 @@ public final class HDLFrameInterpreter {
 			Integer accessIndex = accessIdxMap.get(vi.name);
 			if (accessIndex != null) {
 				if (vi.width > 64) {
-					full[i] = BigAccesses.getInternal(new InternalInformation(vi.name, vi), accessIndex, false, this);
+					full[i] = BigAccesses.getInternal(new InternalInformation(vi.name, vi), accessIndex & BIG_MASK, false, this);
 				} else {
 					full[i] = LongAccesses.getInternal(new InternalInformation(vi.name, vi), accessIndex, false, this);
 				}
@@ -267,11 +267,12 @@ public final class HDLFrameInterpreter {
 			if (regUpdated) {
 				for (RegUpdater ea : updatedRegs) {
 					if (ea.isBig) {
-						big_storage[ea.accessIdx] = big_storage[ea.shadowAccessIdx];
+						big_storage[ea.accessIdx & BIG_MASK] = big_storage[ea.shadowAccessIdx & BIG_MASK];
 					} else {
 						storage[ea.accessIdx] = storage[ea.shadowAccessIdx];
 					}
 				}
+				updatedRegs.clear();
 			}
 		} while (regUpdated);
 		System.arraycopy(storage, 0, storage_prev, 0, storage.length);
