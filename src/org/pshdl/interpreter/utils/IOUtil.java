@@ -78,17 +78,17 @@ public class IOUtil {
 
 		@Override
 		public int getID() {
-			return ordinal() | 0x40;
+			return ordinal() | 0x20;
 		}
 
 		@Override
 		public VariableTypes getFromID(int id) {
-			return values()[id & 0x3F];
+			return values()[id & 0x1F];
 		}
 	}
 
 	public static enum InternalTypes implements IDType<InternalTypes> {
-		bitStart, bitEnd, flags, arrayStart, arrayEnd, varIdx;
+		bitStart, bitEnd, arrayIdx, flags, varIdx;
 
 		@Override
 		public int getID() {
@@ -117,15 +117,19 @@ public class IOUtil {
 	public static void main(String[] args) {
 		System.out.println("Model types:");
 		for (ModelTypes type : ModelTypes.values()) {
-			System.out.printf("0x%02x | %-15s\n", type.getID(), type.name());
+			System.out.printf("0x%02x | %-16s|\n", type.getID(), type.name());
 		}
 		System.out.println("Frame types:");
 		for (FrameTypes type : FrameTypes.values()) {
-			System.out.printf("0x%02x | %-15s\n", type.getID(), type.name());
+			System.out.printf("0x%02x | %-16s|\n", type.getID(), type.name());
 		}
 		System.out.println("Internal types:");
 		for (InternalTypes type : InternalTypes.values()) {
-			System.out.printf("0x%02x | %-15s\n", type.getID(), type.name());
+			System.out.printf("0x%02x | %-16s|\n", type.getID(), type.name());
+		}
+		System.out.println("Variable types:");
+		for (VariableTypes type : VariableTypes.values()) {
+			System.out.printf("0x%02x | %-16s|\n", type.getID(), type.name());
 		}
 	}
 }

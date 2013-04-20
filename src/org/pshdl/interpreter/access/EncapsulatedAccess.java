@@ -62,7 +62,7 @@ public abstract class EncapsulatedAccess {
 			this.dims[dims.length - 1] = 1;
 		}
 		if (ii.fixedArray) {
-			setOffset(ii.arrayStart);
+			setOffset(ii.arrayIdx);
 		}
 	}
 

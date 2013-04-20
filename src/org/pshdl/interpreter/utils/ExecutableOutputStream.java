@@ -66,7 +66,7 @@ public class ExecutableOutputStream extends DataOutputStream {
 		}
 	}
 
-	private void writeVariable(VariableInformation vi) throws IOException {
+	public void writeVariable(VariableInformation vi) throws IOException {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		ExecutableOutputStream obj = new ExecutableOutputStream(baos);
 		obj.writeString(VariableTypes.name, vi.name);
@@ -105,7 +105,7 @@ public class ExecutableOutputStream extends DataOutputStream {
 		obj.close();
 	}
 
-	private void writeInternal(InternalInformation ii, int varIdx) throws IOException {
+	public void writeInternal(InternalInformation ii, int varIdx) throws IOException {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		ExecutableOutputStream obj = new ExecutableOutputStream(baos);
 		obj.writeInt(InternalTypes.varIdx, varIdx);
@@ -115,13 +115,9 @@ public class ExecutableOutputStream extends DataOutputStream {
 		if (ii.bitEnd != -1) {
 			obj.writeInt(InternalTypes.bitEnd, ii.bitEnd);
 		}
-		if (ii.arrayStart.length > 0) {
-			obj.writeIntArray(InternalTypes.arrayStart, ii.arrayStart);
+		if (ii.arrayIdx.length > 0) {
+			obj.writeIntArray(InternalTypes.arrayIdx, ii.arrayIdx);
 		}
-		if (ii.arrayEnd.length > 0) {
-			obj.writeIntArray(InternalTypes.arrayEnd, ii.arrayEnd);
-		}
-
 		obj.writeInt(InternalTypes.flags, (ii.isPred ? IOUtil.PRED_FLAG : 0) | (ii.isShadowReg ? IOUtil.REG_FLAG : 0));
 		writeByteArray(ModelTypes.internal, baos.toByteArray());
 		obj.close();

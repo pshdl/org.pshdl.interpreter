@@ -29,11 +29,34 @@ package org.pshdl.interpreter;
 import java.util.*;
 import java.util.regex.*;
 
+/**
+ * This class contains all information about an internal
+ * 
+ * @author Karsten Becker
+ * 
+ */
 public class InternalInformation {
+	/**
+	 * An internal that ends with this string is the shadow register of a
+	 * regular internal
+	 */
 	public static final String REG_POSTFIX = "$reg";
 
+	/**
+	 * Predicates start with this string
+	 */
 	public static final String PRED_PREFIX = "$Pred_";
 
+	/**
+	 * A regular expression for extracting all parts of the internal.
+	 * <ul>
+	 * <li>group(1) = baseName</li>
+	 * <li>group(2) = arrays</li>
+	 * <li>group(3) = bitStart</li>
+	 * <li>group(4) = bitEnd</li>
+	 * <li>group(5) = {@link #REG_POSTFIX}</li>
+	 * </ul>
+	 */
 	public static final Pattern aiFormatName = Pattern.compile("(.*?)" // baseName
 			+ "((?:\\[.*?\\])*)" // arrays
 			+ "(?:\\{(?:(\\d+)" // first Digit if range
@@ -70,23 +93,33 @@ public class InternalInformation {
 	 */
 	public final int actualWidth;
 
-	public final int arrayStart[], arrayEnd[];
+	/**
+	 * The indices for each dimension. A -1 indicates that this dimension is not
+	 * fixed
+	 */
+	public final int arrayIdx[];
 
+	/**
+	 * If <code>true</code> this internal is always accessing the same array
+	 * indices
+	 */
 	public final boolean fixedArray;
 
+	/**
+	 * A reference to the variable
+	 */
 	public final VariableInformation info;
 
-	public InternalInformation(boolean isShadowReg, boolean isPred, int bitStart, int bitEnd, int[] arrayStart, int[] arrayEnd, VariableInformation info) {
+	public InternalInformation(boolean isShadowReg, boolean isPred, int bitStart, int bitEnd, int[] arrayIdx, VariableInformation info) {
 		super();
 		this.isShadowReg = isShadowReg;
 		this.isPred = isPred;
 		this.bitStart = bitStart;
 		this.bitEnd = bitEnd;
-		this.arrayStart = arrayStart;
-		this.arrayEnd = arrayEnd;
+		this.arrayIdx = arrayIdx;
 		boolean isFixed = true;
-		for (int i = 0; i < arrayEnd.length; i++) {
-			if (arrayStart[i] != arrayEnd[i]) {
+		for (int i = 0; i < arrayIdx.length; i++) {
+			if (arrayIdx[i] == -1) {
 				isFixed = false;
 			}
 		}
@@ -98,7 +131,7 @@ public class InternalInformation {
 		}
 		sb.append(info.name);
 		if (isFixed) {
-			for (int idx : arrayStart) {
+			for (int idx : arrayIdx) {
 				sb.append('[').append(idx).append(']');
 			}
 		}
@@ -147,41 +180,61 @@ public class InternalInformation {
 			}
 		} else
 			throw new IllegalArgumentException("Name:" + fullName + " is not valid!");
-		this.arrayStart = new int[arrIdx.size()];
-		this.arrayEnd = new int[arrIdx.size()];
+		this.arrayIdx = new int[arrIdx.size()];
 		for (int i = 0; i < arrIdx.size(); i++) {
-			Integer d = arrIdx.get(i);
-			this.arrayStart[i] = d;
-			this.arrayEnd[i] = d;
+			arrayIdx[i] = arrIdx.get(i);
 		}
 		this.fixedArray = true;
 	}
 
+	/**
+	 * Returns the baseName with varying suffixes
+	 * 
+	 * @param includeArray
+	 *            if <code>true</code> and the array is a {@link #fixedArray}
+	 *            then then the arrays are included in the string
+	 * @param includeReg
+	 *            if <code>true</code> and the internal {@link #isShadowReg} is
+	 *            <code>true</code>, then {@value #REG_POSTFIX} is appended
+	 * @return the name including array and reg if chosen too. The baseName can
+	 *         potentially contain {@value #PRED_PREFIX}
+	 */
 	public String baseName(boolean includeArray, boolean includeReg) {
 		StringBuilder sb = new StringBuilder();
 		sb.append(info.name);
-
 		if (includeArray && fixedArray) {
-			for (int idx : arrayStart) {
+			for (int idx : arrayIdx) {
 				sb.append('[').append(idx).append(']');
 			}
 		}
 		if (isShadowReg && includeReg) {
 			sb.append(REG_POSTFIX);
 		}
-		// System.out.println("InternalInformation.baseName()" + this + " " + sb
-		// + " includeArray=" + includeArray + " includeReg=" + includeReg);
 		return sb.toString();
 	}
 
-	public static String getBasicName(String name, boolean includeArray, boolean includeReg) {
+	/**
+	 * The static version of {@link #baseName(boolean, boolean)}
+	 * 
+	 * @param name
+	 *            the string to transform
+	 * @param includeArray
+	 *            if <code>true</code> and the array is a {@link #fixedArray}
+	 *            then then the arrays are included in the string
+	 * @param includeReg
+	 *            if <code>true</code> and the internal {@link #isShadowReg} is
+	 *            <code>true</code>, then {@value #REG_POSTFIX} is appended
+	 * @return the name including array and reg if chosen too. The baseName can
+	 *         potentially contain {@value #PRED_PREFIX}
+	 */
+	public static String getBaseName(String name, boolean includeArray, boolean includeReg) {
 		Matcher matcher = aiFormatName.matcher(name);
 		if (matcher.matches()) {
 			String baseName = matcher.group(1);
 			if (includeArray) {
 				baseName += matcher.group(2);
 			}
-			if (includeArray && name.endsWith(REG_POSTFIX)) {
+			if (includeReg && name.endsWith(REG_POSTFIX)) {
 				baseName += REG_POSTFIX;
 			}
 			return baseName;
@@ -189,6 +242,13 @@ public class InternalInformation {
 		throw new IllegalArgumentException("Not a well formed name:" + name);
 	}
 
+	/**
+	 * If the string should end with {@value #REG_POSTFIX}, it returns a string
+	 * without it.
+	 * 
+	 * @param string
+	 * @return
+	 */
 	public static String stripReg(String string) {
 		if (string.endsWith(REG_POSTFIX))
 			return string.substring(0, string.length() - 4);

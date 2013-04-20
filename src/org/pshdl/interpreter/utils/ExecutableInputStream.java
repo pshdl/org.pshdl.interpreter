@@ -55,6 +55,10 @@ public class ExecutableInputStream extends DataInputStream {
 			this.value = value;
 		}
 
+		public String asString() throws UnsupportedEncodingException {
+			return new String(value, "UTF-8");
+		}
+
 	}
 
 	public TLV readTLV(IDType<?> e) throws IOException {
@@ -112,8 +116,7 @@ public class ExecutableInputStream extends DataInputStream {
 				break;
 			case src:
 				if (verbose) {
-					String src = new String(tlv.value, "UTF-8");
-					System.out.println("Generated from resource:" + src);
+					System.out.println("Generated from resource:" + tlv.asString());
 				}
 				break;
 			case version:
@@ -135,14 +138,7 @@ public class ExecutableInputStream extends DataInputStream {
 		return new ExecutableModel(frames, iis, fvars);
 	}
 
-	private void printHex(byte[] value) {
-		for (byte b : value) {
-			System.out.printf("%02X ", b);
-		}
-		System.out.println();
-	}
-
-	private VariableInformation readVariable() throws IOException {
+	public VariableInformation readVariable() throws IOException {
 		TLV tlv = null;
 		Direction dir = Direction.INTERNAL;
 		boolean isRegister = false;
@@ -178,7 +174,7 @@ public class ExecutableInputStream extends DataInputStream {
 				}
 				break;
 			case name:
-				name = new String(tlv.value, "UTF-8");
+				name = tlv.asString();
 				break;
 			case width:
 				width = ex.readVarInt();
@@ -190,11 +186,11 @@ public class ExecutableInputStream extends DataInputStream {
 		return res;
 	}
 
-	private InternalInformation readInternal(List<VariableInformation> varInfos) throws IOException {
+	public InternalInformation readInternal(List<VariableInformation> varInfos) throws IOException {
 		TLV tlv = null;
 		int bitStart = -1, bitEnd = -1;
 		int flags = 0;
-		int[] arrayStart = new int[0], arrayEnd = new int[0];
+		int[] arrayIdx = new int[0];
 		int varIdx = -1;
 		while ((tlv = readTLV(InternalTypes.flags)) != null) {
 			ExecutableInputStream ex = new ExecutableInputStream(new ByteArrayInputStream(tlv.value));
@@ -212,18 +208,15 @@ public class ExecutableInputStream extends DataInputStream {
 			case flags:
 				flags = ex.readVarInt();
 				break;
-			case arrayStart:
-				arrayStart = ex.readIntArray();
-				break;
-			case arrayEnd:
-				arrayEnd = ex.readIntArray();
+			case arrayIdx:
+				arrayIdx = ex.readIntArray();
 				break;
 			}
 			ex.close();
 		}
 		boolean isPred = (flags & IOUtil.PRED_FLAG) == IOUtil.PRED_FLAG;
 		boolean isReg = (flags & IOUtil.REG_FLAG) == IOUtil.REG_FLAG;
-		InternalInformation ii = new InternalInformation(isReg, isPred, bitStart, bitEnd, arrayStart, arrayEnd, varInfos.get(varIdx));
+		InternalInformation ii = new InternalInformation(isReg, isPred, bitStart, bitEnd, arrayIdx, varInfos.get(varIdx));
 		return ii;
 	}
 
