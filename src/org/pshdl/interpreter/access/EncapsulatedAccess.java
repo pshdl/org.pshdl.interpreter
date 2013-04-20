@@ -32,21 +32,42 @@ import org.pshdl.interpreter.*;
 
 public abstract class EncapsulatedAccess {
 	protected final HDLFrameInterpreter intr;
-	public final InternalInformation name;
-	public final int accessIndex;
+	public final InternalInformation ii;
+	private final int accessIndex;
+	public int targetAccessIndex = -1;
 	public final boolean prev;
-	public int arrayAccess;
+	public int offset;
+	private final int[] dims;
 
-	public EncapsulatedAccess(HDLFrameInterpreter hdlFrameInterpreter, InternalInformation name, int accessIndex, boolean prev) {
+	public class RegUpdater {
+		public final int shadowAccessIdx;
+		public final int accessIdx;
+		public boolean isBig = ii.info.width > 64;
+
+		public RegUpdater(int shadowAccessIdx, int accessIdx) {
+			super();
+			this.shadowAccessIdx = shadowAccessIdx;
+			this.accessIdx = accessIdx;
+		}
+	}
+
+	public EncapsulatedAccess(HDLFrameInterpreter hdlFrameInterpreter, InternalInformation ii, int accessIndex, boolean prev) {
 		super();
 		this.intr = hdlFrameInterpreter;
 		this.accessIndex = accessIndex;
 		this.prev = prev;
-		this.name = name;
+		this.ii = ii;
+		this.dims = ii.info.dimensions;
+		if (dims.length > 0) {
+			this.dims[dims.length - 1] = 1;
+		}
+		if (ii.fixedArray) {
+			setOffset(ii.arrayStart);
+		}
 	}
 
 	public void setLastUpdate(int deltaCycle, int epsCycle) {
-		intr.deltaUpdates[accessIndex] = (deltaCycle << 16) | (epsCycle & 0xFFFF);
+		intr.deltaUpdates[getAccessIndex()] = (deltaCycle << 16) | (epsCycle & 0xFFFF);
 	}
 
 	/**
@@ -58,7 +79,7 @@ public abstract class EncapsulatedAccess {
 	 * @return
 	 */
 	public boolean skip(int deltaCycle, int epsCycle) {
-		long local = intr.deltaUpdates[accessIndex];
+		long local = intr.deltaUpdates[getAccessIndex()];
 		long dc = local >>> 16;
 		// Register was updated in previous delta cylce, that is ok
 		if (dc < deltaCycle)
@@ -71,6 +92,16 @@ public abstract class EncapsulatedAccess {
 		return true;
 	}
 
+	public void setOffset(int... off) {
+		offset = 0;
+		if (off.length == 0)
+			return;
+		for (int i = 0; i < dims.length; i++) {
+			int o = off[i];
+			offset += o * dims[i];
+		}
+	}
+
 	/**
 	 * Checks whether this data has been updated in this delta cycle
 	 * 
@@ -79,7 +110,7 @@ public abstract class EncapsulatedAccess {
 	 *         <code>false</code> otherwise
 	 */
 	public boolean isFresh(int deltaCycle) {
-		return (intr.deltaUpdates[accessIndex] >>> 16) == deltaCycle;
+		return (intr.deltaUpdates[getAccessIndex()] >>> 16) == deltaCycle;
 	}
 
 	public abstract BigInteger getDataBig();
@@ -89,4 +120,13 @@ public abstract class EncapsulatedAccess {
 	public abstract void setDataLong(long data, int deltaCycle, int epsCycle);
 
 	public abstract void setDataBig(BigInteger data, int deltaCycle, int epsCycle);
+
+	public RegUpdater getRegUpdater() {
+		return new RegUpdater(getAccessIndex(), targetAccessIndex + offset);
+	}
+
+	public int getAccessIndex() {
+		return accessIndex + offset;
+	}
+
 }

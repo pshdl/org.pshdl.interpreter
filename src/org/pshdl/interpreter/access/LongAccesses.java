@@ -45,7 +45,7 @@ public class LongAccesses {
 			super(hdlFrameInterpreter, name, accessIndex, prev);
 			this.intr = hdlFrameInterpreter;
 			if ((name.bitStart == -1) && (name.bitEnd == -1)) {
-				int width = name.baseWidth;
+				int width = name.info.width;
 				if (width > 64)
 					throw new IllegalArgumentException("Unsupported bitWidth:" + width);
 				this.shift = 0;
@@ -71,41 +71,41 @@ public class LongAccesses {
 
 		@Override
 		public void setDataBig(BigInteger data, int deltaCycle, int epsCycle) {
-			long current = intr.storage[accessIndex] & writeMask;
-			this.intr.storage[accessIndex] = current | ((data.longValue() & mask) << shift);
-			if (name.isPred) {
-				this.intr.deltaUpdates[accessIndex] = (deltaCycle << 16) | (epsCycle & 0xFFFF);
+			long current = intr.storage[getAccessIndex()] & writeMask;
+			this.intr.storage[getAccessIndex()] = current | ((data.longValue() & mask) << shift);
+			if (ii.isPred) {
+				this.intr.deltaUpdates[getAccessIndex()] = (deltaCycle << 16) | (epsCycle & 0xFFFF);
 			}
 		}
 
 		@Override
 		public void setDataLong(long data, int deltaCycle, int epsCycle) {
-			long current = intr.storage[accessIndex] & writeMask;
-			this.intr.storage[accessIndex] = current | ((data & mask) << shift);
-			if (name.isPred) {
-				this.intr.deltaUpdates[accessIndex] = (deltaCycle << 16) | (epsCycle & 0xFFFF);
+			long current = intr.storage[getAccessIndex()] & writeMask;
+			this.intr.storage[getAccessIndex()] = current | ((data & mask) << shift);
+			if (ii.isPred) {
+				this.intr.deltaUpdates[getAccessIndex()] = (deltaCycle << 16) | (epsCycle & 0xFFFF);
 			}
 		}
 
 		@Override
 		public BigInteger getDataBig() {
 			if (prev)
-				return BigInteger.valueOf((intr.storage_prev[accessIndex] >> shift) & mask);
-			return BigInteger.valueOf((intr.storage[accessIndex] >> shift) & mask);
+				return BigInteger.valueOf((intr.storage_prev[getAccessIndex()] >> shift) & mask);
+			return BigInteger.valueOf((intr.storage[getAccessIndex()] >> shift) & mask);
 		}
 
 		@Override
 		public long getDataLong() {
 			if (prev)
-				return (intr.storage_prev[accessIndex] >> shift) & mask;
-			return (intr.storage[accessIndex] >> shift) & mask;
+				return (intr.storage_prev[getAccessIndex()] >> shift) & mask;
+			return (intr.storage[getAccessIndex()] >> shift) & mask;
 		}
 
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("LongAccess [intr=").append(intr).append(", shift=").append(shift).append(", mask=").append(mask).append(", writeMask=").append(writeMask)
-					.append(", name=").append(name).append(", accessIndex=").append(accessIndex).append(", prev=").append(prev).append("]");
+			builder.append("LongAccess [shift=").append(shift).append(", mask=").append(Long.toHexString(mask)).append(", writeMask=").append(Long.toHexString(writeMask))
+					.append(", name=").append(ii).append(", accessIndex=").append(getAccessIndex()).append(", prev=").append(prev).append("]");
 			return builder.toString();
 		}
 

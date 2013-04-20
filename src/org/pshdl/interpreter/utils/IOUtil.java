@@ -31,8 +31,13 @@ import java.io.*;
 import org.pshdl.interpreter.*;
 
 public class IOUtil {
-	public static int PRED_FLAG = 0x01;
-	public static int REG_FLAG = 0x02;
+	public static final int PRED_FLAG = 0x01;
+	public static final int REG_FLAG = 0x02;
+	public static final int IN_FLAG = 0x4;
+	public static final int OUT_FLAG = 0x8;
+	public static final int IO_FLAG = IN_FLAG | OUT_FLAG;
+	public static final int INT_FLAG = 0x10;
+	public static final int UINT_FLAG = 0x20;
 
 	public static interface IDType<T extends Enum<T>> {
 		public int getID();
@@ -41,7 +46,7 @@ public class IOUtil {
 	}
 
 	public static enum ModelTypes implements IDType<ModelTypes> {
-		version, src, date, maxDataWidth, maxStackDepth, internal, registers, frame;
+		version, src, date, maxDataWidth, maxStackDepth, internal, frame, variable;
 
 		@Override
 		public int getID() {
@@ -68,8 +73,22 @@ public class IOUtil {
 		}
 	}
 
+	public static enum VariableTypes implements IDType<VariableTypes> {
+		name, width, flags, dimensions;
+
+		@Override
+		public int getID() {
+			return ordinal() | 0x40;
+		}
+
+		@Override
+		public VariableTypes getFromID(int id) {
+			return values()[id & 0x3F];
+		}
+	}
+
 	public static enum InternalTypes implements IDType<InternalTypes> {
-		baseName, baseWidth, bitStart, bitEnd, arrayIdx, flags, arrayStart, arrayEnd;
+		bitStart, bitEnd, flags, arrayStart, arrayEnd, varIdx;
 
 		@Override
 		public int getID() {

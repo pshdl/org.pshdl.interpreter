@@ -30,7 +30,7 @@ import java.util.*;
 
 import org.pshdl.interpreter.*;
 import org.pshdl.interpreter.access.*;
-import org.pshdl.interpreter.utils.FluidFrame.Instruction;
+import org.pshdl.interpreter.utils.*;
 
 public abstract class ExecutableFrame {
 
@@ -75,14 +75,14 @@ public abstract class ExecutableFrame {
 	protected static final int loadMultiplex = 38;
 
 	protected static class FastInstruction {
-		public final int inst;
+		public final Instruction inst;
 		public final int arg1, arg2;
 		public final boolean popA;
 		public final boolean popB;
 
 		public FastInstruction(Instruction inst, int arg1, int arg2) {
 			super();
-			this.inst = inst.ordinal();
+			this.inst = inst;
 			this.arg1 = arg1;
 			this.arg2 = arg2;
 			popA = inst.pop > 0;
@@ -91,7 +91,11 @@ public abstract class ExecutableFrame {
 
 		@Override
 		public String toString() {
-			return "FastInstruction [inst=" + inst + ", arg1=" + arg1 + ", arg2=" + arg2 + ", popA=" + popA + ", popB=" + popB + "]";
+			if (inst.argCount >= 2)
+				return inst.name() + "[" + inst.args[0] + "=" + arg1 + "," + inst.args[1] + "=" + arg2 + "]";
+			if (inst.argCount >= 1)
+				return inst.name() + "[" + inst.args[0] + "=" + arg1 + "]";
+			return inst.name();
 		}
 	}
 
@@ -106,6 +110,8 @@ public abstract class ExecutableFrame {
 	public boolean regUpdated;
 	public final int uniqueID;
 	private final byte[] instr;
+	public final EncapsulatedAccess outputAccess;
+	protected final int[] writeIndex = new int[10];
 
 	public ExecutableFrame(Frame f, boolean printing, EncapsulatedAccess[] internals, EncapsulatedAccess[] internals_prev) {
 		this.printing = printing;
@@ -113,9 +119,9 @@ public abstract class ExecutableFrame {
 		this.internals_prev = internals_prev;
 		this.outputID = f.outputId;
 		this.uniqueID = f.uniqueID;
-		List<FastInstruction> instr = new LinkedList<>();
 		this.instr = f.instructions;
 		Instruction[] values = Instruction.values();
+		List<FastInstruction> instr = new LinkedList<>();
 		do {
 			Instruction instruction = values[next()];
 			int arg1 = 0;
@@ -128,7 +134,8 @@ public abstract class ExecutableFrame {
 			}
 			instr.add(new FastInstruction(instruction, arg1, arg2));
 		} while (hasMore());
-		instructions = instr.toArray(new FastInstruction[instr.size()]);
+		this.outputAccess = internals[outputID];
+		this.instructions = instr.toArray(new FastInstruction[instr.size()]);
 	}
 
 	private boolean hasMore() {

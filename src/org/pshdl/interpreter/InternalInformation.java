@@ -29,21 +29,17 @@ package org.pshdl.interpreter;
 import java.util.*;
 import java.util.regex.*;
 
-import org.pshdl.interpreter.utils.*;
-
 public class InternalInformation {
+	public static final String REG_POSTFIX = "$reg";
+
+	public static final String PRED_PREFIX = "$Pred_";
+
 	public static final Pattern aiFormatName = Pattern.compile("(.*?)" // baseName
-			+ "((?:\\[\\d+\\])*)" // arrays
+			+ "((?:\\[.*?\\])*)" // arrays
 			+ "(?:\\{(?:(\\d+)" // first Digit if range
 			+ "(?:\\:(\\d+))?)\\})?" // second Digit if range
-			+ "(\\" + FluidFrame.REG_POSTFIX + ")?");
+			+ "(\\" + REG_POSTFIX + ")?");
 	public static final Pattern array = Pattern.compile("\\[(.*?)\\]");
-
-	/**
-	 * The basename is the name of the variable, it may contain
-	 * {@link FluidFrame#PRED_PREFIX} and arrays
-	 */
-	public final String baseName;
 
 	/**
 	 * The full name is the base name, but also includes bit accesses and
@@ -54,7 +50,7 @@ public class InternalInformation {
 	/**
 	 * If <code>true</code> this internal is the shadow register
 	 */
-	public final boolean isReg;
+	public final boolean isShadowReg;
 
 	/**
 	 * If <code>true</code> this internal is a predicate
@@ -72,35 +68,40 @@ public class InternalInformation {
 	 * The baseWidth represents the width of the variable, whereas actualWidth
 	 * represents the width as given by the bit accesses
 	 */
-	public final int baseWidth, actualWidth;
-
-	/**
-	 * The parsed values for array indices. Those are already included in the
-	 * basename.
-	 */
-	public final int arrayIdx[];
+	public final int actualWidth;
 
 	public final int arrayStart[], arrayEnd[];
 
-	public InternalInformation(String baseName, boolean isReg, boolean isPred, int bitStart, int bitEnd, int baseWidth, int[] arrayIdx, int[] arrayStart, int[] arrayEnd) {
+	public final boolean fixedArray;
+
+	public final VariableInformation info;
+
+	public InternalInformation(boolean isShadowReg, boolean isPred, int bitStart, int bitEnd, int[] arrayStart, int[] arrayEnd, VariableInformation info) {
 		super();
-		this.isReg = isReg;
+		this.isShadowReg = isShadowReg;
 		this.isPred = isPred;
 		this.bitStart = bitStart;
 		this.bitEnd = bitEnd;
-		this.baseWidth = baseWidth;
-		this.arrayIdx = arrayIdx;
 		this.arrayStart = arrayStart;
 		this.arrayEnd = arrayEnd;
+		boolean isFixed = true;
+		for (int i = 0; i < arrayEnd.length; i++) {
+			if (arrayStart[i] != arrayEnd[i]) {
+				isFixed = false;
+			}
+		}
+		this.fixedArray = isFixed;
+		this.info = info;
 		StringBuilder sb = new StringBuilder();
 		if (isPred) {
-			sb.append(FluidFrame.PRED_PREFIX);
+			sb.append(PRED_PREFIX);
 		}
-		sb.append(baseName);
-		for (int idx : arrayIdx) {
-			sb.append('[').append(idx).append(']');
+		sb.append(info.name);
+		if (isFixed) {
+			for (int idx : arrayStart) {
+				sb.append('[').append(idx).append(']');
+			}
 		}
-		this.baseName = sb.toString();
 		if ((bitStart != -1) && (bitEnd != -1)) {
 			this.actualWidth = (bitEnd - bitStart) + 1;
 			sb.append('{');
@@ -111,28 +112,27 @@ public class InternalInformation {
 			}
 			sb.append('}');
 		} else {
-			this.actualWidth = baseWidth;
+			this.actualWidth = info.width;
 		}
-		if (isReg) {
-			sb.append(FluidFrame.REG_POSTFIX);
+		if (isShadowReg) {
+			sb.append(REG_POSTFIX);
 		}
 		this.fullName = sb.toString();
 	}
 
-	public InternalInformation(String fullName, int baseWidth) {
+	public InternalInformation(String fullName, VariableInformation info) {
 		super();
 		this.fullName = fullName;
-		this.isReg = fullName.endsWith(FluidFrame.REG_POSTFIX);
-		this.baseWidth = baseWidth;
-		this.isPred = fullName.startsWith(FluidFrame.PRED_PREFIX);
+		this.isShadowReg = fullName.endsWith(REG_POSTFIX);
+		this.isPred = fullName.startsWith(PRED_PREFIX);
+		this.info = info;
 		Matcher matcher = aiFormatName.matcher(fullName);
-		List<Integer> dims = new LinkedList<>();
+		List<Integer> arrIdx = new LinkedList<>();
 		if (matcher.matches()) {
-			this.baseName = matcher.group(1);
 			if (matcher.group(3) == null) {
 				this.bitStart = -1;
 				this.bitEnd = -1;
-				this.actualWidth = baseWidth;
+				this.actualWidth = info.width;
 			} else if (matcher.group(4) != null) {
 				this.bitStart = Integer.parseInt(matcher.group(3));
 				this.bitEnd = Integer.parseInt(matcher.group(4));
@@ -143,78 +143,61 @@ public class InternalInformation {
 			}
 			Matcher m = array.matcher(matcher.group(2));
 			while (m.find()) {
-				dims.add(Integer.parseInt(m.group(1)));
+				arrIdx.add(Integer.parseInt(m.group(1)));
 			}
 		} else
 			throw new IllegalArgumentException("Name:" + fullName + " is not valid!");
-		arrayStart = new int[dims.size()];
-		arrayEnd = new int[dims.size()];
-		arrayIdx = new int[dims.size()];
-		for (int i = 0; i < arrayIdx.length; i++) {
-			Integer d = dims.get(i);
-			arrayIdx[i] = d;
-			arrayStart[i] = d;
-			arrayEnd[i] = d;
+		this.arrayStart = new int[arrIdx.size()];
+		this.arrayEnd = new int[arrIdx.size()];
+		for (int i = 0; i < arrIdx.size(); i++) {
+			Integer d = arrIdx.get(i);
+			this.arrayStart[i] = d;
+			this.arrayEnd[i] = d;
 		}
+		this.fixedArray = true;
 	}
 
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = (prime * result) + actualWidth;
-		result = (prime * result) + ((baseName == null) ? 0 : baseName.hashCode());
-		result = (prime * result) + baseWidth;
-		result = (prime * result) + bitEnd;
-		result = (prime * result) + bitStart;
-		result = (prime * result) + ((fullName == null) ? 0 : fullName.hashCode());
-		result = (prime * result) + (isPred ? 1231 : 1237);
-		result = (prime * result) + (isReg ? 1231 : 1237);
-		return result;
+	public String baseName(boolean includeArray, boolean includeReg) {
+		StringBuilder sb = new StringBuilder();
+		sb.append(info.name);
+
+		if (includeArray && fixedArray) {
+			for (int idx : arrayStart) {
+				sb.append('[').append(idx).append(']');
+			}
+		}
+		if (isShadowReg && includeReg) {
+			sb.append(REG_POSTFIX);
+		}
+		// System.out.println("InternalInformation.baseName()" + this + " " + sb
+		// + " includeArray=" + includeArray + " includeReg=" + includeReg);
+		return sb.toString();
 	}
 
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		InternalInformation other = (InternalInformation) obj;
-		if (actualWidth != other.actualWidth)
-			return false;
-		if (baseName == null) {
-			if (other.baseName != null)
-				return false;
-		} else if (!baseName.equals(other.baseName))
-			return false;
-		if (baseWidth != other.baseWidth)
-			return false;
-		if (bitEnd != other.bitEnd)
-			return false;
-		if (bitStart != other.bitStart)
-			return false;
-		if (fullName == null) {
-			if (other.fullName != null)
-				return false;
-		} else if (!fullName.equals(other.fullName))
-			return false;
-		if (isPred != other.isPred)
-			return false;
-		if (isReg != other.isReg)
-			return false;
-		return true;
+	public static String getBasicName(String name, boolean includeArray, boolean includeReg) {
+		Matcher matcher = aiFormatName.matcher(name);
+		if (matcher.matches()) {
+			String baseName = matcher.group(1);
+			if (includeArray) {
+				baseName += matcher.group(2);
+			}
+			if (includeArray && name.endsWith(REG_POSTFIX)) {
+				baseName += REG_POSTFIX;
+			}
+			return baseName;
+		}
+		throw new IllegalArgumentException("Not a well formed name:" + name);
+	}
+
+	public static String stripReg(String string) {
+		if (string.endsWith(REG_POSTFIX))
+			return string.substring(0, string.length() - 4);
+		return string;
 	}
 
 	@Override
 	public String toString() {
-		return "InternalInformation [baseName=" + baseName + ", fullName=" + fullName + ", isReg=" + isReg + ", isPred=" + isPred + ", bitStart=" + bitStart + ", bitEnd=" + bitEnd
-				+ ", baseWidth=" + baseWidth + ", actualWidth=" + actualWidth + ", arrayDim=" + Arrays.toString(arrayIdx) + "]";
-	}
-
-	public String baseNameWithReg() {
-		return isReg ? baseName + FluidFrame.REG_POSTFIX : baseName;
+		return fullName;
 	}
 
 }

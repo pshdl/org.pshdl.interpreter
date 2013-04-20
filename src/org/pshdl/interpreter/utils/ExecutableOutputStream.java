@@ -27,12 +27,14 @@
 package org.pshdl.interpreter.utils;
 
 import java.io.*;
+import java.util.*;
 
 import org.pshdl.interpreter.*;
 import org.pshdl.interpreter.utils.IOUtil.FrameTypes;
 import org.pshdl.interpreter.utils.IOUtil.IDType;
 import org.pshdl.interpreter.utils.IOUtil.InternalTypes;
 import org.pshdl.interpreter.utils.IOUtil.ModelTypes;
+import org.pshdl.interpreter.utils.IOUtil.VariableTypes;
 
 public class ExecutableOutputStream extends DataOutputStream {
 
@@ -49,35 +51,78 @@ public class ExecutableOutputStream extends DataOutputStream {
 		}
 		writeInt(ModelTypes.maxDataWidth, model.maxDataWidth);
 		writeInt(ModelTypes.maxStackDepth, model.maxStackDepth);
-		for (InternalInformation ii : model.internals) {
-			writeInternal(ii);
+		Map<String, Integer> varIdx = new HashMap<String, Integer>();
+		VariableInformation[] variables = model.variables;
+		for (int i = 0; i < variables.length; i++) {
+			VariableInformation vi = variables[i];
+			varIdx.put(vi.name, i);
+			writeVariable(vi);
 		}
-		writeIntArray(ModelTypes.registers, model.registerOutputs);
+		for (InternalInformation ii : model.internals) {
+			writeInternal(ii, varIdx.get(ii.info.name));
+		}
 		for (Frame f : model.frames) {
 			writeFrame(f);
 		}
 	}
 
-	private void writeInternal(InternalInformation ii) throws IOException {
+	private void writeVariable(VariableInformation vi) throws IOException {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		ExecutableOutputStream obj = new ExecutableOutputStream(baos);
-		obj.writeString(InternalTypes.baseName, ii.baseName);
-		if (ii.arrayIdx.length > 0) {
-			obj.writeIntArray(InternalTypes.arrayIdx, ii.arrayIdx);
+		obj.writeString(VariableTypes.name, vi.name);
+		obj.writeInt(VariableTypes.width, vi.width);
+		int flags = 0;
+		switch (vi.dir) {
+		case IN:
+			flags |= IOUtil.IN_FLAG;
+			break;
+		case INOUT:
+			flags |= IOUtil.IO_FLAG;
+			break;
+		case OUT:
+			flags |= IOUtil.OUT_FLAG;
+			break;
+		default:
 		}
-		obj.writeInt(InternalTypes.baseWidth, ii.baseWidth);
+		switch (vi.type) {
+		case INT:
+			flags |= IOUtil.INT_FLAG;
+			break;
+		case UINT:
+			flags |= IOUtil.UINT_FLAG;
+			break;
+		default:
+			break;
+		}
+		if (vi.isRegister) {
+			flags |= IOUtil.REG_FLAG;
+		}
+		obj.writeInt(VariableTypes.flags, flags);
+		if (vi.dimensions.length != 0) {
+			obj.writeIntArray(VariableTypes.dimensions, vi.dimensions);
+		}
+		writeByteArray(ModelTypes.variable, baos.toByteArray());
+		obj.close();
+	}
+
+	private void writeInternal(InternalInformation ii, int varIdx) throws IOException {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		ExecutableOutputStream obj = new ExecutableOutputStream(baos);
+		obj.writeInt(InternalTypes.varIdx, varIdx);
 		if (ii.bitStart != -1) {
 			obj.writeInt(InternalTypes.bitStart, ii.bitStart);
 		}
 		if (ii.bitEnd != -1) {
 			obj.writeInt(InternalTypes.bitEnd, ii.bitEnd);
 		}
-		if (ii.arrayStart.length > 0)
+		if (ii.arrayStart.length > 0) {
 			obj.writeIntArray(InternalTypes.arrayStart, ii.arrayStart);
-		if (ii.arrayEnd.length > 0)
+		}
+		if (ii.arrayEnd.length > 0) {
 			obj.writeIntArray(InternalTypes.arrayEnd, ii.arrayEnd);
+		}
 
-		obj.writeInt(InternalTypes.flags, (ii.isPred ? IOUtil.PRED_FLAG : 0) | (ii.isReg ? IOUtil.REG_FLAG : 0));
+		obj.writeInt(InternalTypes.flags, (ii.isPred ? IOUtil.PRED_FLAG : 0) | (ii.isShadowReg ? IOUtil.REG_FLAG : 0));
 		writeByteArray(ModelTypes.internal, baos.toByteArray());
 		obj.close();
 	}

@@ -45,21 +45,23 @@ public final class LongFrame extends ExecutableFrame {
 			BigInteger bi = f.constants[i];
 			constants[i] = bi.longValue();
 		}
-
 	}
 
 	@Override
 	public void execute(int deltaCycle, int epsCycle) {
 		int stackPos = -1;
+		int arrayPos = -1;
 		currentPos = 0;
 		regUpdated = false;
 		long a = 0;
 		long b = 0;
 		for (FastInstruction fi : instructions) {
-			if (fi.popA)
+			if (fi.popA) {
 				a = stack[stackPos--];
-			if (fi.popB)
+			}
+			if (fi.popB) {
 				b = stack[stackPos--];
+			}
 			switch (fi.inst) {
 			case noop:
 				break;
@@ -74,16 +76,16 @@ public final class LongFrame extends ExecutableFrame {
 				break;
 			case bitAccessSingle:
 				int bit = fi.arg1;
-				a >>= bit;
-				a &= 1;
-				stack[++stackPos] = a;
+				long t = a >> bit;
+				t &= 1;
+				stack[++stackPos] = t;
 				break;
 			case bitAccessSingleRange:
 				int lowBit = fi.arg1;
 				int highBit = fi.arg2;
-				a >>= lowBit;
-				a &= (1 << ((highBit - lowBit) + 1)) - 1;
-				stack[++stackPos] = a;
+				long t2 = a >> lowBit;
+				t2 &= (1 << ((highBit - lowBit) + 1)) - 1;
+				stack[++stackPos] = t2;
 				break;
 			case cast_int:
 				// Corner cases:
@@ -142,7 +144,8 @@ public final class LongFrame extends ExecutableFrame {
 				stack[++stackPos] = constants[fi.arg1];
 				break;
 			case loadInternal:
-				stack[++stackPos] = internals[fi.arg1].getDataLong();
+				stack[++stackPos] = getInternal(fi.arg1, arrayPos).getDataLong();
+				arrayPos = -1;
 				break;
 			case logiAnd:
 				stack[++stackPos] = ((a != 0) && (b != 0)) ? 1 : 0;
@@ -182,15 +185,18 @@ public final class LongFrame extends ExecutableFrame {
 				break;
 			case isFallingEdge: {
 				int off = fi.arg1;
-				EncapsulatedAccess access = internals[off];
+				EncapsulatedAccess access = getInternal(off, arrayPos);
+				arrayPos = -1;
 				if (access.skip(deltaCycle, epsCycle)) {
 					if (printing) {
 						System.out.println("\t\tSkipped: falling edge already handled");
 					}
 					return;
 				}
-				long curr = internals[off].getDataLong();
-				long prev = internals_prev[off].getDataLong();
+				long curr = access.getDataLong();
+				EncapsulatedAccess prevAcc = internals_prev[off];
+				prevAcc.offset = access.offset;
+				long prev = prevAcc.getDataLong();
 				if ((prev != 1) || (curr != 0)) {
 					if (printing) {
 						System.out.println("\t\tSkipped: not a falling edge");
@@ -203,15 +209,18 @@ public final class LongFrame extends ExecutableFrame {
 			}
 			case isRisingEdge: {
 				int off = fi.arg1;
-				EncapsulatedAccess access = internals[off];
+				EncapsulatedAccess access = getInternal(off, arrayPos);
+				arrayPos = -1;
 				if (access.skip(deltaCycle, epsCycle)) {
 					if (printing) {
 						System.out.println("\t\tSkipped: rising edge already handled");
 					}
 					return;
 				}
-				long curr = internals[off].getDataLong();
-				long prev = internals_prev[off].getDataLong();
+				long curr = access.getDataLong();
+				EncapsulatedAccess prevAcc = internals_prev[off];
+				prevAcc.offset = access.offset;
+				long prev = prevAcc.getDataLong();
 				if ((prev != 0) || (curr != 1)) {
 					if (printing) {
 						System.out.println("\t\tSkipped: Not a rising edge");
@@ -224,7 +233,8 @@ public final class LongFrame extends ExecutableFrame {
 			}
 			case posPredicate: {
 				int off = fi.arg1;
-				EncapsulatedAccess access = internals[off];
+				EncapsulatedAccess access = getInternal(off, arrayPos);
+				arrayPos = -1;
 				// If data is not from this deltaCycle it was not
 				// updated that means prior predicates failed
 				if (!access.isFresh(deltaCycle)) {
@@ -243,7 +253,8 @@ public final class LongFrame extends ExecutableFrame {
 			}
 			case negPredicate: {
 				int off = fi.arg1;
-				EncapsulatedAccess access = internals[off];
+				EncapsulatedAccess access = getInternal(off, arrayPos);
+				arrayPos = -1;
 				// If data is not from this deltaCycle it was not
 				// updated that means prior predicates failed
 				if (!access.isFresh(deltaCycle)) {
@@ -260,13 +271,43 @@ public final class LongFrame extends ExecutableFrame {
 				}
 				break;
 			}
+			case pushAddIndex:
+				writeIndex[++arrayPos] = (int) a;
+				break;
+			}
+			if (printing) {
+				if (stackPos >= 0) {
+					if (fi.popB) {
+						System.out.println("\t\t" + b + " " + fi + " " + a + " = " + stack[stackPos]);
+					} else if (fi.popA) {
+						System.out.println("\t\t" + fi + " " + a + " = " + stack[stackPos]);
+					} else {
+						System.out.println("\t\t" + fi + " = " + stack[stackPos]);
+					}
+				} else {
+					System.out.println("\t\t" + fi + " = empty stack");
+				}
 			}
 		}
-		EncapsulatedAccess ea = internals[outputID];
-		ea.setDataLong(stack[0], deltaCycle, epsCycle);
-		// System.out.println("LongFrame.execute()" + ea + " Value:" + stack[0]
-		// + " read:" + ea.getDataLong());
+		if (arrayPos != -1) {
+			outputAccess.setOffset(writeIndex);
+		}
+		outputAccess.setDataLong(stack[0], deltaCycle, epsCycle);
+		if (printing) {
+			System.out.println("\t\tWriting result:" + outputAccess + " Value:" + stack[0] + " read:" + outputAccess.getDataLong());
+		}
 		return;
+	}
+
+	public EncapsulatedAccess getInternal(int off, int arrayPos) {
+		EncapsulatedAccess ea = internals[off];
+		if (arrayPos != -1) {
+			ea.setOffset(writeIndex);
+		}
+		if (printing) {
+			System.out.println("\t\t\tLoading:" + ea);
+		}
+		return ea;
 	}
 
 }

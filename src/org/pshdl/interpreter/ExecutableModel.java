@@ -38,17 +38,17 @@ public class ExecutableModel implements Serializable {
 	public final int maxStackDepth;
 	public final Frame[] frames;
 	public final InternalInformation[] internals;
-	public final int[] registerOutputs;
+	public final VariableInformation[] variables;
 	private static final long serialVersionUID = 7515137334641792104L;
 
-	public ExecutableModel(Frame[] frames, InternalInformation[] internals) {
+	public ExecutableModel(Frame[] frames, InternalInformation[] internals, VariableInformation[] variables) {
 		super();
 		this.frames = frames;
 		this.internals = internals;
 		int maxWidth = -1, maxExecWidth = -1;
 		int maxStack = -1;
 		for (InternalInformation ii : internals) {
-			maxWidth = Math.max(ii.baseWidth, maxWidth);
+			maxWidth = Math.max(ii.info.width, maxWidth);
 			maxExecWidth = Math.max(ii.actualWidth, maxExecWidth);
 		}
 		this.maxDataWidth = maxWidth;
@@ -61,11 +61,7 @@ public class ExecutableModel implements Serializable {
 			maxStack = Math.max(maxStack, frame.maxStackDepth);
 		}
 		this.maxStackDepth = maxStack;
-		int pos = 0;
-		this.registerOutputs = new int[regOuts.size()];
-		for (Integer integer : regOuts) {
-			registerOutputs[pos++] = integer;
-		}
+		this.variables = variables;
 	}
 
 	@Override
@@ -111,25 +107,6 @@ public class ExecutableModel implements Serializable {
 		return this;
 	}
 
-	public static String getBasicName(String inName, boolean stripReg) {
-		String name = inName;
-		int openBrace = name.indexOf('{');
-		if (openBrace != -1) {
-			name = name.substring(0, openBrace);
-			if (inName.endsWith(FluidFrame.REG_POSTFIX) && !stripReg)
-				return name + FluidFrame.REG_POSTFIX;
-		}
-		if (stripReg)
-			return stripReg(name);
-		return name;
-	}
-
-	public static String stripReg(String string) {
-		if (string.endsWith(FluidFrame.REG_POSTFIX))
-			return string.substring(0, string.length() - 4);
-		return string;
-	}
-
 	public String toDotFile() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("digraph ExecutableModel {\n");
@@ -137,10 +114,10 @@ public class ExecutableModel implements Serializable {
 			String label = internals[i].fullName;
 			String style = "solid";
 			String color;
-			if (label.startsWith(FluidFrame.PRED_PREFIX)) {
+			if (label.startsWith(InternalInformation.PRED_PREFIX)) {
 				color = "blue";
 				label = label.substring(6);
-			} else if (label.endsWith(FluidFrame.REG_POSTFIX)) {
+			} else if (label.endsWith(InternalInformation.REG_POSTFIX)) {
 				color = "gray";
 				label = label.substring(0, label.length() - 4);
 				style = "bold";

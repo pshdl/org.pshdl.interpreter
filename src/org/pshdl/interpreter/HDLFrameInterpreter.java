@@ -31,26 +31,75 @@ import java.util.*;
 import java.util.Map.Entry;
 
 import org.pshdl.interpreter.access.*;
+import org.pshdl.interpreter.access.EncapsulatedAccess.RegUpdater;
 import org.pshdl.interpreter.frames.*;
 
 public final class HDLFrameInterpreter {
+	/**
+	 * Marker that an accessIndex is of kind BigInteger. The accessIndex is
+	 * binary ored with this
+	 */
 	private static final int BIG_MARKER = 0x80000000;
+	/**
+	 * A mask to convert to get the real accessIndex if it is ored with
+	 * BIG_MARKER
+	 */
 	private static final int BIG_MASK = BIG_MARKER - 1;
 
+	/**
+	 * The model to execute
+	 */
 	public final ExecutableModel model;
 
+	/**
+	 * The storage for internals that have a width <= 64
+	 */
 	public final long storage[], storage_prev[];
+	/**
+	 * The storage for internals that have a width >=64;
+	 */
 	public final BigInteger big_storage[], big_storage_prev[];
 
+	/**
+	 * The {@link EncapsulatedAccess} for each accessIndex
+	 */
 	private final EncapsulatedAccess[] internals, internals_prev;
-	private final int[] regIndex, regIndexTarget;
-	private final int[] widths;
-	private final Map<String, Integer> idx = new TreeMap<String, Integer>();
+
+	/**
+	 * An {@link EncapsulatedAccess} for the full variable width of a variable
+	 */
+	private final EncapsulatedAccess[] full;
+
+	/**
+	 * A mapping from baseName of internal to the accessIndex (for accessing
+	 * {@link #internals} or {@link #internals_prev})
+	 */
+	private final Map<String, Integer> accessIdxMap = new TreeMap<String, Integer>();
+
+	/**
+	 * A mapping from baseName to the index in {@link #full}
+	 */
+	private final Map<String, Integer> varIdxMap = new TreeMap<String, Integer>();
+
+	/**
+	 * The current simulation deltaCycle. That is, how often the run method was
+	 * called
+	 */
 	private int deltaCycle = 0;
 
+	/**
+	 * If <code>true</code> debug information are printed
+	 */
 	private boolean printing;
 
+	/**
+	 * An index when a certain internal was last updated
+	 */
 	public final long[] deltaUpdates;
+
+	/**
+	 * The frames that get executed
+	 */
 	private final ExecutableFrame frames[];
 
 	public HDLFrameInterpreter(ExecutableModel model, boolean printing) {
@@ -59,39 +108,13 @@ public final class HDLFrameInterpreter {
 		int currentIdx = 0;
 		this.internals = new EncapsulatedAccess[model.internals.length];
 		this.internals_prev = new EncapsulatedAccess[model.internals.length];
-		this.widths = new int[internals.length];
-		for (int i = 0; i < model.internals.length; i++) {
-			InternalInformation ii = model.internals[i];
-			Integer accessIndex = idx.get(ii.baseNameWithReg());
-			if (accessIndex == null) {
-				if ((ii.baseWidth > 64)) {
-					accessIndex = currentIdx++ | BIG_MARKER;
-				} else {
-					accessIndex = currentIdx++;
-				}
-				idx.put(ii.baseNameWithReg(), accessIndex);
-			}
-			widths[i] = ii.baseWidth;
-			if (((accessIndex & BIG_MARKER) == BIG_MARKER)) {
-				internals[i] = BigAccesses.getInternal(ii, accessIndex & BIG_MASK, false, this);
-				internals_prev[i] = BigAccesses.getInternal(ii, accessIndex & BIG_MASK, true, this);
-			} else {
-				internals[i] = LongAccesses.getInternal(ii, accessIndex, false, this);
-				internals_prev[i] = LongAccesses.getInternal(ii, accessIndex, true, this);
-			}
-		}
-		regIndex = new int[model.registerOutputs.length];
-		regIndexTarget = new int[model.registerOutputs.length];
-		for (int i = 0; i < model.registerOutputs.length; i++) {
-			int ridx = model.registerOutputs[i];
-			InternalInformation name = model.internals[ridx];
-			regIndex[i] = idx.get(name.baseNameWithReg());
-			regIndexTarget[i] = idx.get(name.baseName);
-		}
-		storage = new long[currentIdx];
-		storage_prev = new long[currentIdx];
-		big_storage = new BigInteger[currentIdx];
-		big_storage_prev = new BigInteger[currentIdx];
+		this.full = new EncapsulatedAccess[model.variables.length];
+		currentIdx = createInternals(model, currentIdx);
+		createVarIndex(model);
+		this.storage = new long[currentIdx];
+		this.storage_prev = new long[currentIdx];
+		this.big_storage = new BigInteger[currentIdx];
+		this.big_storage_prev = new BigInteger[currentIdx];
 		for (int i = 0; i < big_storage.length; i++) {
 			big_storage[i] = BigInteger.ZERO;
 			big_storage_prev[i] = BigInteger.ZERO;
@@ -101,8 +124,6 @@ public final class HDLFrameInterpreter {
 		this.frames = new ExecutableFrame[frames.length];
 		for (int i = 0; i < frames.length; i++) {
 			if ((frames[i].maxDataWidth > 64)) {
-				// System.out.println("HDLFrameInterpreter.HDLFrameInterpreter() Using BigFrame for:"
-				// + frames[i].uniqueID);
 				this.frames[i] = new BigIntegerFrame(frames[i], printing, internals, internals_prev);
 			} else {
 				this.frames[i] = new LongFrame(frames[i], printing, internals, internals_prev);
@@ -110,79 +131,108 @@ public final class HDLFrameInterpreter {
 		}
 	}
 
-	public void setInput(String name, BigInteger value) {
-		Integer integer = idx.get(name);
-		if (integer == null)
-			throw new IllegalArgumentException("Could not find a variable named:" + name);
-		if ((integer & BIG_MARKER) == BIG_MARKER) {
-			big_storage[integer & BIG_MASK] = value;
-		} else {
-			storage[integer] = value.longValue();
+	private void createVarIndex(ExecutableModel model) {
+		for (int i = 0; i < model.variables.length; i++) {
+			VariableInformation vi = model.variables[i];
+			Integer accessIndex = accessIdxMap.get(vi.name);
+			if (accessIndex != null) {
+				if (vi.width > 64) {
+					full[i] = BigAccesses.getInternal(new InternalInformation(vi.name, vi), accessIndex, false, this);
+				} else {
+					full[i] = LongAccesses.getInternal(new InternalInformation(vi.name, vi), accessIndex, false, this);
+				}
+				varIdxMap.put(vi.name, i);
+			}
 		}
 	}
 
-	public void setInput(String name, long value) {
-		Integer integer = idx.get(name);
-		if (integer == null)
-			throw new IllegalArgumentException("Could not find a variable named:" + name);
-		setInput(integer, value);
+	private int createInternals(ExecutableModel model, int currentIdx) {
+		for (int i = 0; i < model.internals.length; i++) {
+			InternalInformation ii = model.internals[i];
+			String baseName = ii.baseName(false, true);
+			Integer accessIndex = accessIdxMap.get(baseName);
+			if (accessIndex == null) {
+				if ((ii.info.width > 64)) {
+					accessIndex = currentIdx | BIG_MARKER;
+				} else {
+					accessIndex = currentIdx;
+				}
+				int size = 1;
+				for (int d : ii.info.dimensions) {
+					size *= d;
+				}
+				currentIdx += size;
+				accessIdxMap.put(baseName, accessIndex);
+			}
+			if (((accessIndex & BIG_MARKER) == BIG_MARKER)) {
+				internals[i] = BigAccesses.getInternal(ii, accessIndex & BIG_MASK, false, this);
+				internals_prev[i] = BigAccesses.getInternal(ii, accessIndex & BIG_MASK, true, this);
+			} else {
+				internals[i] = LongAccesses.getInternal(ii, accessIndex, false, this);
+				internals_prev[i] = LongAccesses.getInternal(ii, accessIndex, true, this);
+			}
+		}
+		for (EncapsulatedAccess ea : internals) {
+			if (ea.ii.isShadowReg) {
+				ea.targetAccessIndex = accessIdxMap.get(ea.ii.baseName(false, false));
+			}
+		}
+		return currentIdx;
 	}
 
-	public void setInput(int idx, long value) {
-		if ((idx & BIG_MARKER) == BIG_MARKER) {
-			big_storage[idx & BIG_MASK] = BigInteger.valueOf(value);
-		} else {
-			storage[idx] = value;
+	public void setInput(String name, BigInteger value, int... arrayIdx) {
+		setInput(getIndex(name), value, arrayIdx);
+	}
+
+	public void setInput(int idx, BigInteger value, int... arrayIdx) {
+		EncapsulatedAccess acc = full[idx];
+		if (arrayIdx != null) {
+			acc.setOffset(arrayIdx);
 		}
+		acc.setDataBig(value, deltaCycle, 0);
+	}
+
+	public void setInput(String name, long value, int... arrayIdx) {
+		setInput(getIndex(name), value, arrayIdx);
+	}
+
+	public void setInput(int idx, long value, int... arrayIdx) {
+		EncapsulatedAccess acc = full[idx];
+		if (arrayIdx != null) {
+			acc.setOffset(arrayIdx);
+		}
+		acc.setDataLong(value, deltaCycle, 0);
 	}
 
 	public int getIndex(String name) {
-		Integer integer = idx.get(name);
+		Integer integer = varIdxMap.get(name);
 		if (integer == null)
-			throw new IllegalArgumentException("Could not find a variable named:" + name + " valid names are:" + idx.keySet());
+			throw new IllegalArgumentException("Could not find a variable named:" + name + " valid names are:" + accessIdxMap.keySet());
 		return integer;
 	}
 
-	public long getOutputLong(String name) {
-		Integer integer = idx.get(name);
-		if (integer == null)
-			throw new IllegalArgumentException("Could not find a variable named:" + name);
-		return getOutputLong(integer);
+	public long getOutputLong(String name, int... arrayIdx) {
+		return getOutputLong(getIndex(name), arrayIdx);
 	}
 
-	public long getOutputLong(int idx) {
-		long res;
-		int width;
-		if ((idx & BIG_MARKER) == BIG_MARKER) {
-			res = big_storage[idx & BIG_MASK].longValue();
-			width = widths[idx & BIG_MASK];
-		} else {
-			res = storage[idx];
-			width = widths[idx];
+	public long getOutputLong(int idx, int... arrayIdx) {
+		EncapsulatedAccess acc = full[idx];
+		if (arrayIdx != null) {
+			acc.setOffset(arrayIdx);
 		}
-		if (width < 64) {
-			long mask = (1l << width) - 1;
-			return res & mask;
-		}
-		return res;
+		return acc.getDataLong();
 	}
 
-	public BigInteger getOutputBig(String name) {
-		Integer integer = idx.get(name);
-		if (integer == null)
-			throw new IllegalArgumentException("Could not find a variable named:" + name);
-		return getOutputBig(integer);
+	public BigInteger getOutputBig(String name, int... arrayIdx) {
+		return getOutputBig(getIndex(name), arrayIdx);
 	}
 
-	public BigInteger getOutputBig(int idx) {
-		BigInteger res;
-		if ((idx & BIG_MARKER) == BIG_MARKER) {
-			res = big_storage[idx & BIG_MASK];
+	public BigInteger getOutputBig(int idx, int... arrayIdx) {
+		EncapsulatedAccess acc = full[idx];
+		if (arrayIdx != null) {
+			acc.setOffset(arrayIdx);
 		}
-		res = BigInteger.valueOf(storage[idx]);
-		int width = widths[idx & BIG_MASK];
-		BigInteger mask = BigInteger.ONE.shiftLeft(width).subtract(BigInteger.ONE);
-		return res.and(mask);
+		return acc.getDataBig();
 	}
 
 	/*
@@ -197,6 +247,7 @@ public final class HDLFrameInterpreter {
 		boolean regUpdated = false;
 		deltaCycle++;
 		int epsCycle = 0;
+		List<RegUpdater> updatedRegs = new ArrayList<>();
 		do {
 			epsCycle++;
 			if (printing) {
@@ -209,16 +260,16 @@ public final class HDLFrameInterpreter {
 				}
 				ef.execute(deltaCycle, epsCycle);
 				if (ef.regUpdated) {
+					updatedRegs.add(ef.outputAccess.getRegUpdater());
 					regUpdated = true;
 				}
 			}
 			if (regUpdated) {
-				for (int i = 0; i < regIndex.length; i++) {
-					int j = regIndex[i];
-					if ((j & BIG_MARKER) == BIG_MARKER) {
-						big_storage[regIndexTarget[i] & BIG_MASK] = big_storage[j & BIG_MASK];
+				for (RegUpdater ea : updatedRegs) {
+					if (ea.isBig) {
+						big_storage[ea.accessIdx] = big_storage[ea.shadowAccessIdx];
 					} else {
-						storage[regIndexTarget[i]] = storage[j];
+						storage[ea.accessIdx] = storage[ea.shadowAccessIdx];
 					}
 				}
 			}
@@ -231,7 +282,7 @@ public final class HDLFrameInterpreter {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Current Cycle:" + deltaCycle + "\n");
-		for (Entry<String, Integer> e : idx.entrySet()) {
+		for (Entry<String, Integer> e : accessIdxMap.entrySet()) {
 			sb.append('\t').append(e.getKey()).append("=").append(storage[e.getValue()]).append('\n');
 		}
 		return sb.toString();

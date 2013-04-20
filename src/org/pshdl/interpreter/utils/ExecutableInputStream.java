@@ -31,10 +31,13 @@ import java.math.*;
 import java.util.*;
 
 import org.pshdl.interpreter.*;
+import org.pshdl.interpreter.VariableInformation.Direction;
+import org.pshdl.interpreter.VariableInformation.Type;
 import org.pshdl.interpreter.utils.IOUtil.FrameTypes;
 import org.pshdl.interpreter.utils.IOUtil.IDType;
 import org.pshdl.interpreter.utils.IOUtil.InternalTypes;
 import org.pshdl.interpreter.utils.IOUtil.ModelTypes;
+import org.pshdl.interpreter.utils.IOUtil.VariableTypes;
 
 public class ExecutableInputStream extends DataInputStream {
 
@@ -75,6 +78,7 @@ public class ExecutableInputStream extends DataInputStream {
 			throw new IllegalArgumentException("Not a PS Executable: Missing or wrong header!");
 		List<InternalInformation> internals = new LinkedList<InternalInformation>();
 		List<Frame> frameList = new LinkedList<Frame>();
+		List<VariableInformation> vars = new LinkedList<VariableInformation>();
 		while ((tlv = readTLV(ModelTypes.date)) != null) {
 			ModelTypes type = (ModelTypes) tlv.type;
 			ExecutableInputStream ex = new ExecutableInputStream(new ByteArrayInputStream(tlv.value));
@@ -88,8 +92,11 @@ public class ExecutableInputStream extends DataInputStream {
 			case frame:
 				frameList.add(ex.readFrame(verbose));
 				break;
+			case variable:
+				vars.add(ex.readVariable());
+				break;
 			case internal:
-				internals.add(ex.readInternal());
+				internals.add(ex.readInternal(vars));
 				break;
 			case maxDataWidth:
 				if (verbose) {
@@ -101,16 +108,6 @@ public class ExecutableInputStream extends DataInputStream {
 				if (verbose) {
 					int maxStackDepth = ex.readVarInt();
 					System.out.println("Max Stack depth:" + maxStackDepth);
-				}
-				break;
-			case registers:
-				if (verbose) {
-					int[] asIntArray = ex.readIntArray();
-					StringBuilder sb = new StringBuilder();
-					for (int i : asIntArray) {
-						sb.append(' ').append(internals.get(i).fullName);
-					}
-					System.out.println("The following internals are registers:" + sb);
 				}
 				break;
 			case src:
@@ -134,7 +131,8 @@ public class ExecutableInputStream extends DataInputStream {
 		}
 		Frame[] frames = frameList.toArray(new Frame[frameList.size()]);
 		InternalInformation[] iis = internals.toArray(new InternalInformation[internals.size()]);
-		return new ExecutableModel(frames, iis);
+		VariableInformation[] fvars = vars.toArray(new VariableInformation[vars.size()]);
+		return new ExecutableModel(frames, iis, fvars);
 	}
 
 	private void printHex(byte[] value) {
@@ -144,26 +142,66 @@ public class ExecutableInputStream extends DataInputStream {
 		System.out.println();
 	}
 
-	private InternalInformation readInternal() throws IOException {
+	private VariableInformation readVariable() throws IOException {
 		TLV tlv = null;
-		int[] dims = new int[0];
-		String baseName = null;
-		int baseWidth = -1;
+		Direction dir = Direction.INTERNAL;
+		boolean isRegister = false;
+		Type type = Type.BIT;
+		String name = null;
+		int width = -1;
+		int dimensions[] = new int[0];
+		while ((tlv = readTLV(VariableTypes.name)) != null) {
+			ExecutableInputStream ex = new ExecutableInputStream(new ByteArrayInputStream(tlv.value));
+			VariableTypes it = (VariableTypes) tlv.type;
+			switch (it) {
+			case dimensions:
+				dimensions = ex.readIntArray();
+				break;
+			case flags:
+				int flags = ex.readVarInt();
+				isRegister = (flags & IOUtil.REG_FLAG) == IOUtil.REG_FLAG;
+				if ((flags & IOUtil.IO_FLAG) == IOUtil.IO_FLAG) {
+					dir = Direction.INOUT;
+				} else {
+					if ((flags & IOUtil.IN_FLAG) == IOUtil.IN_FLAG) {
+						dir = Direction.IN;
+					}
+					if ((flags & IOUtil.OUT_FLAG) == IOUtil.OUT_FLAG) {
+						dir = Direction.OUT;
+					}
+				}
+				if ((flags & IOUtil.INT_FLAG) == IOUtil.INT_FLAG) {
+					type = Type.INT;
+				}
+				if ((flags & IOUtil.UINT_FLAG) == IOUtil.UINT_FLAG) {
+					type = Type.UINT;
+				}
+				break;
+			case name:
+				name = new String(tlv.value, "UTF-8");
+				break;
+			case width:
+				width = ex.readVarInt();
+				break;
+			}
+			ex.close();
+		}
+		VariableInformation res = new VariableInformation(dir, name, width, type, isRegister, dimensions);
+		return res;
+	}
+
+	private InternalInformation readInternal(List<VariableInformation> varInfos) throws IOException {
+		TLV tlv = null;
 		int bitStart = -1, bitEnd = -1;
 		int flags = 0;
 		int[] arrayStart = new int[0], arrayEnd = new int[0];
-		while ((tlv = readTLV(InternalTypes.baseName)) != null) {
+		int varIdx = -1;
+		while ((tlv = readTLV(InternalTypes.flags)) != null) {
 			ExecutableInputStream ex = new ExecutableInputStream(new ByteArrayInputStream(tlv.value));
 			InternalTypes it = (InternalTypes) tlv.type;
 			switch (it) {
-			case arrayIdx:
-				dims = ex.readIntArray();
-				break;
-			case baseName:
-				baseName = new String(tlv.value, "UTF-8");
-				break;
-			case baseWidth:
-				baseWidth = ex.readVarInt();
+			case varIdx:
+				varIdx = ex.readVarInt();
 				break;
 			case bitEnd:
 				bitEnd = ex.readVarInt();
@@ -185,7 +223,7 @@ public class ExecutableInputStream extends DataInputStream {
 		}
 		boolean isPred = (flags & IOUtil.PRED_FLAG) == IOUtil.PRED_FLAG;
 		boolean isReg = (flags & IOUtil.REG_FLAG) == IOUtil.REG_FLAG;
-		InternalInformation ii = new InternalInformation(baseName, isReg, isPred, bitStart, bitEnd, baseWidth, dims, arrayStart, arrayEnd);
+		InternalInformation ii = new InternalInformation(isReg, isPred, bitStart, bitEnd, arrayStart, arrayEnd, varInfos.get(varIdx));
 		return ii;
 	}
 
