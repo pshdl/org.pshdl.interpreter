@@ -123,7 +123,7 @@ public abstract class ExecutableFrame {
 		Instruction[] values = Instruction.values();
 		List<FastInstruction> instr = new LinkedList<>();
 		do {
-			Instruction instruction = values[next()];
+			Instruction instruction = values[next() & 0x3F];
 			int arg1 = 0;
 			int arg2 = 0;
 			if (instruction.argCount > 0) {

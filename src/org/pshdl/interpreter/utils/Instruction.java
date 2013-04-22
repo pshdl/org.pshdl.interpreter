@@ -71,4 +71,12 @@ public enum Instruction {
 		this.description = desc;
 		this.args = args;
 	}
+
+	public int toByte() {
+		if (argCount == 1)
+			return ordinal() | 0x80;
+		if (argCount == 2)
+			return ordinal() | 0x40;
+		return ordinal();
+	}
 }
