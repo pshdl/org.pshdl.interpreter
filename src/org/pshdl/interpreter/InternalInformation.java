@@ -118,8 +118,8 @@ public class InternalInformation {
 		this.bitEnd = bitEnd;
 		this.arrayIdx = arrayIdx;
 		boolean isFixed = true;
-		for (int i = 0; i < arrayIdx.length; i++) {
-			if (arrayIdx[i] == -1) {
+		for (int element : arrayIdx) {
+			if (element == -1) {
 				isFixed = false;
 			}
 		}

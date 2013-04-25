@@ -74,9 +74,9 @@ public enum Instruction {
 
 	public int toByte() {
 		if (argCount == 1)
-			return ordinal() | 0x80;
-		if (argCount == 2)
 			return ordinal() | 0x40;
+		if (argCount == 2)
+			return ordinal() | 0x80;
 		return ordinal();
 	}
 }
