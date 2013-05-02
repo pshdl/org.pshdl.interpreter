@@ -74,7 +74,7 @@ public class LongAccesses {
 			long current = intr.storage[getAccessIndex()] & writeMask;
 			this.intr.storage[getAccessIndex()] = current | ((data.longValue() & mask) << shift);
 			if (ii.isPred) {
-				this.intr.deltaUpdates[getAccessIndex()] = (deltaCycle << 16) | (epsCycle & 0xFFFF);
+				setLastUpdate(deltaCycle, epsCycle);
 			}
 		}
 
@@ -83,7 +83,7 @@ public class LongAccesses {
 			long current = intr.storage[getAccessIndex()] & writeMask;
 			this.intr.storage[getAccessIndex()] = current | ((data & mask) << shift);
 			if (ii.isPred) {
-				this.intr.deltaUpdates[getAccessIndex()] = (deltaCycle << 16) | (epsCycle & 0xFFFF);
+				setLastUpdate(deltaCycle, epsCycle);
 			}
 		}
 

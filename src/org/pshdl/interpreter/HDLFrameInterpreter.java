@@ -90,7 +90,7 @@ public final class HDLFrameInterpreter {
 	/**
 	 * If <code>true</code> debug information are printed
 	 */
-	private boolean printing;
+	public boolean printing;
 
 	/**
 	 * An index when a certain internal was last updated
@@ -123,10 +123,10 @@ public final class HDLFrameInterpreter {
 		Frame[] frames = model.frames;
 		this.frames = new ExecutableFrame[frames.length];
 		for (int i = 0; i < frames.length; i++) {
-			if ((frames[i].maxDataWidth > 64)) {
-				this.frames[i] = new BigIntegerFrame(frames[i], printing, internals, internals_prev);
+			if (frames[i].maxDataWidth > 64) {
+				this.frames[i] = new BigIntegerFrame(this, frames[i], internals, internals_prev);
 			} else {
-				this.frames[i] = new LongFrame(frames[i], printing, internals, internals_prev);
+				this.frames[i] = new LongFrame(this, frames[i], internals, internals_prev);
 			}
 		}
 	}
@@ -149,6 +149,7 @@ public final class HDLFrameInterpreter {
 	private int createInternals(ExecutableModel model, int currentIdx) {
 		for (int i = 0; i < model.internals.length; i++) {
 			InternalInformation ii = model.internals[i];
+			// System.out.println("HDLFrameInterpreter.createInternals()" + ii);
 			String baseName = ii.baseName(false, true);
 			Integer accessIndex = accessIdxMap.get(baseName);
 			if (accessIndex == null) {
@@ -162,6 +163,8 @@ public final class HDLFrameInterpreter {
 					size *= d;
 				}
 				currentIdx += size;
+				// System.out.println("HDLFrameInterpreter.createInternals()Allocating:"
+				// + size + " for " + baseName);
 				accessIdxMap.put(baseName, accessIndex);
 			}
 			if (((accessIndex & BIG_MARKER) == BIG_MARKER)) {
@@ -247,7 +250,7 @@ public final class HDLFrameInterpreter {
 		boolean regUpdated = false;
 		deltaCycle++;
 		int epsCycle = 0;
-		List<RegUpdater> updatedRegs = new ArrayList<>();
+		List<RegUpdater> updatedRegs = new ArrayList<EncapsulatedAccess.RegUpdater>();
 		do {
 			epsCycle++;
 			if (printing) {
@@ -266,6 +269,8 @@ public final class HDLFrameInterpreter {
 			}
 			if (regUpdated) {
 				for (RegUpdater ea : updatedRegs) {
+					if (printing)
+						System.out.println("\tCopying register:" + ea.accessIdx + " from:" + ea.shadowAccessIdx);
 					if (ea.isBig) {
 						big_storage[ea.accessIdx & BIG_MASK] = big_storage[ea.shadowAccessIdx & BIG_MASK];
 					} else {
@@ -284,8 +289,12 @@ public final class HDLFrameInterpreter {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Current Cycle:" + deltaCycle + "\n");
 		for (Entry<String, Integer> e : accessIdxMap.entrySet()) {
-			sb.append('\t').append(e.getKey()).append("=").append(storage[e.getValue()]).append('\n');
+			sb.append('\t').append(e.getKey()).append("=").append(storage[e.getValue() & BIG_MASK]).append('\n');
 		}
 		return sb.toString();
+	}
+
+	public void setPrinting(boolean b) {
+		printing = true;
 	}
 }

@@ -38,7 +38,7 @@ public class Frame implements Serializable {
 	public final int edgePosDepRes, edgeNegDepRes;
 	public final BigInteger[] constants;
 	public final int outputId;
-	public final int maxDataWidth;
+	public int maxDataWidth;
 	public final int maxStackDepth;
 	transient public int lastUpdate;
 	public int executionDep = -1;

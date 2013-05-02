@@ -34,46 +34,6 @@ import org.pshdl.interpreter.utils.*;
 
 public abstract class ExecutableFrame {
 
-	protected static final int noop = 0;
-	protected static final int bitAccessSingle = 1;
-	protected static final int bitAccessSingleRange = 2;
-	protected static final int cast_int = 3;
-	protected static final int cast_uint = 4;
-	protected static final int loadConstant = 5;
-	protected static final int loadInternal = 6;
-	protected static final int concat = 7;
-	protected static final int const0 = 8;
-	protected static final int const1 = 9;
-	protected static final int const2 = 10;
-	protected static final int constAll1 = 11;
-	protected static final int isFallingEdge = 12;
-	protected static final int isRisingEdge = 13;
-	protected static final int posPredicate = 14;
-	protected static final int negPredicate = 15;
-	protected static final int and = 16;
-	protected static final int or = 17;
-	protected static final int xor = 18;
-	protected static final int div = 19;
-	protected static final int minus = 20;
-	protected static final int mul = 21;
-	protected static final int plus = 22;
-	protected static final int eq = 23;
-	protected static final int greater = 24;
-	protected static final int greater_eq = 25;
-	protected static final int less = 26;
-	protected static final int less_eq = 27;
-	protected static final int not_eq = 28;
-	protected static final int logiOr = 29;
-	protected static final int logiAnd = 30;
-	protected static final int logiNeg = 31;
-	protected static final int arith_neg = 32;
-	protected static final int bit_neg = 33;
-	protected static final int sll = 34;
-	protected static final int sra = 35;
-	protected static final int srl = 36;
-	protected static final int pushAddIndex = 37;
-	protected static final int loadMultiplex = 38;
-
 	protected static class FastInstruction {
 		public final Instruction inst;
 		public final int arg1, arg2;
@@ -106,22 +66,23 @@ public abstract class ExecutableFrame {
 
 	protected final int outputID;
 
-	protected final boolean printing;
 	public boolean regUpdated;
 	public final int uniqueID;
 	private final byte[] instr;
 	public final EncapsulatedAccess outputAccess;
 	protected final int[] writeIndex = new int[10];
 
-	public ExecutableFrame(Frame f, boolean printing, EncapsulatedAccess[] internals, EncapsulatedAccess[] internals_prev) {
-		this.printing = printing;
+	private HDLFrameInterpreter fir;
+
+	public ExecutableFrame(HDLFrameInterpreter fir, Frame f, EncapsulatedAccess[] internals, EncapsulatedAccess[] internals_prev) {
+		this.fir = fir;
 		this.internals = internals;
 		this.internals_prev = internals_prev;
 		this.outputID = f.outputId;
 		this.uniqueID = f.uniqueID;
 		this.instr = f.instructions;
 		Instruction[] values = Instruction.values();
-		List<FastInstruction> instr = new LinkedList<>();
+		List<FastInstruction> instr = new LinkedList<ExecutableFrame.FastInstruction>();
 		do {
 			Instruction instruction = values[next() & 0x3F];
 			int arg1 = 0;
@@ -178,5 +139,9 @@ public abstract class ExecutableFrame {
 		for (Instruction i : Instruction.values()) {
 			System.out.println("protected static final int " + i.name() + "=" + i.ordinal() + ";");
 		}
+	}
+
+	protected boolean isPrinting() {
+		return fir.printing;
 	}
 }

@@ -57,7 +57,7 @@ public abstract class EncapsulatedAccess {
 		this.accessIndex = accessIndex;
 		this.prev = prev;
 		this.ii = ii;
-		this.dims = ii.info.dimensions;
+		this.dims = ii.info.dimensions.clone();
 		if (dims.length > 0) {
 			this.dims[dims.length - 1] = 1;
 		}
@@ -67,7 +67,7 @@ public abstract class EncapsulatedAccess {
 	}
 
 	public void setLastUpdate(int deltaCycle, int epsCycle) {
-		intr.deltaUpdates[getAccessIndex()] = (deltaCycle << 16) | (epsCycle & 0xFFFF);
+		intr.deltaUpdates[getAccessIndex()] = ((long) deltaCycle << 16l) | (epsCycle & 0xFFFF);
 	}
 
 	/**
@@ -80,7 +80,7 @@ public abstract class EncapsulatedAccess {
 	 */
 	public boolean skip(int deltaCycle, int epsCycle) {
 		long local = intr.deltaUpdates[getAccessIndex()];
-		long dc = local >>> 16;
+		long dc = local >>> 16l;
 		// Register was updated in previous delta cylce, that is ok
 		if (dc < deltaCycle)
 			return false;
@@ -110,7 +110,7 @@ public abstract class EncapsulatedAccess {
 	 *         <code>false</code> otherwise
 	 */
 	public boolean isFresh(int deltaCycle) {
-		return (intr.deltaUpdates[getAccessIndex()] >>> 16) == deltaCycle;
+		return (intr.deltaUpdates[getAccessIndex()] >>> 16l) == deltaCycle;
 	}
 
 	public abstract BigInteger getDataBig();

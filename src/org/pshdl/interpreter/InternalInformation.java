@@ -160,7 +160,7 @@ public class InternalInformation {
 		this.isPred = fullName.startsWith(PRED_PREFIX);
 		this.info = info;
 		Matcher matcher = aiFormatName.matcher(fullName);
-		List<Integer> arrIdx = new LinkedList<>();
+		List<Integer> arrIdx = new LinkedList<Integer>();
 		if (matcher.matches()) {
 			if (matcher.group(3) == null) {
 				this.bitStart = -1;

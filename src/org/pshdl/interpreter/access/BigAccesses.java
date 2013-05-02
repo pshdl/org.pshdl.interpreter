@@ -44,7 +44,7 @@ public class BigAccesses {
 		public void setDataBig(BigInteger data, int deltaCycle, int epsCycle) {
 			this.hdlFrameInterpreter.big_storage[getAccessIndex()] = data;
 			if (ii.isPred) {
-				this.hdlFrameInterpreter.deltaUpdates[getAccessIndex()] = (deltaCycle << 16) | (epsCycle & 0xFFFF);
+				setLastUpdate(deltaCycle, epsCycle);
 			}
 		}
 
@@ -69,8 +69,7 @@ public class BigAccesses {
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("DirectBigAccess [hdlFrameInterpreter=").append(hdlFrameInterpreter).append(", name=").append(ii).append(", accessIndex=").append(getAccessIndex())
-					.append(", prev=").append(prev).append("]");
+			builder.append("DirectBigAccess [name=").append(ii).append(", accessIndex=").append(getAccessIndex()).append(", prev=").append(prev).append("]");
 			return builder.toString();
 		}
 
@@ -96,7 +95,7 @@ public class BigAccesses {
 				this.hdlFrameInterpreter.big_storage[getAccessIndex()] = initial.setBit(bit);
 			}
 			if (ii.isPred) {
-				this.hdlFrameInterpreter.deltaUpdates[getAccessIndex()] = (deltaCycle << 16) | (epsCycle & 0xFFFF);
+				setLastUpdate(deltaCycle, epsCycle);
 			}
 		}
 
@@ -147,7 +146,7 @@ public class BigAccesses {
 			BigInteger current = initial.and(writeMask);
 			this.hdlFrameInterpreter.big_storage[getAccessIndex()] = current.or(data.and(mask).shiftLeft(shift));
 			if (ii.isPred) {
-				this.hdlFrameInterpreter.deltaUpdates[getAccessIndex()] = (deltaCycle << 16) | (epsCycle & 0xFFFF);
+				setLastUpdate(deltaCycle, epsCycle);
 			}
 		}
 
@@ -167,6 +166,11 @@ public class BigAccesses {
 		@Override
 		public long getDataLong() {
 			return getDataBig().longValue();
+		}
+
+		@Override
+		public String toString() {
+			return "RangeBigAccess [writeMask=" + writeMask + ", mask=" + mask + ", shift=" + shift + "]";
 		}
 
 	}

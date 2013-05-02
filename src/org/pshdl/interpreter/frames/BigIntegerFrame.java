@@ -37,8 +37,8 @@ public final class BigIntegerFrame extends ExecutableFrame {
 	private final BigInteger stack[];
 	private final BigInteger constants[];
 
-	public BigIntegerFrame(Frame f, boolean printing, EncapsulatedAccess internals[], EncapsulatedAccess internals_prev[]) {
-		super(f, printing, internals, internals_prev);
+	public BigIntegerFrame(HDLFrameInterpreter fir, Frame f, EncapsulatedAccess internals[], EncapsulatedAccess internals_prev[]) {
+		super(fir, f, internals, internals_prev);
 		this.stack = new BigInteger[f.maxStackDepth];
 		this.constants = f.constants;
 	}
@@ -49,36 +49,40 @@ public final class BigIntegerFrame extends ExecutableFrame {
 		currentPos = 0;
 		regUpdated = false;
 		int arrayPos = -1;
+		BigInteger b = null, a = null;
 		for (FastInstruction f : instructions) {
+			if (f.popA) {
+				a = stack[stackPos--];
+			}
+			if (f.popB) {
+				b = stack[stackPos--];
+			}
 			switch (f.inst) {
 			case noop:
 				break;
 			case and: {
-				BigInteger b = stack[stackPos--];
-				BigInteger a = stack[stackPos];
-				stack[stackPos] = a.and(b);
+				stack[++stackPos] = b.and(a);
 				break;
 			}
 			case arith_neg: {
-				stack[stackPos] = stack[stackPos].negate();
+				stack[++stackPos] = a.negate();
 				break;
 			}
 			case bit_neg: {
-				stack[stackPos] = stack[stackPos].not();
+				stack[++stackPos] = a.not();
 				break;
 			}
 			case bitAccessSingle: {
 				int bit = f.arg1;
-				BigInteger current = stack[stackPos].shiftRight(bit).and(BigInteger.ONE);
-				stack[stackPos] = current;
+				stack[++stackPos] = a.shiftRight(bit).and(BigInteger.ONE);
 				break;
 			}
 			case bitAccessSingleRange: {
-				int lowBit = f.arg1;
-				int highBit = f.arg2;
+				int highBit = f.arg1;
+				int lowBit = f.arg2;
 				BigInteger mask = BigInteger.ONE.shiftLeft((highBit - lowBit) + 1).subtract(BigInteger.ONE);
-				BigInteger current = stack[stackPos].shiftRight(lowBit).and(mask);
-				stack[stackPos] = current;
+				BigInteger current = a.shiftRight(lowBit).and(mask);
+				stack[++stackPos] = current;
 				break;
 			}
 			case cast_int: {
@@ -89,7 +93,7 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				} else {
 					BigInteger mask = BigInteger.ONE.shiftLeft(targetWidth).subtract(BigInteger.ONE);
 					System.out.println("BigIntegerFrame.execute() cast int<" + currWidth + "> to int<" + targetWidth + "> masking with:" + mask.toString(16));
-					BigInteger t = stack[stackPos];
+					BigInteger t = a;
 					t = t.and(mask);
 					if (t.testBit(targetWidth - 1)) { // MSB is set
 						if (t.signum() > 0) {
@@ -100,18 +104,19 @@ public final class BigIntegerFrame extends ExecutableFrame {
 							t = t.negate();
 						}
 					}
-					stack[stackPos] = t;
+					stack[++stackPos] = t;
 				}
 				break;
 			}
 			case cast_uint: {
 				BigInteger mask = BigInteger.ONE.shiftLeft(f.arg1).subtract(BigInteger.ONE);
-				stack[stackPos] = stack[stackPos].and(mask);
+				stack[++stackPos] = a.and(mask);
 				break;
 			}
-			case concat:
-				// Implement somewhen...
+			case concat: {
+				stack[++stackPos] = b.shiftLeft(f.arg2).or(a);
 				break;
+			}
 			case const0:
 				stack[++stackPos] = ZERO;
 				break;
@@ -125,39 +130,27 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				stack[++stackPos] = BigInteger.ONE.shiftLeft(f.arg1).subtract(BigInteger.ONE);
 				break;
 			case div: {
-				BigInteger b = stack[stackPos--];
-				BigInteger a = stack[stackPos];
-				stack[stackPos] = a.divide(b);
+				stack[++stackPos] = b.divide(a);
 				break;
 			}
 			case eq: {
-				BigInteger b = stack[stackPos--];
-				BigInteger a = stack[stackPos];
-				stack[stackPos] = a.equals(b) ? ONE : ZERO;
+				stack[++stackPos] = b.equals(a) ? ONE : ZERO;
 				break;
 			}
 			case greater: {
-				BigInteger b = stack[stackPos--];
-				BigInteger a = stack[stackPos];
-				stack[stackPos] = a.compareTo(b) > 0 ? ONE : ZERO;
+				stack[++stackPos] = b.compareTo(a) > 0 ? ONE : ZERO;
 				break;
 			}
 			case greater_eq: {
-				BigInteger b = stack[stackPos--];
-				BigInteger a = stack[stackPos];
-				stack[stackPos] = a.compareTo(b) >= 0 ? ONE : ZERO;
+				stack[++stackPos] = b.compareTo(a) >= 0 ? ONE : ZERO;
 				break;
 			}
 			case less: {
-				BigInteger b = stack[stackPos--];
-				BigInteger a = stack[stackPos];
-				stack[stackPos] = a.compareTo(b) < 0 ? ONE : ZERO;
+				stack[++stackPos] = b.compareTo(a) < 0 ? ONE : ZERO;
 				break;
 			}
 			case less_eq: {
-				BigInteger b = stack[stackPos--];
-				BigInteger a = stack[stackPos];
-				stack[stackPos] = a.compareTo(b) <= 0 ? ONE : ZERO;
+				stack[++stackPos] = b.compareTo(a) <= 0 ? ONE : ZERO;
 				break;
 			}
 			case loadConstant:
@@ -168,78 +161,55 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				arrayPos = -1;
 				break;
 			case logiAnd: {
-				BigInteger b = stack[stackPos--];
-				BigInteger a = stack[stackPos];
-				stack[stackPos] = ((!ZERO.equals(a)) && (!ZERO.equals(b))) ? ONE : ZERO;
+				stack[++stackPos] = ((!ZERO.equals(b)) && (!ZERO.equals(a))) ? ONE : ZERO;
 				break;
 			}
 			case logiOr: {
-				BigInteger b = stack[stackPos--];
-				BigInteger a = stack[stackPos];
-				stack[stackPos] = (!ZERO.equals(a) || !ZERO.equals(b)) ? ONE : ZERO;
+				stack[++stackPos] = (!ZERO.equals(b) || !ZERO.equals(a)) ? ONE : ZERO;
 				break;
 			}
 			case logiNeg: {
-				BigInteger a = stack[stackPos];
 				if (ZERO.equals(a)) {
-					stack[stackPos] = ONE;
+					stack[++stackPos] = ONE;
 				} else {
-					stack[stackPos] = ZERO;
+					stack[++stackPos] = ZERO;
 				}
 				break;
 			}
 			case minus: {
-				BigInteger b = stack[stackPos--];
-				BigInteger a = stack[stackPos];
-				stack[stackPos] = a.subtract(b);
+				stack[++stackPos] = b.subtract(a);
 				break;
 			}
 			case mul: {
-				BigInteger b = stack[stackPos--];
-				BigInteger a = stack[stackPos];
-				stack[stackPos] = a.multiply(b);
+				stack[++stackPos] = b.multiply(a);
 				break;
 			}
 			case not_eq: {
-				BigInteger b = stack[stackPos--];
-				BigInteger a = stack[stackPos];
-				stack[stackPos] = !a.equals(b) ? ONE : ZERO;
+				stack[++stackPos] = !b.equals(a) ? ONE : ZERO;
 				break;
 			}
 			case or: {
-				BigInteger b = stack[stackPos--];
-				BigInteger a = stack[stackPos];
-				stack[stackPos] = a.or(b);
+				stack[++stackPos] = b.or(a);
 				break;
 			}
 			case plus: {
-				BigInteger b = stack[stackPos--];
-				BigInteger a = stack[stackPos];
-				stack[stackPos] = a.add(b);
+				stack[++stackPos] = b.add(a);
 				break;
 			}
 			case sll: {
-				BigInteger b = stack[stackPos--];
-				BigInteger a = stack[stackPos];
-				stack[stackPos] = a.shiftLeft(b.intValue());
+				stack[++stackPos] = b.shiftLeft(a.intValue());
 				break;
 			}
 			case sra: {
-				BigInteger b = stack[stackPos--];
-				BigInteger a = stack[stackPos];
-				stack[stackPos] = a.shiftRight(b.intValue());
+				stack[++stackPos] = b.shiftRight(a.intValue());
 				break;
 			}
 			case srl: {
-				BigInteger b = stack[stackPos--];
-				BigInteger a = stack[stackPos];
-				stack[stackPos] = srl(a, 1024, b.intValue());
+				stack[++stackPos] = srl(b, 1024, a.intValue());
 				break;
 			}
 			case xor: {
-				BigInteger b = stack[stackPos--];
-				BigInteger a = stack[stackPos];
-				stack[stackPos] = a.xor(b);
+				stack[++stackPos] = b.xor(a);
 				break;
 			}
 			case isFallingEdge: {
@@ -247,7 +217,7 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				EncapsulatedAccess access = getInternal(off, arrayPos);
 				arrayPos = -1;
 				if (access.skip(deltaCycle, epsCycle)) {
-					if (printing) {
+					if (isPrinting()) {
 						System.out.println("\t\tSkipped: falling edge already handled");
 					}
 					return;
@@ -257,7 +227,7 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				prevAccess.offset = access.offset;
 				long prev = prevAccess.getDataLong();
 				if ((prev != 1) || (curr != 0)) {
-					if (printing) {
+					if (isPrinting()) {
 						System.out.println("\t\tSkipped: not a falling edge");
 					}
 					return;
@@ -271,7 +241,7 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				EncapsulatedAccess access = getInternal(off, arrayPos);
 				arrayPos = -1;
 				if (access.skip(deltaCycle, epsCycle)) {
-					if (printing) {
+					if (isPrinting()) {
 						System.out.println("\t\tSkipped: rising edge already handled");
 					}
 					return;
@@ -281,7 +251,7 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				prevAccess.offset = access.offset;
 				long prev = prevAccess.getDataLong();
 				if ((prev != 0) || (curr != 1)) {
-					if (printing) {
+					if (isPrinting()) {
 						System.out.println("\t\tSkipped: Not a rising edge");
 					}
 					return;
@@ -290,9 +260,6 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				regUpdated = true;
 				break;
 			}
-			case pushAddIndex:
-				writeIndex[++arrayPos] = stack[stackPos--].intValue();
-				break;
 			case posPredicate: {
 				int off = f.arg1;
 				EncapsulatedAccess access = getInternal(off, arrayPos);
@@ -300,13 +267,13 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				// If data is not from this deltaCycle it was not
 				// updated that means prior predicates failed
 				if (!access.isFresh(deltaCycle)) {
-					if (printing) {
+					if (isPrinting()) {
 						System.out.println("\t\tSkipped: predicate not fresh enough");
 					}
 					return;
 				}
 				if (ZERO.equals(access.getDataBig())) {
-					if (printing) {
+					if (isPrinting()) {
 						System.out.println("\t\tSkipped: predicate not positive");
 					}
 					return;
@@ -320,25 +287,44 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				// If data is not from this deltaCycle it was not
 				// updated that means prior predicates failed
 				if (!access.isFresh(deltaCycle)) {
-					if (printing) {
+					if (isPrinting()) {
 						System.out.println("\t\tSkipped: predicate not fresh enough");
 					}
 					return;
 				}
 				if (!ZERO.equals(access.getDataBig())) {
-					if (printing) {
+					if (isPrinting()) {
 						System.out.println("\t\tSkipped: predicate not negative");
 					}
 					return;
 				}
 				break;
 			}
+			case pushAddIndex:
+				writeIndex[++arrayPos] = a.intValue();
+				break;
+			}
+			if (isPrinting()) {
+				if (stackPos >= 0) {
+					if (f.popB) {
+						System.out.printf("\t\t0x%x %s 0x%x = 0x%x\n", b, f, a, stack[stackPos]);
+					} else if (f.popA) {
+						System.out.printf("\t\t%s 0x%x = 0x%x\n", f, a, stack[stackPos]);
+					} else {
+						System.out.printf("\t\t%s = 0x%x\n", f, stack[stackPos]);
+					}
+				} else {
+					System.out.printf("\t\t%s = emptyStack\n", f);
+				}
 			}
 		}
 		if (arrayPos != -1) {
 			outputAccess.setOffset(writeIndex);
 		}
 		outputAccess.setDataBig(stack[0], deltaCycle, epsCycle);
+		if (isPrinting()) {
+			System.out.println("\t\tWriting result:" + outputAccess + " Value:" + stack[0] + " read:" + outputAccess.getDataBig());
+		}
 		return;
 	}
 
