@@ -29,6 +29,7 @@ package org.pshdl.interpreter.frames;
 import java.math.*;
 
 import org.pshdl.interpreter.*;
+import org.pshdl.interpreter.Frame.FastInstruction;
 import org.pshdl.interpreter.access.*;
 
 public final class LongFrame extends ExecutableFrame {
@@ -106,8 +107,9 @@ public final class LongFrame extends ExecutableFrame {
 				if (fi.arg1 != 64) {
 					long mask = (1l << (fi.arg1)) - 1;
 					stack[++stackPos] = a & mask;
-				} else
+				} else {
 					stack[++stackPos] = a;
+				}
 				break;
 			case concat:
 				stack[++stackPos] = (b << fi.arg2) | a;

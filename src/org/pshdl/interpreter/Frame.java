@@ -30,8 +30,36 @@ import java.io.*;
 import java.math.*;
 import java.util.*;
 
+import org.pshdl.interpreter.utils.*;
+
 public class Frame implements Serializable {
-	public final byte[] instructions;
+
+	public static class FastInstruction {
+		public final Instruction inst;
+		public final int arg1, arg2;
+		public final boolean popA;
+		public final boolean popB;
+
+		public FastInstruction(Instruction inst, int arg1, int arg2) {
+			super();
+			this.inst = inst;
+			this.arg1 = arg1;
+			this.arg2 = arg2;
+			popA = inst.pop > 0;
+			popB = inst.pop > 1;
+		}
+
+		@Override
+		public String toString() {
+			if (inst.argCount >= 2)
+				return inst.name() + "[" + inst.args[0] + "=" + arg1 + "," + inst.args[1] + "=" + arg2 + "]";
+			if (inst.argCount >= 1)
+				return inst.name() + "[" + inst.args[0] + "=" + arg1 + "]";
+			return inst.name();
+		}
+	}
+
+	public final FastInstruction[] instructions;
 	public final int[] internalDependencies;
 	public final int[] predPosDepRes;
 	public final int[] predNegDepRes;
@@ -45,8 +73,8 @@ public class Frame implements Serializable {
 	public final int uniqueID;
 	private static final long serialVersionUID = -1690021519637432408L;
 
-	public Frame(byte[] instructions, int[] internalDependencies, int[] predPosDepRes, int[] predNegDepRes, int edgePosDepRes, int edgeNegDepRes, int outputId, int maxDataWidth,
-			int maxStackDepth, BigInteger[] constants, int uniqueID) {
+	public Frame(FastInstruction[] instructions, int[] internalDependencies, int[] predPosDepRes, int[] predNegDepRes, int edgePosDepRes, int edgeNegDepRes, int outputId,
+			int maxDataWidth, int maxStackDepth, BigInteger[] constants, int uniqueID) {
 		super();
 		this.constants = constants;
 		this.instructions = instructions;

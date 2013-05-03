@@ -31,6 +31,7 @@ import static java.math.BigInteger.*;
 import java.math.*;
 
 import org.pshdl.interpreter.*;
+import org.pshdl.interpreter.Frame.FastInstruction;
 import org.pshdl.interpreter.access.*;
 
 public final class BigIntegerFrame extends ExecutableFrame {

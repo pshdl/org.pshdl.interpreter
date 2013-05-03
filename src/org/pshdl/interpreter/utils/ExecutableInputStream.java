@@ -31,6 +31,7 @@ import java.math.*;
 import java.util.*;
 
 import org.pshdl.interpreter.*;
+import org.pshdl.interpreter.Frame.FastInstruction;
 import org.pshdl.interpreter.VariableInformation.Direction;
 import org.pshdl.interpreter.VariableInformation.Type;
 import org.pshdl.interpreter.utils.IOUtil.FrameTypes;
@@ -135,7 +136,10 @@ public class ExecutableInputStream extends DataInputStream {
 		Frame[] frames = frameList.toArray(new Frame[frameList.size()]);
 		InternalInformation[] iis = internals.toArray(new InternalInformation[internals.size()]);
 		VariableInformation[] fvars = vars.toArray(new VariableInformation[vars.size()]);
-		return new ExecutableModel(frames, iis, fvars);
+		ExecutableModel executableModel = new ExecutableModel(frames, iis, fvars);
+		// System.out.println("ExecutableInputStream.readExecutableModel()" +
+		// executableModel);
+		return executableModel;
 	}
 
 	public VariableInformation readVariable() throws IOException {
@@ -229,7 +233,7 @@ public class ExecutableInputStream extends DataInputStream {
 		int executionDep = -1;
 		int maxDataWidth = -1, maxStackDepth = -1;
 		int outputID = -1, uniqueID = -1;
-		byte[] instructions = new byte[0];
+		FastInstruction[] instructions = new FastInstruction[0];
 		int[] intDeps = new int[0];
 		while ((tlv = readTLV(FrameTypes.constants)) != null) {
 			ExecutableInputStream ex = new ExecutableInputStream(new ByteArrayInputStream(tlv.value));
@@ -253,7 +257,7 @@ public class ExecutableInputStream extends DataInputStream {
 				executionDep = ex.readVarInt();
 				break;
 			case instructions:
-				instructions = tlv.value;
+				instructions = readInstructions(tlv);
 				break;
 			case internalDep:
 				intDeps = ex.readIntArray();
@@ -285,6 +289,29 @@ public class ExecutableInputStream extends DataInputStream {
 		Frame frame = new Frame(instructions, intDeps, predPosDep, predNegDep, edgePosDep, edgeNegDep, outputID, maxDataWidth, maxStackDepth, consts, uniqueID);
 		frame.executionDep = executionDep;
 		return frame;
+	}
+
+	public FastInstruction[] readInstructions(TLV tlv) throws IOException {
+		ExecutableInputStream ex = new ExecutableInputStream(new ByteArrayInputStream(tlv.value));
+		FastInstruction[] instructions;
+		Instruction[] values = Instruction.values();
+		List<FastInstruction> instr = new LinkedList<FastInstruction>();
+		int read = -1;
+		while ((read = ex.read()) != -1) {
+			Instruction instruction = values[read & 0x3F];
+			int arg1 = 0;
+			int arg2 = 0;
+			if (instruction.argCount > 0) {
+				arg1 = ex.readVarInt();
+			}
+			if (instruction.argCount > 1) {
+				arg2 = ex.readVarInt();
+			}
+			instr.add(new FastInstruction(instruction, arg1, arg2));
+		}
+		ex.close();
+		instructions = instr.toArray(new FastInstruction[instr.size()]);
+		return instructions;
 	}
 
 	public String[] readStringArray() throws IOException {

@@ -269,8 +269,9 @@ public final class HDLFrameInterpreter {
 			}
 			if (regUpdated) {
 				for (RegUpdater ea : updatedRegs) {
-					if (printing)
+					if (printing) {
 						System.out.println("\tCopying register:" + ea.accessIdx + " from:" + ea.shadowAccessIdx);
+					}
 					if (ea.isBig) {
 						big_storage[ea.accessIdx & BIG_MASK] = big_storage[ea.shadowAccessIdx & BIG_MASK];
 					} else {

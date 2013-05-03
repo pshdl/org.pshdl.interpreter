@@ -30,6 +30,7 @@ import java.io.*;
 import java.util.*;
 
 import org.pshdl.interpreter.*;
+import org.pshdl.interpreter.Frame.FastInstruction;
 import org.pshdl.interpreter.utils.IOUtil.FrameTypes;
 import org.pshdl.interpreter.utils.IOUtil.IDType;
 import org.pshdl.interpreter.utils.IOUtil.InternalTypes;
@@ -43,6 +44,8 @@ public class ExecutableOutputStream extends DataOutputStream {
 	}
 
 	public void writeExecutableModel(String source, long date, ExecutableModel model) throws IOException {
+		// System.out.println("ExecutableOutputStream.writeExecutableModel()" +
+		// model);
 		write("PSEX".getBytes());
 		writeByteArray(ModelTypes.version, new byte[] { 0, 2, 0 });
 		writeString(ModelTypes.src, source);
@@ -150,12 +153,24 @@ public class ExecutableOutputStream extends DataOutputStream {
 			consts[i] = f.constants[i].toString(16); // Represent as hex String
 		}
 		obj.writeStringArray(FrameTypes.constants, consts);
-		obj.writeByteArray(FrameTypes.instructions, f.instructions);
+		obj.writeByteArray(FrameTypes.instructions, getInstructions(f.instructions));
 		obj.writeInt(FrameTypes.maxDataWidth, f.maxDataWidth);
 		obj.writeInt(FrameTypes.maxStackDepth, f.maxStackDepth);
 
 		writeByteArray(ModelTypes.frame, baos.toByteArray());
 		obj.close();
+	}
+
+	private byte[] getInstructions(FastInstruction[] instructions) throws IOException {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		for (FastInstruction fi : instructions) {
+			baos.write(fi.inst.toByte());
+			if (fi.inst.argCount > 0)
+				baos.write(getVarInt(fi.arg1));
+			if (fi.inst.argCount > 1)
+				baos.write(getVarInt(fi.arg2));
+		}
+		return baos.toByteArray();
 	}
 
 	/**
