@@ -105,21 +105,20 @@ public final class HDLFrameInterpreter {
 	public HDLFrameInterpreter(ExecutableModel model, boolean printing) {
 		this.printing = printing;
 		this.model = model;
-		int currentIdx = 0;
 		this.internals = new EncapsulatedAccess[model.internals.length];
 		this.internals_prev = new EncapsulatedAccess[model.internals.length];
 		this.full = new EncapsulatedAccess[model.variables.length];
-		currentIdx = createInternals(model, currentIdx);
+		int storageSize = createInternals(model);
 		createVarIndex(model);
-		this.storage = new long[currentIdx];
-		this.storage_prev = new long[currentIdx];
-		this.big_storage = new BigInteger[currentIdx];
-		this.big_storage_prev = new BigInteger[currentIdx];
+		this.storage = new long[storageSize];
+		this.storage_prev = new long[storageSize];
+		this.big_storage = new BigInteger[storageSize];
+		this.big_storage_prev = new BigInteger[storageSize];
 		for (int i = 0; i < big_storage.length; i++) {
 			big_storage[i] = BigInteger.ZERO;
 			big_storage_prev[i] = BigInteger.ZERO;
 		}
-		deltaUpdates = new long[currentIdx];
+		deltaUpdates = new long[storageSize];
 		Frame[] frames = model.frames;
 		this.frames = new ExecutableFrame[frames.length];
 		for (int i = 0; i < frames.length; i++) {
@@ -146,7 +145,8 @@ public final class HDLFrameInterpreter {
 		}
 	}
 
-	private int createInternals(ExecutableModel model, int currentIdx) {
+	private int createInternals(ExecutableModel model) {
+		int currentIdx = 0;
 		for (int i = 0; i < model.internals.length; i++) {
 			InternalInformation ii = model.internals[i];
 			// System.out.println("HDLFrameInterpreter.createInternals()" + ii);

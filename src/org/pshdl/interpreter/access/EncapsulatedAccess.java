@@ -113,14 +113,6 @@ public abstract class EncapsulatedAccess {
 		return (intr.deltaUpdates[getAccessIndex()] >>> 16l) == deltaCycle;
 	}
 
-	public abstract BigInteger getDataBig();
-
-	public abstract long getDataLong();
-
-	public abstract void setDataLong(long data, int deltaCycle, int epsCycle);
-
-	public abstract void setDataBig(BigInteger data, int deltaCycle, int epsCycle);
-
 	public RegUpdater getRegUpdater() {
 		return new RegUpdater(getAccessIndex(), targetAccessIndex + offset);
 	}
@@ -128,5 +120,13 @@ public abstract class EncapsulatedAccess {
 	public int getAccessIndex() {
 		return accessIndex + offset;
 	}
+
+	public abstract BigInteger getDataBig();
+
+	public abstract long getDataLong();
+
+	public abstract void setDataLong(long data, int deltaCycle, int epsCycle);
+
+	public abstract void setDataBig(BigInteger data, int deltaCycle, int epsCycle);
 
 }
