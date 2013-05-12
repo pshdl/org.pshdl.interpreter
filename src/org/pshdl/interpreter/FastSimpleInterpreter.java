@@ -1,11 +1,13 @@
 package org.pshdl.interpreter;
 
+import java.math.*;
 import java.util.*;
+import java.util.Map.Entry;
 
 import org.pshdl.interpreter.FastSimpleInterpreter.LongAccess.RegUpdater;
 import org.pshdl.interpreter.frames.*;
 
-public class FastSimpleInterpreter {
+public class FastSimpleInterpreter implements IHDLInterpreter {
 
 	public final class LongAccess {
 
@@ -169,8 +171,7 @@ public class FastSimpleInterpreter {
 	public FastSimpleInterpreter(ExecutableModel model, boolean disableEdge) {
 		Map<String, Integer> index = new HashMap<String, Integer>();
 		int currentIdx = 0;
-		for (int i = 0; i < model.variables.length; i++) {
-			VariableInformation var = model.variables[i];
+		for (VariableInformation var : model.variables) {
 			index.put(var.name, currentIdx);
 			int size = 1;
 			for (int d : var.dimensions) {
@@ -238,6 +239,7 @@ public class FastSimpleInterpreter {
 		return currentIdx;
 	}
 
+	@Override
 	public void run() {
 		boolean regUpdated = false;
 		this.deltaCycle++;
@@ -263,10 +265,12 @@ public class FastSimpleInterpreter {
 		System.arraycopy(storage, 0, storage_prev, 0, storage.length);
 	}
 
+	@Override
 	public void setInput(String name, long value, int... arrayIdx) {
 		setInput(getIndex(name), value, arrayIdx);
 	}
 
+	@Override
 	public void setInput(int idx, long value, int... arrayIdx) {
 		LongAccess acc = full[idx];
 		if (arrayIdx != null) {
@@ -275,6 +279,7 @@ public class FastSimpleInterpreter {
 		acc.setDataLong(value, deltaCycle, 0);
 	}
 
+	@Override
 	public int getIndex(String name) {
 		Integer integer = varIdxMap.get(name);
 		if (integer == null)
@@ -282,15 +287,51 @@ public class FastSimpleInterpreter {
 		return integer;
 	}
 
+	@Override
 	public long getOutputLong(String name, int... arrayIdx) {
 		return getOutputLong(getIndex(name), arrayIdx);
 	}
 
+	@Override
 	public long getOutputLong(int idx, int... arrayIdx) {
 		LongAccess acc = full[idx];
 		if (arrayIdx != null) {
 			acc.setOffset(arrayIdx);
 		}
 		return acc.getDataLong();
+	}
+
+	@Override
+	public void setInput(String name, BigInteger value, int... arrayIdx) {
+		setInput(name, value.longValue(), arrayIdx);
+	}
+
+	@Override
+	public void setInput(int idx, BigInteger value, int... arrayIdx) {
+		setInput(idx, value.longValue(), arrayIdx);
+	}
+
+	@Override
+	public BigInteger getOutputBig(String name, int... arrayIdx) {
+		return BigInteger.valueOf(getOutputLong(name, arrayIdx));
+	}
+
+	@Override
+	public BigInteger getOutputBig(int idx, int... arrayIdx) {
+		return BigInteger.valueOf(getOutputLong(idx, arrayIdx));
+	}
+
+	@Override
+	public void setPrinting(boolean b) {
+
+	}
+
+	@Override
+	public String getName(int idx) {
+		for (Entry<String, Integer> e : varIdxMap.entrySet()) {
+			if (e.getValue() == idx)
+				return e.getKey();
+		}
+		throw new IllegalArgumentException("No such index:" + idx);
 	}
 }

@@ -165,10 +165,12 @@ public class ExecutableOutputStream extends DataOutputStream {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		for (FastInstruction fi : instructions) {
 			baos.write(fi.inst.toByte());
-			if (fi.inst.argCount > 0)
+			if (fi.inst.argCount > 0) {
 				baos.write(getVarInt(fi.arg1));
-			if (fi.inst.argCount > 1)
+			}
+			if (fi.inst.argCount > 1) {
 				baos.write(getVarInt(fi.arg2));
+			}
 		}
 		return baos.toByteArray();
 	}

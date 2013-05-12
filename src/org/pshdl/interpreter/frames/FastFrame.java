@@ -75,7 +75,7 @@ public class FastFrame {
 				fi.add(fast);
 			}
 		}
-		this.instructions = (FastInstruction[]) fi.toArray(new FastInstruction[fi.size()]);
+		this.instructions = fi.toArray(new FastInstruction[fi.size()]);
 		for (int i = 0; i < f.constants.length; i++) {
 			BigInteger bi = f.constants[i];
 			constants[i] = bi.longValue();
@@ -89,8 +89,9 @@ public class FastFrame {
 	public void execute(int deltaCycle, int epsCycle) {
 		int stackPos = -1;
 		arrayPos = -1;
-		if (!disableEdge)
+		if (!disableEdge) {
 			regUpdated = false;
+		}
 		long a = 0;
 		long b = 0;
 		for (FastInstruction fi : instructions) {
@@ -229,17 +230,15 @@ public class FastFrame {
 				int off = fi.arg1;
 				LongAccess access = getInternal(off, arrayPos);
 				arrayPos = -1;
-				if (access.skip(deltaCycle, epsCycle)) {
+				if (access.skip(deltaCycle, epsCycle))
 					return;
-				}
 				long curr = access.getDataLong();
 				if (!disableEdge) {
 					LongAccess prevAcc = internals_prev[off];
 					prevAcc.offset = access.offset;
 					long prev = prevAcc.getDataLong();
-					if ((prev != 1) || (curr != 0)) {
+					if ((prev != 1) || (curr != 0))
 						return;
-					}
 				}
 				access.setLastUpdate(deltaCycle, epsCycle);
 				regUpdated = true;
@@ -249,17 +248,15 @@ public class FastFrame {
 				int off = fi.arg1;
 				LongAccess access = getInternal(off, arrayPos);
 				arrayPos = -1;
-				if (access.skip(deltaCycle, epsCycle)) {
+				if (access.skip(deltaCycle, epsCycle))
 					return;
-				}
 				if (!disableEdge) {
 					long curr = access.getDataLong();
 					LongAccess prevAcc = internals_prev[off];
 					prevAcc.offset = access.offset;
 					long prev = prevAcc.getDataLong();
-					if ((prev != 0) || (curr != 1)) {
+					if ((prev != 0) || (curr != 1))
 						return;
-					}
 				}
 				access.setLastUpdate(deltaCycle, epsCycle);
 				regUpdated = true;
@@ -271,12 +268,10 @@ public class FastFrame {
 				arrayPos = -1;
 				// If data is not from this deltaCycle it was not
 				// updated that means prior predicates failed
-				if (!access.isFresh(deltaCycle)) {
+				if (!access.isFresh(deltaCycle))
 					return;
-				}
-				if (access.getDataLong() == 0) {
+				if (access.getDataLong() == 0)
 					return;
-				}
 				break;
 			}
 			case negPredicate: {
@@ -285,12 +280,10 @@ public class FastFrame {
 				arrayPos = -1;
 				// If data is not from this deltaCycle it was not
 				// updated that means prior predicates failed
-				if (!access.isFresh(deltaCycle)) {
+				if (!access.isFresh(deltaCycle))
 					return;
-				}
-				if (access.getDataLong() != 0) {
+				if (access.getDataLong() != 0)
 					return;
-				}
 				break;
 			}
 			case pushAddIndex:

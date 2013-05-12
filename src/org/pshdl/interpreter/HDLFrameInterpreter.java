@@ -34,7 +34,7 @@ import org.pshdl.interpreter.access.*;
 import org.pshdl.interpreter.access.EncapsulatedAccess.RegUpdater;
 import org.pshdl.interpreter.frames.*;
 
-public final class HDLFrameInterpreter {
+public final class HDLFrameInterpreter implements IHDLInterpreter {
 	/**
 	 * Marker that an accessIndex is of kind BigInteger. The accessIndex is
 	 * binary ored with this
@@ -183,10 +183,24 @@ public final class HDLFrameInterpreter {
 		return currentIdx;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.pshdl.interpreter.IHDLInterpreter#setInput(java.lang.String,
+	 * java.math.BigInteger, int)
+	 */
+	@Override
 	public void setInput(String name, BigInteger value, int... arrayIdx) {
 		setInput(getIndex(name), value, arrayIdx);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.pshdl.interpreter.IHDLInterpreter#setInput(int,
+	 * java.math.BigInteger, int)
+	 */
+	@Override
 	public void setInput(int idx, BigInteger value, int... arrayIdx) {
 		EncapsulatedAccess acc = full[idx];
 		if (arrayIdx != null) {
@@ -195,10 +209,23 @@ public final class HDLFrameInterpreter {
 		acc.setDataBig(value, deltaCycle, 0);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.pshdl.interpreter.IHDLInterpreter#setInput(java.lang.String,
+	 * long, int)
+	 */
+	@Override
 	public void setInput(String name, long value, int... arrayIdx) {
 		setInput(getIndex(name), value, arrayIdx);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.pshdl.interpreter.IHDLInterpreter#setInput(int, long, int)
+	 */
+	@Override
 	public void setInput(int idx, long value, int... arrayIdx) {
 		EncapsulatedAccess acc = full[idx];
 		if (arrayIdx != null) {
@@ -207,6 +234,12 @@ public final class HDLFrameInterpreter {
 		acc.setDataLong(value, deltaCycle, 0);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.pshdl.interpreter.IHDLInterpreter#getIndex(java.lang.String)
+	 */
+	@Override
 	public int getIndex(String name) {
 		Integer integer = varIdxMap.get(name);
 		if (integer == null)
@@ -214,10 +247,24 @@ public final class HDLFrameInterpreter {
 		return integer;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.pshdl.interpreter.IHDLInterpreter#getOutputLong(java.lang.String,
+	 * int)
+	 */
+	@Override
 	public long getOutputLong(String name, int... arrayIdx) {
 		return getOutputLong(getIndex(name), arrayIdx);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.pshdl.interpreter.IHDLInterpreter#getOutputLong(int, int)
+	 */
+	@Override
 	public long getOutputLong(int idx, int... arrayIdx) {
 		EncapsulatedAccess acc = full[idx];
 		if (arrayIdx != null) {
@@ -226,10 +273,23 @@ public final class HDLFrameInterpreter {
 		return acc.getDataLong();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.pshdl.interpreter.IHDLInterpreter#getOutputBig(java.lang.String,
+	 * int)
+	 */
+	@Override
 	public BigInteger getOutputBig(String name, int... arrayIdx) {
 		return getOutputBig(getIndex(name), arrayIdx);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.pshdl.interpreter.IHDLInterpreter#getOutputBig(int, int)
+	 */
+	@Override
 	public BigInteger getOutputBig(int idx, int... arrayIdx) {
 		EncapsulatedAccess acc = full[idx];
 		if (arrayIdx != null) {
@@ -246,6 +306,12 @@ public final class HDLFrameInterpreter {
 	 * SignedCastTest.main() cast (uint<16>) 65535 to (int<32>) : 0000FFFF
 	 */
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.pshdl.interpreter.IHDLInterpreter#run()
+	 */
+	@Override
 	public void run() {
 		boolean regUpdated = false;
 		deltaCycle++;
@@ -295,7 +361,22 @@ public final class HDLFrameInterpreter {
 		return sb.toString();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.pshdl.interpreter.IHDLInterpreter#setPrinting(boolean)
+	 */
+	@Override
 	public void setPrinting(boolean b) {
 		printing = true;
+	}
+
+	@Override
+	public String getName(int idx) {
+		for (Entry<String, Integer> e : varIdxMap.entrySet()) {
+			if (e.getValue() == idx)
+				return e.getKey();
+		}
+		throw new IllegalArgumentException("No such index:" + idx);
 	}
 }
