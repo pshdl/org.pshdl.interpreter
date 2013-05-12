@@ -79,6 +79,7 @@ public enum Instruction {
 	srl(2, 1, "A shift >>> operation"), //
 	// Memory
 	pushAddIndex(1, 0, "Pushes an additional index into the write stack for that memory"), //
+	writeMemory(1, 0, "Writes the current item to the memory at the offset"), //
 	;
 	public final int argCount;
 	public final String description;
