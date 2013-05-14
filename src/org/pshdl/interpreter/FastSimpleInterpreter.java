@@ -123,6 +123,23 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 			}
 		}
 
+		public void fillDataLong(int arrayPos, int[] writeIndex, long a, int deltaCycle, int epsCycle) {
+			int offset = 0;
+			for (int i = 0; i < (arrayPos + 1); i++) {
+				int o = writeIndex[i];
+				offset += o * dims[i];
+			}
+			int fill = 1;
+			int[] dims = ii.info.dimensions;
+			for (int i = arrayPos + 1; i < dims.length; i++) {
+				fill *= dims[i];
+			}
+			for (int i = offset; i < (offset + fill); i++) {
+				this.offset = i;
+				setDataLong(a, deltaCycle, epsCycle);
+			}
+		}
+
 		/**
 		 * Check whether this register has been updated in this delta / eps
 		 * cycle. Returns <code>true</code> when updating this register is not

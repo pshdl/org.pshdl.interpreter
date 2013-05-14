@@ -129,4 +129,38 @@ public abstract class EncapsulatedAccess {
 
 	public abstract void setDataBig(BigInteger data, int deltaCycle, int epsCycle);
 
+	public void fillDataBig(int arrayPos, int[] writeIndex, BigInteger a, int deltaCycle, int epsCycle) {
+		int offset = 0;
+		for (int i = 0; i < (arrayPos + 1); i++) {
+			int o = writeIndex[i];
+			offset += o * dims[i];
+		}
+		int fill = 1;
+		int[] dims = ii.info.dimensions;
+		for (int i = arrayPos + 1; i < dims.length; i++) {
+			fill *= dims[i];
+		}
+		for (int i = offset; i < (offset + fill); i++) {
+			this.offset = i;
+			setDataBig(a, deltaCycle, epsCycle);
+		}
+	}
+
+	public void fillDataLong(int arrayPos, int[] writeIndex, long a, int deltaCycle, int epsCycle) {
+		int offset = 0;
+		for (int i = 0; i < (arrayPos + 1); i++) {
+			int o = writeIndex[i];
+			offset += o * dims[i];
+		}
+		int fill = 1;
+		int[] dims = ii.info.dimensions;
+		for (int i = arrayPos + 1; i < dims.length; i++) {
+			fill *= dims[i];
+		}
+		for (int i = offset; i < (offset + fill); i++) {
+			this.offset = i;
+			setDataLong(a, deltaCycle, epsCycle);
+		}
+	}
+
 }

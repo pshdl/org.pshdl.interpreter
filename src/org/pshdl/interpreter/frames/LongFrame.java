@@ -279,6 +279,18 @@ public final class LongFrame extends ExecutableFrame {
 			case pushAddIndex:
 				writeIndex[++arrayPos] = (int) a;
 				break;
+			case writeInternal:
+				int off = fi.arg1;
+				EncapsulatedAccess access = getInternal(off, -1);
+				access.fillDataLong(arrayPos, writeIndex, a, deltaCycle, epsCycle);
+				arrayPos = -1;
+				break;
+			case endFrame:
+				if (isPrinting()) {
+					System.out.println("\t\tExiting frame execution");
+				}
+				regUpdated = false;
+				return;
 			}
 			if (isPrinting()) {
 				if (stackPos >= 0) {

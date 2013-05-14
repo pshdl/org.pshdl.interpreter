@@ -50,7 +50,7 @@ public final class BigIntegerFrame extends ExecutableFrame {
 		currentPos = 0;
 		regUpdated = false;
 		int arrayPos = -1;
-		BigInteger b = null, a = null;
+		BigInteger b = BigInteger.ZERO, a = BigInteger.ZERO;
 		for (FastInstruction f : instructions) {
 			if (f.popA) {
 				a = stack[stackPos--];
@@ -304,6 +304,18 @@ public final class BigIntegerFrame extends ExecutableFrame {
 			case pushAddIndex:
 				writeIndex[++arrayPos] = a.intValue();
 				break;
+			case writeInternal:
+				int off = f.arg1;
+				EncapsulatedAccess access = getInternal(off, -1);
+				access.fillDataBig(arrayPos, writeIndex, a, deltaCycle, epsCycle);
+				arrayPos = -1;
+				break;
+			case endFrame:
+				if (isPrinting()) {
+					System.out.println("\t\tExiting frame execution");
+				}
+				regUpdated = false;
+				return;
 			}
 			if (isPrinting()) {
 				if (stackPos >= 0) {

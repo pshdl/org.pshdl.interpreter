@@ -286,7 +286,7 @@ public class ExecutableInputStream extends DataInputStream {
 			}
 			ex.close();
 		}
-		Frame frame = new Frame(instructions, intDeps, predPosDep, predNegDep, edgePosDep, edgeNegDep, outputID, maxDataWidth, maxStackDepth, consts, uniqueID);
+		Frame frame = new Frame(instructions, intDeps, predPosDep, predNegDep, edgePosDep, edgeNegDep, outputID, maxDataWidth, maxStackDepth, consts, uniqueID, false);
 		frame.executionDep = executionDep;
 		return frame;
 	}
