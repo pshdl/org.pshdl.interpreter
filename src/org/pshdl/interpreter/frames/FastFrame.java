@@ -6,7 +6,6 @@ import java.util.*;
 import org.pshdl.interpreter.*;
 import org.pshdl.interpreter.FastSimpleInterpreter.LongAccess;
 import org.pshdl.interpreter.Frame.FastInstruction;
-import org.pshdl.interpreter.access.*;
 import org.pshdl.interpreter.utils.*;
 
 public class FastFrame {
@@ -55,8 +54,8 @@ public class FastFrame {
 	private final long stack[];
 	private final long constants[];
 	public boolean regUpdated;
-	int arrayPos = -1;
-	int[] writeIndex = new int[8];
+	private int arrayPos = -1;
+	private final int[] writeIndex = new int[8];
 	private final FastInstruction[] instructions;
 	private final LongAccess[] internals;
 	private final LongAccess[] internals_prev;
@@ -89,7 +88,7 @@ public class FastFrame {
 		this.disableEdge = disableEdge;
 	}
 
-	public void execute(int deltaCycle, int epsCycle) {
+	public boolean execute(int deltaCycle, int epsCycle) {
 		int stackPos = -1;
 		arrayPos = -1;
 		if (!disableEdge) {
@@ -234,14 +233,14 @@ public class FastFrame {
 				LongAccess access = getInternal(off, arrayPos);
 				arrayPos = -1;
 				if (access.skip(deltaCycle, epsCycle))
-					return;
+					return false;
 				long curr = access.getDataLong();
 				if (!disableEdge) {
 					LongAccess prevAcc = internals_prev[off];
 					prevAcc.offset = access.offset;
 					long prev = prevAcc.getDataLong();
 					if ((prev != 1) || (curr != 0))
-						return;
+						return false;
 				}
 				access.setLastUpdate(deltaCycle, epsCycle);
 				regUpdated = true;
@@ -252,14 +251,14 @@ public class FastFrame {
 				LongAccess access = getInternal(off, arrayPos);
 				arrayPos = -1;
 				if (access.skip(deltaCycle, epsCycle))
-					return;
+					return false;
 				if (!disableEdge) {
 					long curr = access.getDataLong();
 					LongAccess prevAcc = internals_prev[off];
 					prevAcc.offset = access.offset;
 					long prev = prevAcc.getDataLong();
 					if ((prev != 0) || (curr != 1))
-						return;
+						return false;
 				}
 				access.setLastUpdate(deltaCycle, epsCycle);
 				regUpdated = true;
@@ -272,9 +271,9 @@ public class FastFrame {
 				// If data is not from this deltaCycle it was not
 				// updated that means prior predicates failed
 				if (!access.isFresh(deltaCycle))
-					return;
+					return false;
 				if (access.getDataLong() == 0)
-					return;
+					return false;
 				break;
 			}
 			case negPredicate: {
@@ -284,9 +283,9 @@ public class FastFrame {
 				// If data is not from this deltaCycle it was not
 				// updated that means prior predicates failed
 				if (!access.isFresh(deltaCycle))
-					return;
+					return false;
 				if (access.getDataLong() != 0)
-					return;
+					return false;
 				break;
 			}
 			case pushAddIndex:
@@ -300,7 +299,7 @@ public class FastFrame {
 				break;
 			case endFrame:
 				regUpdated = false;
-				return;
+				return true;
 			}
 
 		}
@@ -308,7 +307,7 @@ public class FastFrame {
 			outputAccess.setOffset(writeIndex);
 		}
 		outputAccess.setDataLong(stack[0], deltaCycle, epsCycle);
-		return;
+		return true;
 	}
 
 	public LongAccess getInternal(int off, int arrayPos) {

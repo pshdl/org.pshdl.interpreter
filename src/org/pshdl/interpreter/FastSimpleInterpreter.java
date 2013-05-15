@@ -266,8 +266,8 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 			epsCycle++;
 			regUpdated = false;
 			for (FastFrame ef : frames) {
-				ef.execute(deltaCycle, epsCycle);
-				if (ef.regUpdated) {
+				boolean execute = ef.execute(deltaCycle, epsCycle);
+				if (execute && ef.regUpdated) {
 					updatedRegs.add(ef.outputAccess.getRegUpdater());
 					regUpdated = true;
 				}
