@@ -26,9 +26,11 @@
  ******************************************************************************/
 package org.pshdl.interpreter.utils;
 
+import java.io.*;
 import java.util.*;
 
 import org.pshdl.interpreter.*;
+import org.pshdl.interpreter.utils.Graph.Cycle.DependencyType;
 
 public class Graph<T extends Frame> {
 
@@ -108,7 +110,7 @@ public class Graph<T extends Frame> {
 		return new Node<T>(object);
 	}
 
-	public ArrayList<Node<T>> sortNodes(List<Node<T>> allNodes, ExecutableModel em) {
+	public ArrayList<Node<T>> sortNodes(List<Node<T>> allNodes) throws CycleException {
 		// L <- Empty list that will contain the sorted elements
 		ArrayList<Node<T>> L = new ArrayList<Node<T>>();
 
@@ -149,8 +151,9 @@ public class Graph<T extends Frame> {
 			if (!n.inEdges.isEmpty()) {
 				cycle = true;
 				for (Edge<T> e : n.inEdges) {
-					if (printEdges(e.from, new LinkedHashSet<T>(), n, em))
-						throw new RuntimeException("Cycle present, topological sort not possible");
+					Cycle findCycle = findCycle(e.from, new LinkedHashSet<T>(), n);
+					if (findCycle != null)
+						throw new CycleException(findCycle);
 				}
 			}
 		}
@@ -159,27 +162,102 @@ public class Graph<T extends Frame> {
 		return L;
 	}
 
-	public boolean printEdges(Node<T> n, LinkedHashSet<T> visitedNodes, Node<T> target, ExecutableModel em) {
+	public static class CycleException extends Exception {
+
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = -6522657621203932715L;
+
+		public final Cycle cycle;
+
+		public ExecutableModel model;
+
+		public CycleException(Cycle cycle) {
+			super();
+			this.cycle = cycle;
+		}
+
+		public void explain(PrintStream out) {
+			out.printf("In order to compute %s (Frame %d) the following other variables need to be computed:\n", model.internals[cycle.frame.outputId], cycle.frame.uniqueID);
+			explain(out, cycle);
+		}
+
+		public void explain(PrintStream out, Cycle current) {
+			if (current.type == null)
+				return;
+			if (current.prior != null)
+				explain(out, current.prior);
+
+			out.printf("\t%s (Frame %d) depency type %s\n", model.internals[current.frame.outputId], current.frame.uniqueID, current.type, current.prior.frame.uniqueID);
+
+		}
+	}
+
+	public static class Cycle {
+		public static enum DependencyType {
+			unknown, internal, negEdge, posEdge, posPred, negPred, order
+		};
+
+		public final Cycle prior;
+		public final Frame frame;
+		public final DependencyType type;
+
+		public Cycle(Cycle prior, Frame frame, DependencyType type) {
+			super();
+			this.prior = prior;
+			this.frame = frame;
+			this.type = type;
+		}
+
+	}
+
+	public Cycle findCycle(Node<T> n, LinkedHashSet<T> visitedNodes, Node<T> target) throws CycleException {
 		if (visitedNodes.contains(n.object))
-			return false;
+			return null;
 		LinkedHashSet<T> newVisited = new LinkedHashSet<T>(visitedNodes);
 		newVisited.add(n.object);
 		for (Edge<T> e : n.inEdges) {
 			// System.out.println(e.from + " -> " + e.to);
 			if (e.to == target) {
 				Frame lastFrame = target.object;
-				for (T t : newVisited) {
-					InternalInformation thisInt = em.internals[t.outputId];
-					System.out.println(thisInt);
+				Cycle lastCycle = new Cycle(null, lastFrame, null);
+				for (Iterator<T> iterator = newVisited.iterator(); iterator.hasNext();) {
+					T t = iterator.next();
+					DependencyType type = DependencyType.unknown;
+					if (lastFrame.edgeNegDepRes == t.outputId) {
+						type = DependencyType.negEdge;
+					}
+					if (lastFrame.edgePosDepRes == t.outputId) {
+						type = DependencyType.posEdge;
+					}
+					for (int pnd : lastFrame.predNegDepRes) {
+						if (pnd == t.outputId) {
+							type = DependencyType.negPred;
+						}
+					}
+					for (int pnd : lastFrame.predPosDepRes) {
+						if (pnd == t.outputId) {
+							type = DependencyType.posPred;
+						}
+					}
+					if (lastFrame.executionDep == t.uniqueID)
+						type = DependencyType.order;
+					if (type == DependencyType.unknown) {
+						for (int t2 : lastFrame.internalDependencies) {
+							if (t2 == t.outputId)
+								type = DependencyType.internal;
+						}
+					}
+					lastCycle = new Cycle(lastCycle, t, type);
 					lastFrame = t;
 				}
-				// System.out.println("Graph.printEdges()" + e.from + "->" +
-				// e.to);
-				return true;
+				return lastCycle;
 			}
-			if (printEdges(e.from, newVisited, target, em))
-				return true;
+			Cycle findCycle = findCycle(e.from, newVisited, target);
+			if (findCycle != null)
+				return findCycle;
 		}
-		return false;
+		return null;
 	}
 }

@@ -30,6 +30,7 @@ import java.io.*;
 import java.util.*;
 
 import org.pshdl.interpreter.utils.*;
+import org.pshdl.interpreter.utils.Graph.CycleException;
 import org.pshdl.interpreter.utils.Graph.Node;
 
 public class ExecutableModel implements Serializable {
@@ -75,7 +76,7 @@ public class ExecutableModel implements Serializable {
 		return builder.toString();
 	}
 
-	public ExecutableModel sortTopological() {
+	public ExecutableModel sortTopological() throws CycleException {
 		Graph<Frame> graph = new Graph<Frame>();
 		ArrayList<Node<Frame>> nodes = new ArrayList<Graph.Node<Frame>>();
 		Map<String, Node<Frame>> intProvider = new LinkedHashMap<String, Graph.Node<Frame>>();

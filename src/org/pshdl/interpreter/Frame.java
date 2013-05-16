@@ -60,16 +60,30 @@ public class Frame implements Serializable {
 	}
 
 	public final FastInstruction[] instructions;
+	/**
+	 * An array of internal IDs that need to be computed before this frame can
+	 * be executed
+	 */
 	public final int[] internalDependencies;
-	public final int[] predPosDepRes;
-	public final int[] predNegDepRes;
+	/**
+	 * An array of internal IDs that need to be evaluate to true to execute this
+	 * frame
+	 */
+	public final int[] predPosDepRes, predNegDepRes;
+	/**
+	 * An internal ID that needs to have a edge in order to execute this frame
+	 */
 	public final int edgePosDepRes, edgeNegDepRes;
+	/**
+	 * A uniqueID of a frame that needs to be executed before this frame can be
+	 * executed
+	 */
+	public int executionDep = -1;
 	public final BigInteger[] constants;
 	public final int outputId;
 	public int maxDataWidth;
 	public final int maxStackDepth;
 	transient public int lastUpdate;
-	public int executionDep = -1;
 	public final int uniqueID;
 	public final boolean constant;
 	private static final long serialVersionUID = -1690021519637432408L;
