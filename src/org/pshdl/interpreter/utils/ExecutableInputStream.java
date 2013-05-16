@@ -91,7 +91,7 @@ public class ExecutableInputStream extends DataInputStream {
 			case date:
 				if (verbose) {
 					long readDate = ex.readLong();
-					System.out.printf("Created on: %1$F %1$T\n" + new Date(readDate));
+					System.out.printf("Created on: %tF %<tR\n", new Date(readDate));
 				}
 				break;
 			case frame:

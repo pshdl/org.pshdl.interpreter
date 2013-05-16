@@ -94,7 +94,7 @@ public class Frame implements Serializable {
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		builder.append("Frame [");
+		builder.append("Frame [").append(uniqueID).append(' ');
 		if (instructions != null) {
 			builder.append("instructions=").append(Arrays.toString(instructions)).append(", ");
 		}

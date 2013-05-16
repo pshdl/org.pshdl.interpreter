@@ -28,7 +28,9 @@ package org.pshdl.interpreter.utils;
 
 import java.util.*;
 
-public class Graph<T> {
+import org.pshdl.interpreter.*;
+
+public class Graph<T extends Frame> {
 
 	public static class Node<T> {
 		public final T object;
@@ -106,27 +108,7 @@ public class Graph<T> {
 		return new Node<T>(object);
 	}
 
-	public static void main(String[] args) {
-		Graph<String> graph = new Graph<String>();
-		Node<String> seven = graph.createNode("7");
-		Node<String> five = graph.createNode("5");
-		Node<String> three = graph.createNode("3");
-		Node<String> eleven = graph.createNode("11");
-		Node<String> eight = graph.createNode("8");
-		Node<String> two = graph.createNode("2");
-		Node<String> nine = graph.createNode("9");
-		Node<String> ten = graph.createNode("10");
-		seven.addEdge(eleven).addEdge(eight);
-		five.addEdge(eleven);
-		three.addEdge(eight).addEdge(ten);
-		eleven.addEdge(two).addEdge(nine).addEdge(ten);
-		eight.addEdge(nine).addEdge(ten);
-
-		List<Node<String>> allNodes = Arrays.asList(seven, five, three, eleven, eight, two, nine, ten);
-		graph.sortNodes(allNodes);
-	}
-
-	public ArrayList<Node<T>> sortNodes(List<Node<T>> allNodes) {
+	public ArrayList<Node<T>> sortNodes(List<Node<T>> allNodes, ExecutableModel em) {
 		// L <- Empty list that will contain the sorted elements
 		ArrayList<Node<T>> L = new ArrayList<Node<T>>();
 
@@ -166,11 +148,38 @@ public class Graph<T> {
 		for (Node<T> n : allNodes) {
 			if (!n.inEdges.isEmpty()) {
 				cycle = true;
-				break;
+				for (Edge<T> e : n.inEdges) {
+					if (printEdges(e.from, new LinkedHashSet<T>(), n, em))
+						throw new RuntimeException("Cycle present, topological sort not possible");
+				}
 			}
 		}
 		if (cycle)
 			throw new RuntimeException("Cycle present, topological sort not possible");
 		return L;
+	}
+
+	public boolean printEdges(Node<T> n, LinkedHashSet<T> visitedNodes, Node<T> target, ExecutableModel em) {
+		if (visitedNodes.contains(n.object))
+			return false;
+		LinkedHashSet<T> newVisited = new LinkedHashSet<T>(visitedNodes);
+		newVisited.add(n.object);
+		for (Edge<T> e : n.inEdges) {
+			// System.out.println(e.from + " -> " + e.to);
+			if (e.to == target) {
+				Frame lastFrame = target.object;
+				for (T t : newVisited) {
+					InternalInformation thisInt = em.internals[t.outputId];
+					System.out.println(thisInt);
+					lastFrame = t;
+				}
+				// System.out.println("Graph.printEdges()" + e.from + "->" +
+				// e.to);
+				return true;
+			}
+			if (printEdges(e.from, newVisited, target, em))
+				return true;
+		}
+		return false;
 	}
 }
