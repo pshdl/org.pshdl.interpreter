@@ -46,8 +46,10 @@ public abstract class EncapsulatedAccess {
 
 		public RegUpdater(int shadowAccessIdx, int accessIdx) {
 			super();
-			this.shadowAccessIdx = shadowAccessIdx;
-			this.accessIdx = accessIdx;
+			// This may be caused by a check on the edge as caused by the #null
+			// output for reset frames
+			this.shadowAccessIdx = shadowAccessIdx == -1 ? accessIdx : shadowAccessIdx;
+			this.accessIdx = accessIdx == -1 ? shadowAccessIdx : accessIdx;
 		}
 	}
 

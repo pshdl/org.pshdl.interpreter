@@ -49,7 +49,6 @@ public class FastFrame {
 	protected static final int srl = 36;
 	protected static final int pushAddIndex = 37;
 	protected static final int writeInternal = 38;
-	protected static final int endFrame = 39;
 
 	private final long stack[];
 	private final long constants[];
@@ -297,9 +296,6 @@ public class FastFrame {
 				access.fillDataLong(arrayPos, writeIndex, a, deltaCycle, epsCycle);
 				arrayPos = -1;
 				break;
-			case endFrame:
-				regUpdated = false;
-				return true;
 			}
 
 		}

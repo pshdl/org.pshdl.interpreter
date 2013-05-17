@@ -80,7 +80,6 @@ public enum Instruction {
 	// Memory
 	pushAddIndex(1, 0, "Pushes an additional index into the write stack for that memory"), //
 	writeInternal(1, 0, "Writes a value to an internal (and every array position)", "internal"), //
-	endFrame(0, 0, "Quits the execution of this frame"), //
 	;
 	public final int argCount;
 	public final String description;

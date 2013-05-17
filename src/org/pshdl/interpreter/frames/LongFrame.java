@@ -285,12 +285,6 @@ public final class LongFrame extends ExecutableFrame {
 				access.fillDataLong(arrayPos, writeIndex, a, deltaCycle, epsCycle);
 				arrayPos = -1;
 				break;
-			case endFrame:
-				if (isPrinting()) {
-					System.out.println("\t\tExiting frame execution");
-				}
-				regUpdated = false;
-				return;
 			}
 			if (isPrinting()) {
 				if (stackPos >= 0) {
