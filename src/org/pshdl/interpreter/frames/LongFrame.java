@@ -36,9 +36,11 @@ public final class LongFrame extends ExecutableFrame {
 
 	private final long stack[];
 	private final long constants[];
+	private IDebugListener listener;
 
-	public LongFrame(HDLFrameInterpreter fir, Frame f, EncapsulatedAccess internals[], EncapsulatedAccess internals_prev[]) {
+	public LongFrame(IDebugListener listener, HDLFrameInterpreter fir, Frame f, EncapsulatedAccess internals[], EncapsulatedAccess internals_prev[]) {
 		super(fir, f, internals, internals_prev);
+		this.listener = listener;
 		this.stack = new long[f.maxStackDepth];
 		this.constants = new long[f.constants.length];
 
@@ -56,6 +58,8 @@ public final class LongFrame extends ExecutableFrame {
 		regUpdated = false;
 		long a = 0;
 		long b = 0;
+		if (listener != null)
+			listener.startFrame(uniqueID, deltaCycle, epsCycle, this);
 		for (FastInstruction fi : instructions) {
 			if (fi.popA) {
 				a = stack[stackPos--];
@@ -106,7 +110,8 @@ public final class LongFrame extends ExecutableFrame {
 				// them
 				if (fi.arg1 != 64) {
 					long mask = (1l << (fi.arg1)) - 1;
-					stack[++stackPos] = a & mask;
+					long res = a & mask;
+					stack[++stackPos] = res;
 				} else {
 					stack[++stackPos] = a;
 				}
@@ -193,9 +198,8 @@ public final class LongFrame extends ExecutableFrame {
 				EncapsulatedAccess access = getInternal(off, arrayPos);
 				arrayPos = -1;
 				if (access.skip(deltaCycle, epsCycle)) {
-					if (isPrinting()) {
-						System.out.println("\t\tSkipped: falling edge already handled");
-					}
+					if (listener != null)
+						listener.skippingHandledEdge(uniqueID, access.ii, false, this);
 					return;
 				}
 				long curr = access.getDataLong();
@@ -203,9 +207,8 @@ public final class LongFrame extends ExecutableFrame {
 				prevAcc.offset = access.offset;
 				long prev = prevAcc.getDataLong();
 				if ((prev != 1) || (curr != 0)) {
-					if (isPrinting()) {
-						System.out.println("\t\tSkipped: not a falling edge");
-					}
+					if (listener != null)
+						listener.skippingNotAnEdge(uniqueID, access.ii, false, this);
 					return;
 				}
 				access.setLastUpdate(deltaCycle, epsCycle);
@@ -217,9 +220,8 @@ public final class LongFrame extends ExecutableFrame {
 				EncapsulatedAccess access = getInternal(off, arrayPos);
 				arrayPos = -1;
 				if (access.skip(deltaCycle, epsCycle)) {
-					if (isPrinting()) {
-						System.out.println("\t\tSkipped: rising edge already handled");
-					}
+					if (listener != null)
+						listener.skippingHandledEdge(uniqueID, access.ii, true, this);
 					return;
 				}
 				long curr = access.getDataLong();
@@ -227,9 +229,8 @@ public final class LongFrame extends ExecutableFrame {
 				prevAcc.offset = access.offset;
 				long prev = prevAcc.getDataLong();
 				if ((prev != 0) || (curr != 1)) {
-					if (isPrinting()) {
-						System.out.println("\t\tSkipped: Not a rising edge");
-					}
+					if (listener != null)
+						listener.skippingNotAnEdge(uniqueID, access.ii, true, this);
 					return;
 				}
 				access.setLastUpdate(deltaCycle, epsCycle);
@@ -243,15 +244,13 @@ public final class LongFrame extends ExecutableFrame {
 				// If data is not from this deltaCycle it was not
 				// updated that means prior predicates failed
 				if (!access.isFresh(deltaCycle)) {
-					if (isPrinting()) {
-						System.out.println("\t\tSkipped: predicate not fresh enough");
-					}
+					if (listener != null)
+						listener.skippingPredicateNotFresh(uniqueID, access.ii, true, this);
 					return;
 				}
 				if (access.getDataLong() == 0) {
-					if (isPrinting()) {
-						System.out.println("\t\tSkipped: predicate not positive");
-					}
+					if (listener != null)
+						listener.skippingPredicateNotMet(uniqueID, access.ii, true, access.getDataBig(), this);
 					return;
 				}
 				break;
@@ -263,15 +262,13 @@ public final class LongFrame extends ExecutableFrame {
 				// If data is not from this deltaCycle it was not
 				// updated that means prior predicates failed
 				if (!access.isFresh(deltaCycle)) {
-					if (isPrinting()) {
-						System.out.println("\t\tSkipped: predicate not fresh enough");
-					}
+					if (listener != null)
+						listener.skippingPredicateNotFresh(uniqueID, access.ii, false, this);
 					return;
 				}
 				if (access.getDataLong() != 0) {
-					if (isPrinting()) {
-						System.out.println("\t\tSkipped: predicate not negative");
-					}
+					if (listener != null)
+						listener.skippingPredicateNotMet(uniqueID, access.ii, false, access.getDataBig(), this);
 					return;
 				}
 				break;
@@ -286,27 +283,25 @@ public final class LongFrame extends ExecutableFrame {
 				arrayPos = -1;
 				break;
 			}
-			if (isPrinting()) {
+			if (listener != null)
 				if (stackPos >= 0) {
 					if (fi.popB) {
-						System.out.printf("\t\t0x%x %s 0x%x = 0x%x\n", b, fi, a, stack[stackPos]);
+						listener.twoArgOp(uniqueID, BigInteger.valueOf(b), fi, BigInteger.valueOf(a), BigInteger.valueOf(stack[stackPos]), this);
 					} else if (fi.popA) {
-						System.out.printf("\t\t%s 0x%x = 0x%x\n", fi, a, stack[stackPos]);
+						listener.oneArgOp(uniqueID, fi, BigInteger.valueOf(a), BigInteger.valueOf(stack[stackPos]), this);
 					} else {
-						System.out.printf("\t\t%s = 0x%x\n", fi, stack[stackPos]);
+						listener.noArgOp(uniqueID, fi, BigInteger.valueOf(stack[stackPos]), this);
 					}
 				} else {
-					System.out.printf("\t\t%s = emptyStack\n", fi);
+					listener.emptyStack(uniqueID, fi, this);
 				}
-			}
 		}
 		if (arrayPos != -1) {
 			outputAccess.setOffset(writeIndex);
 		}
 		outputAccess.setDataLong(stack[0], deltaCycle, epsCycle);
-		if (isPrinting()) {
-			System.out.println("\t\tWriting result:" + outputAccess + " Value:" + stack[0] + " read:" + outputAccess.getDataLong());
-		}
+		if (listener != null)
+			listener.writingResult(uniqueID, outputAccess.ii, BigInteger.valueOf(stack[0]), this);
 		return;
 	}
 
@@ -315,9 +310,8 @@ public final class LongFrame extends ExecutableFrame {
 		if (arrayPos != -1) {
 			ea.setOffset(writeIndex);
 		}
-		if (isPrinting()) {
-			// System.out.println("\t\t\tLoading:" + ea);
-		}
+		if (listener != null)
+			listener.loadingInternal(uniqueID, ea.ii, ea.getDataBig(), this);
 		return ea;
 	}
 

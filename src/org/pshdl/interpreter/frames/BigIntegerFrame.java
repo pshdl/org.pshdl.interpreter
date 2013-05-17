@@ -37,11 +37,13 @@ import org.pshdl.interpreter.access.*;
 public final class BigIntegerFrame extends ExecutableFrame {
 	private final BigInteger stack[];
 	private final BigInteger constants[];
+	private final IDebugListener listener;
 
-	public BigIntegerFrame(HDLFrameInterpreter fir, Frame f, EncapsulatedAccess internals[], EncapsulatedAccess internals_prev[]) {
+	public BigIntegerFrame(IDebugListener listener, HDLFrameInterpreter fir, Frame f, EncapsulatedAccess internals[], EncapsulatedAccess internals_prev[]) {
 		super(fir, f, internals, internals_prev);
 		this.stack = new BigInteger[f.maxStackDepth];
 		this.constants = f.constants;
+		this.listener = listener;
 	}
 
 	@Override
@@ -51,6 +53,8 @@ public final class BigIntegerFrame extends ExecutableFrame {
 		regUpdated = false;
 		int arrayPos = -1;
 		BigInteger b = BigInteger.ZERO, a = BigInteger.ZERO;
+		if (listener != null)
+			listener.startFrame(uniqueID, deltaCycle, epsCycle, this);
 		for (FastInstruction f : instructions) {
 			if (f.popA) {
 				a = stack[stackPos--];
@@ -218,9 +222,8 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				EncapsulatedAccess access = getInternal(off, arrayPos);
 				arrayPos = -1;
 				if (access.skip(deltaCycle, epsCycle)) {
-					if (isPrinting()) {
-						System.out.println("\t\tSkipped: falling edge already handled");
-					}
+					if (listener != null)
+						listener.skippingHandledEdge(uniqueID, access.ii, false, this);
 					return;
 				}
 				long curr = access.getDataLong();
@@ -228,9 +231,8 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				prevAccess.offset = access.offset;
 				long prev = prevAccess.getDataLong();
 				if ((prev != 1) || (curr != 0)) {
-					if (isPrinting()) {
-						System.out.println("\t\tSkipped: not a falling edge");
-					}
+					if (listener != null)
+						listener.skippingNotAnEdge(uniqueID, access.ii, false, this);
 					return;
 				}
 				access.setLastUpdate(deltaCycle, epsCycle);
@@ -242,9 +244,8 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				EncapsulatedAccess access = getInternal(off, arrayPos);
 				arrayPos = -1;
 				if (access.skip(deltaCycle, epsCycle)) {
-					if (isPrinting()) {
-						System.out.println("\t\tSkipped: rising edge already handled");
-					}
+					if (listener != null)
+						listener.skippingHandledEdge(uniqueID, access.ii, true, this);
 					return;
 				}
 				long curr = access.getDataLong();
@@ -252,9 +253,8 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				prevAccess.offset = access.offset;
 				long prev = prevAccess.getDataLong();
 				if ((prev != 0) || (curr != 1)) {
-					if (isPrinting()) {
-						System.out.println("\t\tSkipped: Not a rising edge");
-					}
+					if (listener != null)
+						listener.skippingNotAnEdge(uniqueID, access.ii, true, this);
 					return;
 				}
 				access.setLastUpdate(deltaCycle, epsCycle);
@@ -268,15 +268,13 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				// If data is not from this deltaCycle it was not
 				// updated that means prior predicates failed
 				if (!access.isFresh(deltaCycle)) {
-					if (isPrinting()) {
-						System.out.println("\t\tSkipped: predicate not fresh enough");
-					}
+					if (listener != null)
+						listener.skippingPredicateNotFresh(uniqueID, access.ii, true, this);
 					return;
 				}
 				if (ZERO.equals(access.getDataBig())) {
-					if (isPrinting()) {
-						System.out.println("\t\tSkipped: predicate not positive");
-					}
+					if (listener != null)
+						listener.skippingPredicateNotMet(uniqueID, access.ii, true, access.getDataBig(), this);
 					return;
 				}
 				break;
@@ -288,15 +286,13 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				// If data is not from this deltaCycle it was not
 				// updated that means prior predicates failed
 				if (!access.isFresh(deltaCycle)) {
-					if (isPrinting()) {
-						System.out.println("\t\tSkipped: predicate not fresh enough");
-					}
+					if (listener != null)
+						listener.skippingPredicateNotFresh(uniqueID, access.ii, true, this);
 					return;
 				}
 				if (!ZERO.equals(access.getDataBig())) {
-					if (isPrinting()) {
-						System.out.println("\t\tSkipped: predicate not negative");
-					}
+					if (listener != null)
+						listener.skippingPredicateNotMet(uniqueID, access.ii, false, access.getDataBig(), this);
 					return;
 				}
 				break;
@@ -311,27 +307,26 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				arrayPos = -1;
 				break;
 			}
-			if (isPrinting()) {
+			if (listener != null)
 				if (stackPos >= 0) {
 					if (f.popB) {
-						System.out.printf("\t\t0x%x %s 0x%x = 0x%x\n", b, f, a, stack[stackPos]);
+						listener.twoArgOp(uniqueID, b, f, (a), (stack[stackPos]), this);
 					} else if (f.popA) {
-						System.out.printf("\t\t%s 0x%x = 0x%x\n", f, a, stack[stackPos]);
+						listener.oneArgOp(uniqueID, f, (a), (stack[stackPos]), this);
 					} else {
-						System.out.printf("\t\t%s = 0x%x\n", f, stack[stackPos]);
+						listener.noArgOp(uniqueID, f, (stack[stackPos]), this);
 					}
 				} else {
-					System.out.printf("\t\t%s = emptyStack\n", f);
+					listener.emptyStack(uniqueID, f, this);
 				}
-			}
 		}
 		if (arrayPos != -1) {
 			outputAccess.setOffset(writeIndex);
 		}
 		outputAccess.setDataBig(stack[0], deltaCycle, epsCycle);
-		if (isPrinting()) {
-			System.out.println("\t\tWriting result:" + outputAccess + " Value:" + stack[0] + " read:" + outputAccess.getDataBig());
-		}
+		if (listener != null)
+			listener.writingResult(uniqueID, outputAccess.ii, stack[0], this);
+
 		return;
 	}
 

@@ -126,9 +126,6 @@ public class InternalInformation {
 		this.fixedArray = isFixed;
 		this.info = info;
 		StringBuilder sb = new StringBuilder();
-		if (isPred) {
-			sb.append(PRED_PREFIX);
-		}
 		sb.append(info.name);
 		if (isFixed) {
 			for (int idx : arrayIdx) {

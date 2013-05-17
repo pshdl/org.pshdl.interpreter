@@ -65,7 +65,4 @@ public abstract class ExecutableFrame {
 		}
 	}
 
-	protected boolean isPrinting() {
-		return fir.printing;
-	}
 }

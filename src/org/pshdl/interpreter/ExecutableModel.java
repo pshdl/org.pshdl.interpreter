@@ -31,7 +31,6 @@ import java.util.*;
 
 import org.pshdl.interpreter.utils.*;
 import org.pshdl.interpreter.utils.Graph.CycleException;
-import org.pshdl.interpreter.utils.Graph.Edge;
 import org.pshdl.interpreter.utils.Graph.Node;
 
 public class ExecutableModel implements Serializable {
@@ -71,7 +70,11 @@ public class ExecutableModel implements Serializable {
 		StringBuilder builder = new StringBuilder();
 		builder.append("ExecutableModel [maxDataWidth=").append(maxDataWidth).append(", maxStackDepth=").append(maxStackDepth).append(", ");
 		if (frames != null) {
-			builder.append("frames=\n").append(Arrays.toString(frames)).append(", ");
+			builder.append("frames=\n");
+			for (Frame f : frames) {
+				builder.append(f.toString(this));
+			}
+			builder.append('\n').append(", ");
 		}
 		builder.append("]");
 		return builder.toString();
@@ -91,7 +94,7 @@ public class ExecutableModel implements Serializable {
 		}
 		for (int i = 0; i < internals.length; i++) {
 			String string = getInternal(i);
-			System.out.println(i + " " + internals[i]);
+			// System.out.println(i + " " + internals[i]);
 			Node<String> node = new Node<String>(string);
 			nodes.add(node);
 			nodeNames.put(string, node);
@@ -109,16 +112,16 @@ public class ExecutableModel implements Serializable {
 				node.reverseAddEdge(ni);
 			}
 		}
-		for (Node<String> node : nodes) {
-			System.out.print(node.object + " -> ");
-			for (Edge<String> i : node.inEdges) {
-				System.out.print(i.from.object + " ");
-			}
-			System.out.println();
-			Frame f = frameNames.get(node.object);
-			if (f != null)
-				System.out.println(f.toString(this));
-		}
+		// for (Node<String> node : nodes) {
+		// System.out.print(node.object + " -> ");
+		// for (Edge<String> i : node.inEdges) {
+		// System.out.print(i.from.object + " ");
+		// }
+		// System.out.println();
+		// Frame f = frameNames.get(node.object);
+		// if (f != null)
+		// System.out.println(f.toString(this));
+		// }
 		ArrayList<Node<String>> sortNodes = graph.sortNodes(nodes);
 		// for (Node<String> node : sortNodes) {
 		// System.out.println(node.object);
@@ -138,7 +141,7 @@ public class ExecutableModel implements Serializable {
 		return "Frame" + uniqueID;
 	}
 
-	public String getInternal(int i) {
+	private String getInternal(int i) {
 		return "Internal" + i;
 	}
 

@@ -88,11 +88,6 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 	private int deltaCycle = 0;
 
 	/**
-	 * If <code>true</code> debug information are printed
-	 */
-	public boolean printing;
-
-	/**
 	 * An index when a certain internal was last updated
 	 */
 	public final long[] deltaUpdates;
@@ -101,13 +96,14 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 	 * The frames that get executed
 	 */
 	private final ExecutableFrame frames[];
+	private final IDebugListener listener;
 
-	public HDLFrameInterpreter(ExecutableModel model, boolean printing) {
-		this.printing = printing;
+	public HDLFrameInterpreter(ExecutableModel model, IDebugListener listener) {
 		this.model = model;
 		this.internals = new EncapsulatedAccess[model.internals.length];
 		this.internals_prev = new EncapsulatedAccess[model.internals.length];
 		this.full = new EncapsulatedAccess[model.variables.length];
+		this.listener = listener;
 		int storageSize = createInternals(model);
 		createVarIndex(model);
 		this.storage = new long[storageSize];
@@ -123,9 +119,9 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 		this.frames = new ExecutableFrame[frames.length];
 		for (int i = 0; i < frames.length; i++) {
 			if (frames[i].maxDataWidth > 64) {
-				this.frames[i] = new BigIntegerFrame(this, frames[i], internals, internals_prev);
+				this.frames[i] = new BigIntegerFrame(listener, this, frames[i], internals, internals_prev);
 			} else {
-				this.frames[i] = new LongFrame(this, frames[i], internals, internals_prev);
+				this.frames[i] = new LongFrame(listener, this, frames[i], internals, internals_prev);
 			}
 		}
 	}
@@ -319,14 +315,10 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 		List<RegUpdater> updatedRegs = new ArrayList<EncapsulatedAccess.RegUpdater>();
 		do {
 			epsCycle++;
-			if (printing) {
-				System.out.println("Starting cylce:" + deltaCycle + "." + epsCycle);
-			}
+			if (listener != null)
+				listener.startCycle(deltaCycle, epsCycle, this);
 			regUpdated = false;
 			for (ExecutableFrame ef : frames) {
-				if (printing) {
-					System.out.println("\tExecuting frame:" + ef.uniqueID);
-				}
 				ef.execute(deltaCycle, epsCycle);
 				if (ef.regUpdated) {
 					updatedRegs.add(ef.outputAccess.getRegUpdater());
@@ -334,10 +326,9 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 				}
 			}
 			if (regUpdated) {
+				if (listener != null)
+					listener.copyingRegisterValues(this);
 				for (RegUpdater ea : updatedRegs) {
-					if (printing) {
-						System.out.println("\tCopying register:" + ea.accessIdx + " from:" + ea.shadowAccessIdx);
-					}
 					if (ea.isBig) {
 						big_storage[ea.accessIdx & BIG_MASK] = big_storage[ea.shadowAccessIdx & BIG_MASK];
 					} else {
@@ -347,6 +338,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 				updatedRegs.clear();
 			}
 		} while (regUpdated);
+		listener.doneCycle(deltaCycle, this);
 		System.arraycopy(storage, 0, storage_prev, 0, storage.length);
 		System.arraycopy(big_storage, 0, big_storage_prev, 0, big_storage.length);
 	}
@@ -359,16 +351,6 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 			sb.append('\t').append(e.getKey()).append("=").append(storage[e.getValue() & BIG_MASK]).append('\n');
 		}
 		return sb.toString();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.pshdl.interpreter.IHDLInterpreter#setPrinting(boolean)
-	 */
-	@Override
-	public void setPrinting(boolean b) {
-		printing = true;
 	}
 
 	@Override

@@ -26,6 +26,4 @@ public interface IHDLInterpreter {
 
 	public abstract void run();
 
-	public abstract void setPrinting(boolean b);
-
 }

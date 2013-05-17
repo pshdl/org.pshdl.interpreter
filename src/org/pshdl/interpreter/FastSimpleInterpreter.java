@@ -339,11 +339,6 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 	}
 
 	@Override
-	public void setPrinting(boolean b) {
-
-	}
-
-	@Override
 	public String getName(int idx) {
 		for (Entry<String, Integer> e : varIdxMap.entrySet()) {
 			if (e.getValue() == idx)
