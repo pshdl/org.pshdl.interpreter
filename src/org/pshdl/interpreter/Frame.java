@@ -51,6 +51,16 @@ public class Frame implements Serializable {
 
 		@Override
 		public String toString() {
+			return toString(null);
+		}
+
+		public String toString(ExecutableModel em) {
+			if ((em != null) && (inst == Instruction.loadInternal))
+				return "loadInternal[" + em.internals[arg1] + "]";
+			if ((em != null) && (inst == Instruction.posPredicate))
+				return "posPredicate[" + em.internals[arg1] + "]";
+			if ((em != null) && (inst == Instruction.negPredicate))
+				return "negPredicate[" + em.internals[arg1] + "]";
 			if (inst.argCount >= 2)
 				return inst.name() + "[" + inst.args[0] + "=" + arg1 + "," + inst.args[1] + "=" + arg2 + "]";
 			if (inst.argCount >= 1)
@@ -107,10 +117,17 @@ public class Frame implements Serializable {
 
 	@Override
 	public String toString() {
+		return toString(null);
+	}
+
+	public String toString(ExecutableModel em) {
 		StringBuilder builder = new StringBuilder();
 		builder.append("Frame [").append(uniqueID).append(' ');
 		if (instructions != null) {
-			builder.append("instructions=").append(Arrays.toString(instructions)).append(", ");
+			builder.append("instructions=");
+			for (FastInstruction fi : instructions) {
+				builder.append(fi.toString(em)).append(',');
+			}
 		}
 		if (internalDependencies != null) {
 			builder.append("internalDependencies=").append(Arrays.toString(internalDependencies)).append(", ");
@@ -118,9 +135,12 @@ public class Frame implements Serializable {
 		if (constants != null) {
 			builder.append("constants=").append(Arrays.toString(constants)).append(", ");
 		}
-		builder.append("outputId=").append(outputId).append(", maxDataWidth=").append(maxDataWidth).append(", maxStackDepth=").append(maxStackDepth).append(", ");
+		String outputName = Integer.toString(outputId);
+		if (em != null)
+			outputName = em.internals[outputId].toString();
+		builder.append("outputId=").append(outputName).append(", maxDataWidth=").append(maxDataWidth).append(", maxStackDepth=").append(maxStackDepth).append(", ");
 		builder.append("executionDep=").append(executionDep);
-		builder.append("]\n");
+		builder.append("]");
 		return builder.toString();
 	}
 

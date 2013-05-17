@@ -98,7 +98,8 @@ public class LongAccesses {
 		public long getDataLong() {
 			if (prev)
 				return (intr.storage_prev[getAccessIndex()] >> shift) & mask;
-			return (intr.storage[getAccessIndex()] >> shift) & mask;
+			long rawVal = intr.storage[getAccessIndex()];
+			return (rawVal >> shift) & mask;
 		}
 
 		@Override

@@ -63,12 +63,12 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 	/**
 	 * The {@link EncapsulatedAccess} for each accessIndex
 	 */
-	private final EncapsulatedAccess[] internals, internals_prev;
+	public final EncapsulatedAccess[] internals, internals_prev;
 
 	/**
 	 * An {@link EncapsulatedAccess} for the full variable width of a variable
 	 */
-	private final EncapsulatedAccess[] full;
+	public final EncapsulatedAccess[] full;
 
 	/**
 	 * A mapping from baseName of internal to the accessIndex (for accessing

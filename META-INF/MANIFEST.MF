@@ -4,5 +4,6 @@ Bundle-Name: Interpreter
 Bundle-SymbolicName: org.pshdl.interpreter
 Bundle-Version: 1.0.0.qualifier
 Export-Package: org.pshdl.interpreter,
+ org.pshdl.interpreter.access,
  org.pshdl.interpreter.utils
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6

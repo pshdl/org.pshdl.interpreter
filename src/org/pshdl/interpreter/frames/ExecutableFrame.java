@@ -45,7 +45,7 @@ public abstract class ExecutableFrame {
 	public final EncapsulatedAccess outputAccess;
 	protected final int[] writeIndex = new int[10];
 
-	private HDLFrameInterpreter fir;
+	protected HDLFrameInterpreter fir;
 
 	public ExecutableFrame(HDLFrameInterpreter fir, Frame f, EncapsulatedAccess[] internals, EncapsulatedAccess[] internals_prev) {
 		this.fir = fir;

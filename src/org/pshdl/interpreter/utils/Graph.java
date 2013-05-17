@@ -30,9 +30,8 @@ import java.io.*;
 import java.util.*;
 
 import org.pshdl.interpreter.*;
-import org.pshdl.interpreter.utils.Graph.Cycle.DependencyType;
 
-public class Graph<T extends Frame> {
+public class Graph<T> {
 
 	public static class Node<T> {
 		public final T object;
@@ -150,11 +149,13 @@ public class Graph<T extends Frame> {
 		for (Node<T> n : allNodes) {
 			if (!n.inEdges.isEmpty()) {
 				cycle = true;
-				for (Edge<T> e : n.inEdges) {
-					Cycle findCycle = findCycle(e.from, new LinkedHashSet<T>(), n);
-					if (findCycle != null)
-						throw new CycleException(findCycle);
-				}
+				// for (Edge<T> e : n.inEdges) {
+				// Cycle findCycle = findCycle(e.from, new LinkedHashSet<T>(),
+				// n);
+				// if (findCycle != null)
+				// throw new CycleException(findCycle);
+				// }
+				break;
 			}
 		}
 		if (cycle)
@@ -212,52 +213,53 @@ public class Graph<T extends Frame> {
 
 	}
 
-	public Cycle findCycle(Node<T> n, LinkedHashSet<T> visitedNodes, Node<T> target) throws CycleException {
-		if (visitedNodes.contains(n.object))
-			return null;
-		LinkedHashSet<T> newVisited = new LinkedHashSet<T>(visitedNodes);
-		newVisited.add(n.object);
-		for (Edge<T> e : n.inEdges) {
-			// System.out.println(e.from + " -> " + e.to);
-			if (e.to == target) {
-				Frame lastFrame = target.object;
-				Cycle lastCycle = new Cycle(null, lastFrame, null);
-				for (Iterator<T> iterator = newVisited.iterator(); iterator.hasNext();) {
-					T t = iterator.next();
-					DependencyType type = DependencyType.unknown;
-					if (lastFrame.edgeNegDepRes == t.outputId) {
-						type = DependencyType.negEdge;
-					}
-					if (lastFrame.edgePosDepRes == t.outputId) {
-						type = DependencyType.posEdge;
-					}
-					for (int pnd : lastFrame.predNegDepRes) {
-						if (pnd == t.outputId) {
-							type = DependencyType.negPred;
-						}
-					}
-					for (int pnd : lastFrame.predPosDepRes) {
-						if (pnd == t.outputId) {
-							type = DependencyType.posPred;
-						}
-					}
-					if (lastFrame.executionDep == t.uniqueID)
-						type = DependencyType.order;
-					if (type == DependencyType.unknown) {
-						for (int t2 : lastFrame.internalDependencies) {
-							if (t2 == t.outputId)
-								type = DependencyType.internal;
-						}
-					}
-					lastCycle = new Cycle(lastCycle, t, type);
-					lastFrame = t;
-				}
-				return lastCycle;
-			}
-			Cycle findCycle = findCycle(e.from, newVisited, target);
-			if (findCycle != null)
-				return findCycle;
-		}
-		return null;
-	}
+	// public Cycle findCycle(Node<T> n, LinkedHashSet<T> visitedNodes, Node<T>
+	// target) throws CycleException {
+	// if (visitedNodes.contains(n.object))
+	// return null;
+	// LinkedHashSet<T> newVisited = new LinkedHashSet<T>(visitedNodes);
+	// newVisited.add(n.object);
+	// for (Edge<T> e : n.inEdges) {
+	// // System.out.println(e.from + " -> " + e.to);
+	// if (e.to == target) {
+	// Frame lastFrame = target.object;
+	// Cycle lastCycle = new Cycle(null, lastFrame, null);
+	// for (Iterator<T> iterator = newVisited.iterator(); iterator.hasNext();) {
+	// T t = iterator.next();
+	// DependencyType type = DependencyType.unknown;
+	// if (lastFrame.edgeNegDepRes == t.outputId) {
+	// type = DependencyType.negEdge;
+	// }
+	// if (lastFrame.edgePosDepRes == t.outputId) {
+	// type = DependencyType.posEdge;
+	// }
+	// for (int pnd : lastFrame.predNegDepRes) {
+	// if (pnd == t.outputId) {
+	// type = DependencyType.negPred;
+	// }
+	// }
+	// for (int pnd : lastFrame.predPosDepRes) {
+	// if (pnd == t.outputId) {
+	// type = DependencyType.posPred;
+	// }
+	// }
+	// if (lastFrame.executionDep == t.uniqueID)
+	// type = DependencyType.order;
+	// if (type == DependencyType.unknown) {
+	// for (int t2 : lastFrame.internalDependencies) {
+	// if (t2 == t.outputId)
+	// type = DependencyType.internal;
+	// }
+	// }
+	// lastCycle = new Cycle(lastCycle, t, type);
+	// lastFrame = t;
+	// }
+	// return lastCycle;
+	// }
+	// Cycle findCycle = findCycle(e.from, newVisited, target);
+	// if (findCycle != null)
+	// return findCycle;
+	// }
+	// return null;
+	// }
 }

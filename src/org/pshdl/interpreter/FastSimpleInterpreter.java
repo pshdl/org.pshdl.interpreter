@@ -17,8 +17,8 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 
 			public RegUpdater(int shadowAccessIdx, int accessIdx) {
 				super();
-				this.shadowAccessIdx = shadowAccessIdx;
-				this.accessIdx = accessIdx;
+				this.shadowAccessIdx = shadowAccessIdx == -1 ? accessIdx : shadowAccessIdx;
+				this.accessIdx = accessIdx == -1 ? shadowAccessIdx : accessIdx;
 			}
 		}
 

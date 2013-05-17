@@ -36,7 +36,7 @@ public enum Instruction {
 	cast_uint(1, 1, "Re-interprets the operand as uint and resizes it", "targetSize", "currentSize"), //
 	// Load operations
 	loadConstant(0, 1, "Loads a value from the constant storage", "constantIdx"), //
-	loadInternal(0, 1, "Loads a value from an internal", "inernalIdx"), //
+	loadInternal(0, 1, "Loads a value from an internal", "internalIdx"), //
 	// Concatenation
 	concat(2, 1, "Concatenate operands, assumes the width as indicated", "widthLeft", "widthRight"), //
 	// Constants

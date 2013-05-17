@@ -31,6 +31,7 @@ import java.util.*;
 
 import org.pshdl.interpreter.utils.*;
 import org.pshdl.interpreter.utils.Graph.CycleException;
+import org.pshdl.interpreter.utils.Graph.Edge;
 import org.pshdl.interpreter.utils.Graph.Node;
 
 public class ExecutableModel implements Serializable {
@@ -77,35 +78,68 @@ public class ExecutableModel implements Serializable {
 	}
 
 	public ExecutableModel sortTopological() throws CycleException {
-		Graph<Frame> graph = new Graph<Frame>();
-		ArrayList<Node<Frame>> nodes = new ArrayList<Graph.Node<Frame>>();
-		Map<String, Node<Frame>> intProvider = new LinkedHashMap<String, Graph.Node<Frame>>();
-		Map<Integer, Node<Frame>> outputIDMap = new LinkedHashMap<Integer, Graph.Node<Frame>>();
+		Graph<String> graph = new Graph<String>();
+		ArrayList<Node<String>> nodes = new ArrayList<Graph.Node<String>>();
+		Map<String, Node<String>> nodeNames = new HashMap<String, Graph.Node<String>>();
+		Map<String, Frame> frameNames = new HashMap<String, Frame>();
 		for (Frame f : frames) {
-			Node<Frame> node = new Node<Frame>(f);
+			String string = getFrame(f.uniqueID);
+			Node<String> node = new Node<String>(string);
 			nodes.add(node);
-			outputIDMap.put(f.uniqueID, node);
-			intProvider.put(internals[f.outputId].fullName, node);
+			nodeNames.put(string, node);
+			frameNames.put(string, f);
 		}
-		for (Node<Frame> node : nodes) {
-			if (node.object.executionDep != -1) {
-				Node<Frame> preNode = outputIDMap.get(node.object.executionDep);
-				node.reverseAddEdge(preNode);
+		for (int i = 0; i < internals.length; i++) {
+			String string = getInternal(i);
+			System.out.println(i + " " + internals[i]);
+			Node<String> node = new Node<String>(string);
+			nodes.add(node);
+			nodeNames.put(string, node);
+		}
+		for (Frame f : frames) {
+			Node<String> node = nodeNames.get(getFrame(f.uniqueID));
+			Node<String> outNode = nodeNames.get(getInternal(f.outputId));
+			outNode.reverseAddEdge(node);
+			for (int i : f.internalDependencies) {
+				Node<String> ni = nodeNames.get(getInternal(i));
+				node.reverseAddEdge(ni);
 			}
-			for (int intDep : node.object.internalDependencies) {
-				String string = internals[intDep].fullName;
-				Node<Frame> node2 = intProvider.get(string);
-				if (node2 != null) {
-					node.reverseAddEdge(node2);
-				}
+			if (f.executionDep != -1) {
+				Node<String> ni = nodeNames.get(getFrame(f.executionDep));
+				node.reverseAddEdge(ni);
 			}
 		}
-		ArrayList<Node<Frame>> sortNodes = graph.sortNodes(nodes);
+		for (Node<String> node : nodes) {
+			System.out.print(node.object + " -> ");
+			for (Edge<String> i : node.inEdges) {
+				System.out.print(i.from.object + " ");
+			}
+			System.out.println();
+			Frame f = frameNames.get(node.object);
+			if (f != null)
+				System.out.println(f.toString(this));
+		}
+		ArrayList<Node<String>> sortNodes = graph.sortNodes(nodes);
+		// for (Node<String> node : sortNodes) {
+		// System.out.println(node.object);
+		// }
 		int pos = 0;
-		for (Node<Frame> node : sortNodes) {
-			frames[pos++] = node.object;
+		for (Node<String> node : sortNodes) {
+			String obj = node.object;
+			Frame f = frameNames.get(obj);
+			if (f != null) {
+				frames[pos++] = f;
+			}
 		}
 		return this;
+	}
+
+	private String getFrame(int uniqueID) {
+		return "Frame" + uniqueID;
+	}
+
+	public String getInternal(int i) {
+		return "Internal" + i;
 	}
 
 	public String toDotFile() {
