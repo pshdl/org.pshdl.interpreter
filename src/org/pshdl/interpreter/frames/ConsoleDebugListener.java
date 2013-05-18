@@ -80,7 +80,17 @@ public class ConsoleDebugListener implements IDebugListener {
 		}
 	}
 
+	/**
+	 * Adds frames to the list of interesting frames that match the given
+	 * internal.
+	 * 
+	 * @param internalRegex
+	 *            '$' signs are automatically escaped
+	 * @param ops
+	 *            if true also the instructions will be shown
+	 */
 	public void addFramesThatWriteInternal(String internalRegex, boolean ops) {
+		internalRegex = internalRegex.replaceAll("\\$", "\\\\\\$");
 		for (Frame f : em.frames) {
 			if (em.internals[f.outputId].fullName.matches(internalRegex)) {
 				addFrames(ops, f.uniqueID);
@@ -122,20 +132,20 @@ public class ConsoleDebugListener implements IDebugListener {
 	@Override
 	public void twoArgOp(int frameUniqueID, BigInteger b, FastInstruction fi, BigInteger a, BigInteger res, Object frame) {
 		if (doShowOp(frameUniqueID))
-			out.printf("\t\tExecuting 0x%s %s 0x%s = %s\n", b.toString(16), fi.toString(em), a.toString(16), res.toString(16));
+			out.printf("\t\tExecuting 0x%s %s 0x%s = 0x%s\n", b.toString(16), fi.toString(em), a.toString(16), res.toString(16));
 	}
 
 	@Override
 	public void oneArgOp(int frameUniqueID, FastInstruction fi, BigInteger a, BigInteger res, Object frame) {
 		if (doShowOp(frameUniqueID))
-			out.printf("\t\tExecuting %s 0x%s = %s\n", fi.toString(em), a.toString(16), res.toString(16));
+			out.printf("\t\tExecuting %s 0x%s = 0x%s\n", fi.toString(em), a.toString(16), res.toString(16));
 
 	}
 
 	@Override
 	public void noArgOp(int frameUniqueID, FastInstruction fi, BigInteger res, Object frame) {
 		if (doShowOp(frameUniqueID))
-			out.printf("\t\tExecuting %s = %s\n", fi.toString(em), res.toString(16));
+			out.printf("\t\tExecuting %s = 0x%s\n", fi.toString(em), res.toString(16));
 	}
 
 	@Override

@@ -225,4 +225,12 @@ public class ExecutableModel implements Serializable {
 		return sb.toString();
 	}
 
+	public InternalInformation getInternal(String string) {
+		for (InternalInformation ii : internals) {
+			if (ii.fullName.equals(string))
+				return ii;
+		}
+		return null;
+	}
+
 }

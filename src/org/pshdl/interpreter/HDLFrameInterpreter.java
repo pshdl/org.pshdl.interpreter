@@ -338,7 +338,8 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 				updatedRegs.clear();
 			}
 		} while (regUpdated);
-		listener.doneCycle(deltaCycle, this);
+		if (listener != null)
+			listener.doneCycle(deltaCycle, this);
 		System.arraycopy(storage, 0, storage_prev, 0, storage.length);
 		System.arraycopy(big_storage, 0, big_storage_prev, 0, big_storage.length);
 	}
@@ -360,5 +361,9 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 				return e.getKey();
 		}
 		throw new IllegalArgumentException("No such index:" + idx);
+	}
+
+	public int getDeltaCycle() {
+		return deltaCycle;
 	}
 }

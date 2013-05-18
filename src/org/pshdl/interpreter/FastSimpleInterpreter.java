@@ -346,4 +346,9 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 		}
 		throw new IllegalArgumentException("No such index:" + idx);
 	}
+
+	@Override
+	public int getDeltaCycle() {
+		return deltaCycle;
+	}
 }

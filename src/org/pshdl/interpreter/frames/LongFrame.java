@@ -243,14 +243,17 @@ public final class LongFrame extends ExecutableFrame {
 				arrayPos = -1;
 				// If data is not from this deltaCycle it was not
 				// updated that means prior predicates failed
-				if (!access.isFresh(deltaCycle)) {
+				long dataLong = access.getDataLong();
+				if (dataLong > 1) {
 					if (listener != null)
 						listener.skippingPredicateNotFresh(uniqueID, access.ii, true, this);
+					invalidatePredicate(deltaCycle, epsCycle);
 					return;
 				}
-				if (access.getDataLong() == 0) {
+				if (dataLong == 0) {
 					if (listener != null)
 						listener.skippingPredicateNotMet(uniqueID, access.ii, true, access.getDataBig(), this);
+					invalidatePredicate(deltaCycle, epsCycle);
 					return;
 				}
 				break;
@@ -261,14 +264,17 @@ public final class LongFrame extends ExecutableFrame {
 				arrayPos = -1;
 				// If data is not from this deltaCycle it was not
 				// updated that means prior predicates failed
-				if (!access.isFresh(deltaCycle)) {
+				long dataLong = access.getDataLong();
+				if (dataLong > 1) {
 					if (listener != null)
-						listener.skippingPredicateNotFresh(uniqueID, access.ii, false, this);
+						listener.skippingPredicateNotFresh(uniqueID, access.ii, true, this);
+					invalidatePredicate(deltaCycle, epsCycle);
 					return;
 				}
-				if (access.getDataLong() != 0) {
+				if (dataLong != 0) {
 					if (listener != null)
 						listener.skippingPredicateNotMet(uniqueID, access.ii, false, access.getDataBig(), this);
+					invalidatePredicate(deltaCycle, epsCycle);
 					return;
 				}
 				break;
@@ -303,6 +309,14 @@ public final class LongFrame extends ExecutableFrame {
 		if (listener != null)
 			listener.writingResult(uniqueID, outputAccess.ii, BigInteger.valueOf(stack[0]), this);
 		return;
+	}
+
+	public void invalidatePredicate(int deltaCycle, int epsCycle) {
+		if (outputAccess.ii.isPred) {
+			if (listener != null)
+				listener.writingResult(uniqueID, outputAccess.ii, BigInteger.valueOf(2), this);
+			outputAccess.setDataLong(2, deltaCycle, epsCycle);
+		}
 	}
 
 	public EncapsulatedAccess getInternal(int off, int arrayPos) {
