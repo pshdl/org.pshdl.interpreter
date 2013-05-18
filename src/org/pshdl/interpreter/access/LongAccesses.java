@@ -44,11 +44,7 @@ public class LongAccesses {
 		public LongAccess(HDLFrameInterpreter hdlFrameInterpreter, InternalInformation name, int accessIndex, boolean prev) {
 			super(hdlFrameInterpreter, name, accessIndex, prev);
 			this.intr = hdlFrameInterpreter;
-			if (name.isPred) {
-				this.shift = 0;
-				this.writeMask = 0x3;
-				this.mask = 0x3;
-			} else if ((name.bitStart == -1) && (name.bitEnd == -1)) {
+			if ((name.bitStart == -1) && (name.bitEnd == -1)) {
 				int width = name.info.width;
 				if (width > 64)
 					throw new IllegalArgumentException("Unsupported bitWidth:" + width);

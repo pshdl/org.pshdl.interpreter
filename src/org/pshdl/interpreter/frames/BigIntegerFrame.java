@@ -267,7 +267,7 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				arrayPos = -1;
 				// If data is not from this deltaCycle it was not
 				// updated that means prior predicates failed
-				if (!access.isFresh(deltaCycle)) {
+				if (!access.isFresh(deltaCycle, epsCycle)) {
 					if (listener != null)
 						listener.skippingPredicateNotFresh(uniqueID, access.ii, true, this);
 					return;
@@ -285,7 +285,7 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				arrayPos = -1;
 				// If data is not from this deltaCycle it was not
 				// updated that means prior predicates failed
-				if (!access.isFresh(deltaCycle)) {
+				if (!access.isFresh(deltaCycle, epsCycle)) {
 					if (listener != null)
 						listener.skippingPredicateNotFresh(uniqueID, access.ii, true, this);
 					return;
