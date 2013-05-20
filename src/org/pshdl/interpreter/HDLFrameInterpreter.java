@@ -145,7 +145,6 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 		int currentIdx = 0;
 		for (int i = 0; i < model.internals.length; i++) {
 			InternalInformation ii = model.internals[i];
-			// System.out.println("HDLFrameInterpreter.createInternals()" + ii);
 			String baseName = ii.baseName(false, true);
 			Integer accessIndex = accessIdxMap.get(baseName);
 			if (accessIndex == null) {
@@ -159,8 +158,6 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 					size *= d;
 				}
 				currentIdx += size;
-				// System.out.println("HDLFrameInterpreter.createInternals()Allocating:"
-				// + size + " for " + baseName);
 				accessIdxMap.put(baseName, accessIndex);
 			}
 			if (((accessIndex & BIG_MARKER) == BIG_MARKER)) {
@@ -315,8 +312,9 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 		List<RegUpdater> updatedRegs = new ArrayList<EncapsulatedAccess.RegUpdater>();
 		do {
 			epsCycle++;
-			if (listener != null)
+			if (listener != null) {
 				listener.startCycle(deltaCycle, epsCycle, this);
+			}
 			regUpdated = false;
 			for (ExecutableFrame ef : frames) {
 				ef.execute(deltaCycle, epsCycle);
@@ -326,8 +324,9 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 				}
 			}
 			if (regUpdated) {
-				if (listener != null)
+				if (listener != null) {
 					listener.copyingRegisterValues(this);
+				}
 				for (RegUpdater ea : updatedRegs) {
 					if (ea.isBig) {
 						big_storage[ea.accessIdx & BIG_MASK] = big_storage[ea.shadowAccessIdx & BIG_MASK];
@@ -338,8 +337,9 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 				updatedRegs.clear();
 			}
 		} while (regUpdated);
-		if (listener != null)
+		if (listener != null) {
 			listener.doneCycle(deltaCycle, this);
+		}
 		System.arraycopy(storage, 0, storage_prev, 0, storage.length);
 		System.arraycopy(big_storage, 0, big_storage_prev, 0, big_storage.length);
 	}
@@ -363,6 +363,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 		throw new IllegalArgumentException("No such index:" + idx);
 	}
 
+	@Override
 	public int getDeltaCycle() {
 		return deltaCycle;
 	}

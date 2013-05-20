@@ -136,8 +136,9 @@ public class Frame implements Serializable {
 			builder.append("constants=").append(Arrays.toString(constants)).append(", ");
 		}
 		String outputName = Integer.toString(outputId);
-		if (em != null)
+		if (em != null) {
 			outputName = em.internals[outputId].toString();
+		}
 		builder.append("outputId=").append(outputName).append(", maxDataWidth=").append(maxDataWidth).append(", maxStackDepth=").append(maxStackDepth).append(", ");
 		builder.append("executionDep=").append(executionDep);
 		builder.append("]");

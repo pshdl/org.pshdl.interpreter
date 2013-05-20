@@ -178,10 +178,15 @@ public class InternalInformation {
 		} else
 			throw new IllegalArgumentException("Name:" + fullName + " is not valid!");
 		this.arrayIdx = new int[arrIdx.size()];
+		boolean isFixed = true;
 		for (int i = 0; i < arrIdx.size(); i++) {
-			arrayIdx[i] = arrIdx.get(i);
+			Integer integer = arrIdx.get(i);
+			arrayIdx[i] = integer;
+			if (integer == -1) {
+				isFixed = false;
+			}
 		}
-		this.fixedArray = true;
+		this.fixedArray = isFixed;
 	}
 
 	/**

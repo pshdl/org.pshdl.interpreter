@@ -58,8 +58,9 @@ public final class LongFrame extends ExecutableFrame {
 		regUpdated = false;
 		long a = 0;
 		long b = 0;
-		if (listener != null)
+		if (listener != null) {
 			listener.startFrame(uniqueID, deltaCycle, epsCycle, this);
+		}
 		for (FastInstruction fi : instructions) {
 			if (fi.popA) {
 				a = stack[stackPos--];
@@ -198,8 +199,9 @@ public final class LongFrame extends ExecutableFrame {
 				EncapsulatedAccess access = getInternal(off, arrayPos);
 				arrayPos = -1;
 				if (access.skip(deltaCycle, epsCycle)) {
-					if (listener != null)
+					if (listener != null) {
 						listener.skippingHandledEdge(uniqueID, access.ii, false, this);
+					}
 					return;
 				}
 				long curr = access.getDataLong();
@@ -207,8 +209,9 @@ public final class LongFrame extends ExecutableFrame {
 				prevAcc.offset = access.offset;
 				long prev = prevAcc.getDataLong();
 				if ((prev != 1) || (curr != 0)) {
-					if (listener != null)
+					if (listener != null) {
 						listener.skippingNotAnEdge(uniqueID, access.ii, false, this);
+					}
 					return;
 				}
 				access.setLastUpdate(deltaCycle, epsCycle);
@@ -220,8 +223,9 @@ public final class LongFrame extends ExecutableFrame {
 				EncapsulatedAccess access = getInternal(off, arrayPos);
 				arrayPos = -1;
 				if (access.skip(deltaCycle, epsCycle)) {
-					if (listener != null)
+					if (listener != null) {
 						listener.skippingHandledEdge(uniqueID, access.ii, true, this);
+					}
 					return;
 				}
 				long curr = access.getDataLong();
@@ -229,8 +233,9 @@ public final class LongFrame extends ExecutableFrame {
 				prevAcc.offset = access.offset;
 				long prev = prevAcc.getDataLong();
 				if ((prev != 0) || (curr != 1)) {
-					if (listener != null)
+					if (listener != null) {
 						listener.skippingNotAnEdge(uniqueID, access.ii, true, this);
+					}
 					return;
 				}
 				access.setLastUpdate(deltaCycle, epsCycle);
@@ -244,13 +249,15 @@ public final class LongFrame extends ExecutableFrame {
 				// If data is not from this deltaCycle it was not
 				// updated that means prior predicates failed
 				if (!access.isFresh(deltaCycle, epsCycle)) {
-					if (listener != null)
+					if (listener != null) {
 						listener.skippingPredicateNotFresh(uniqueID, access.ii, true, this);
+					}
 					return;
 				}
 				if (access.getDataLong() == 0) {
-					if (listener != null)
+					if (listener != null) {
 						listener.skippingPredicateNotMet(uniqueID, access.ii, true, access.getDataBig(), this);
+					}
 					return;
 				}
 				break;
@@ -262,13 +269,15 @@ public final class LongFrame extends ExecutableFrame {
 				// If data is not from this deltaCycle it was not
 				// updated that means prior predicates failed
 				if (!access.isFresh(deltaCycle, epsCycle)) {
-					if (listener != null)
+					if (listener != null) {
 						listener.skippingPredicateNotFresh(uniqueID, access.ii, false, this);
+					}
 					return;
 				}
 				if (access.getDataLong() != 0) {
-					if (listener != null)
+					if (listener != null) {
 						listener.skippingPredicateNotMet(uniqueID, access.ii, false, access.getDataBig(), this);
+					}
 					return;
 				}
 				break;
@@ -300,8 +309,9 @@ public final class LongFrame extends ExecutableFrame {
 			outputAccess.setOffset(writeIndex);
 		}
 		outputAccess.setDataLong(stack[0], deltaCycle, epsCycle);
-		if (listener != null)
+		if (listener != null) {
 			listener.writingResult(uniqueID, outputAccess.ii, BigInteger.valueOf(stack[0]), this);
+		}
 		return;
 	}
 
@@ -310,8 +320,9 @@ public final class LongFrame extends ExecutableFrame {
 		if (arrayPos != -1) {
 			ea.setOffset(writeIndex);
 		}
-		if (listener != null)
+		if (listener != null) {
 			listener.loadingInternal(uniqueID, ea.ii, ea.getDataBig(), this);
+		}
 		return ea;
 	}
 

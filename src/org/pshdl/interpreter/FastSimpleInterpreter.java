@@ -94,11 +94,16 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 		 * Checks whether this data has been updated in this delta cycle
 		 * 
 		 * @param deltaCycle
+		 * @param epsCycle
+		 *            TODO
 		 * @return <code>true</code> if it was calculated in this delta cycle,
 		 *         <code>false</code> otherwise
 		 */
-		public boolean isFresh(int deltaCycle) {
-			return (deltaUpdates[getAccessIndex()] >>> 16l) == deltaCycle;
+		public boolean isFresh(int deltaCycle, int epsCycle) {
+			long raw = deltaUpdates[getAccessIndex()];
+			boolean dc = (raw >>> 16l) == deltaCycle;
+			boolean ec = (raw & 0xFFFF) == epsCycle;
+			return dc && ec;
 		}
 
 		public void setDataLong(long data, int deltaCycle, int epsCycle) {

@@ -269,7 +269,7 @@ public class FastFrame {
 				arrayPos = -1;
 				// If data is not from this deltaCycle it was not
 				// updated that means prior predicates failed
-				if (!access.isFresh(deltaCycle))
+				if (!access.isFresh(deltaCycle, epsCycle))
 					return false;
 				if (access.getDataLong() == 0)
 					return false;
@@ -281,7 +281,7 @@ public class FastFrame {
 				arrayPos = -1;
 				// If data is not from this deltaCycle it was not
 				// updated that means prior predicates failed
-				if (!access.isFresh(deltaCycle))
+				if (!access.isFresh(deltaCycle, epsCycle))
 					return false;
 				if (access.getDataLong() != 0)
 					return false;

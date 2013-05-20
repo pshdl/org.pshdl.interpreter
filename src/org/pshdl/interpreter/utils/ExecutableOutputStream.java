@@ -186,18 +186,19 @@ public class ExecutableOutputStream extends DataOutputStream {
 		int num = val;
 		int t = 0;
 		ByteArrayOutputStream os = new ByteArrayOutputStream(5);
-		while (num > 127) {
+		while ((num > 127) || (num < 0)) {
 			t = 0x80 | (num & 0x7F);
 			os.write(t);
-			num >>= 7;
+			num >>>= 7;
 		}
 		t = num & 0x7F;
 		os.write(t);
+
 		return os.toByteArray();
 	}
 
 	public static void main(String[] args) throws IOException {
-		byte[] varInt = getVarInt(123456);
+		byte[] varInt = getVarInt(-1);
 		for (byte b : varInt) {
 			System.out.printf("%02X", b & 0xFF);
 		}

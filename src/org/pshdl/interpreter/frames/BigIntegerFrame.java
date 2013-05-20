@@ -53,8 +53,9 @@ public final class BigIntegerFrame extends ExecutableFrame {
 		regUpdated = false;
 		int arrayPos = -1;
 		BigInteger b = BigInteger.ZERO, a = BigInteger.ZERO;
-		if (listener != null)
+		if (listener != null) {
 			listener.startFrame(uniqueID, deltaCycle, epsCycle, this);
+		}
 		for (FastInstruction f : instructions) {
 			if (f.popA) {
 				a = stack[stackPos--];
@@ -222,8 +223,9 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				EncapsulatedAccess access = getInternal(off, arrayPos);
 				arrayPos = -1;
 				if (access.skip(deltaCycle, epsCycle)) {
-					if (listener != null)
+					if (listener != null) {
 						listener.skippingHandledEdge(uniqueID, access.ii, false, this);
+					}
 					return;
 				}
 				long curr = access.getDataLong();
@@ -231,8 +233,9 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				prevAccess.offset = access.offset;
 				long prev = prevAccess.getDataLong();
 				if ((prev != 1) || (curr != 0)) {
-					if (listener != null)
+					if (listener != null) {
 						listener.skippingNotAnEdge(uniqueID, access.ii, false, this);
+					}
 					return;
 				}
 				access.setLastUpdate(deltaCycle, epsCycle);
@@ -244,8 +247,9 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				EncapsulatedAccess access = getInternal(off, arrayPos);
 				arrayPos = -1;
 				if (access.skip(deltaCycle, epsCycle)) {
-					if (listener != null)
+					if (listener != null) {
 						listener.skippingHandledEdge(uniqueID, access.ii, true, this);
+					}
 					return;
 				}
 				long curr = access.getDataLong();
@@ -253,8 +257,9 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				prevAccess.offset = access.offset;
 				long prev = prevAccess.getDataLong();
 				if ((prev != 0) || (curr != 1)) {
-					if (listener != null)
+					if (listener != null) {
 						listener.skippingNotAnEdge(uniqueID, access.ii, true, this);
+					}
 					return;
 				}
 				access.setLastUpdate(deltaCycle, epsCycle);
@@ -268,13 +273,15 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				// If data is not from this deltaCycle it was not
 				// updated that means prior predicates failed
 				if (!access.isFresh(deltaCycle, epsCycle)) {
-					if (listener != null)
+					if (listener != null) {
 						listener.skippingPredicateNotFresh(uniqueID, access.ii, true, this);
+					}
 					return;
 				}
 				if (ZERO.equals(access.getDataBig())) {
-					if (listener != null)
+					if (listener != null) {
 						listener.skippingPredicateNotMet(uniqueID, access.ii, true, access.getDataBig(), this);
+					}
 					return;
 				}
 				break;
@@ -286,13 +293,15 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				// If data is not from this deltaCycle it was not
 				// updated that means prior predicates failed
 				if (!access.isFresh(deltaCycle, epsCycle)) {
-					if (listener != null)
+					if (listener != null) {
 						listener.skippingPredicateNotFresh(uniqueID, access.ii, true, this);
+					}
 					return;
 				}
 				if (!ZERO.equals(access.getDataBig())) {
-					if (listener != null)
+					if (listener != null) {
 						listener.skippingPredicateNotMet(uniqueID, access.ii, false, access.getDataBig(), this);
+					}
 					return;
 				}
 				break;
@@ -324,8 +333,9 @@ public final class BigIntegerFrame extends ExecutableFrame {
 			outputAccess.setOffset(writeIndex);
 		}
 		outputAccess.setDataBig(stack[0], deltaCycle, epsCycle);
-		if (listener != null)
+		if (listener != null) {
 			listener.writingResult(uniqueID, outputAccess.ii, stack[0], this);
+		}
 
 		return;
 	}

@@ -114,7 +114,8 @@ public class IOUtil {
 		fos.close();
 	}
 
-	public static void main(String[] args) {
+	@SuppressWarnings("resource")
+	public static void main(String[] args) throws IOException {
 		System.out.println("Model types:");
 		for (ModelTypes type : ModelTypes.values()) {
 			System.out.printf("0x%02x | %-16s|\n", type.getID(), type.name());
@@ -131,5 +132,19 @@ public class IOUtil {
 		for (VariableTypes type : VariableTypes.values()) {
 			System.out.printf("0x%02x | %-16s|\n", type.getID(), type.name());
 		}
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		ExecutableOutputStream os = new ExecutableOutputStream(baos);
+		os.writeInt(ModelTypes.date, 512);
+		// os.writeIntArray(ModelTypes.date, new int[] { 128 });
+		byte[] res = baos.toByteArray();
+		for (byte b : res) {
+			System.out.printf("%02X", b);
+		}
+		System.out.println();
+		ExecutableInputStream is = new ExecutableInputStream(new ByteArrayInputStream(res));
+		System.out.println(is.readVarInt());
+		System.out.println(is.readVarInt());
+		System.out.println(is.readVarInt());
+		// System.out.println(Arrays.toString(is.readIntArray()));
 	}
 }

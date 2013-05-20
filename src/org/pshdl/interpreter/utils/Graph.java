@@ -187,8 +187,9 @@ public class Graph<T> {
 		public void explain(PrintStream out, Cycle current) {
 			if (current.type == null)
 				return;
-			if (current.prior != null)
+			if (current.prior != null) {
 				explain(out, current.prior);
+			}
 
 			out.printf("\t%s (Frame %d) depency type %s\n", model.internals[current.frame.outputId], current.frame.uniqueID, current.type, current.prior.frame.uniqueID);
 
