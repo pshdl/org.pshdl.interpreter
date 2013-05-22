@@ -133,7 +133,7 @@ public class InternalInformation {
 			}
 		}
 		if ((bitStart != -1) && (bitEnd != -1)) {
-			this.actualWidth = (bitEnd - bitStart) + 1;
+			this.actualWidth = (bitStart - bitEnd) + 1;
 			sb.append('{');
 			if (bitEnd == bitStart) {
 				sb.append(bitStart);
@@ -166,7 +166,7 @@ public class InternalInformation {
 			} else if (matcher.group(4) != null) {
 				this.bitStart = Integer.parseInt(matcher.group(3));
 				this.bitEnd = Integer.parseInt(matcher.group(4));
-				this.actualWidth = (bitEnd - bitStart) + 1;
+				this.actualWidth = (bitStart - bitEnd) + 1;
 			} else {
 				this.bitStart = this.bitEnd = Integer.parseInt(matcher.group(3));
 				this.actualWidth = 1;
