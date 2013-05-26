@@ -36,7 +36,7 @@ public final class LongFrame extends ExecutableFrame {
 
 	private final long stack[];
 	private final long constants[];
-	private IDebugListener listener;
+	private final IDebugListener listener;
 
 	public LongFrame(IDebugListener listener, HDLFrameInterpreter fir, Frame f, EncapsulatedAccess internals[], EncapsulatedAccess internals_prev[]) {
 		super(fir, f, internals, internals_prev);
@@ -45,7 +45,7 @@ public final class LongFrame extends ExecutableFrame {
 		this.constants = new long[f.constants.length];
 
 		for (int i = 0; i < f.constants.length; i++) {
-			BigInteger bi = f.constants[i];
+			final BigInteger bi = f.constants[i];
 			constants[i] = bi.longValue();
 		}
 	}
@@ -61,7 +61,7 @@ public final class LongFrame extends ExecutableFrame {
 		if (listener != null) {
 			listener.startFrame(uniqueID, deltaCycle, epsCycle, this);
 		}
-		for (FastInstruction fi : instructions) {
+		for (final FastInstruction fi : instructions) {
 			if (fi.popA) {
 				a = stack[stackPos--];
 			}
@@ -81,14 +81,14 @@ public final class LongFrame extends ExecutableFrame {
 				stack[++stackPos] = ~a;
 				break;
 			case bitAccessSingle:
-				int bit = fi.arg1;
+				final int bit = fi.arg1;
 				long t = a >> bit;
 				t &= 1;
 				stack[++stackPos] = t;
 				break;
 			case bitAccessSingleRange:
-				int highBit = fi.arg1;
-				int lowBit = fi.arg2;
+				final int highBit = fi.arg1;
+				final int lowBit = fi.arg2;
 				long t2 = a >> lowBit;
 				t2 &= (1l << ((highBit - lowBit) + 1)) - 1;
 				stack[++stackPos] = t2;
@@ -100,18 +100,18 @@ public final class LongFrame extends ExecutableFrame {
 				// value is 0xA (-6 int<4>)
 				// cast to int<3> result should be 0xE (-2)
 				// Resize sign correctly to correct size
-				int targetSize = fi.arg1;
+				final int targetSize = fi.arg1;
 				// Throw away unnecessary bits (only needed when
 				// targetsize>currentSize)
-				long temp = a << (64 - targetSize);
+				final long temp = a << (64 - targetSize);
 				stack[++stackPos] = (temp >> (64 - targetSize));
 				break;
 			case cast_uint:
 				// There is nothing special about uints, so we just mask
 				// them
 				if (fi.arg1 != 64) {
-					long mask = (1l << (fi.arg1)) - 1;
-					long res = a & mask;
+					final long mask = (1l << (fi.arg1)) - 1;
+					final long res = a & mask;
 					stack[++stackPos] = res;
 				} else {
 					stack[++stackPos] = a;
@@ -130,7 +130,7 @@ public final class LongFrame extends ExecutableFrame {
 				stack[++stackPos] = 2;
 				break;
 			case constAll1:
-				int width = fi.arg1;
+				final int width = fi.arg1;
 				stack[++stackPos] = (1 << width) - 1;
 				break;
 			case div:
@@ -195,8 +195,8 @@ public final class LongFrame extends ExecutableFrame {
 				stack[++stackPos] = b ^ a;
 				break;
 			case isFallingEdge: {
-				int off = fi.arg1;
-				EncapsulatedAccess access = getInternal(off, arrayPos);
+				final int off = fi.arg1;
+				final EncapsulatedAccess access = getInternal(off, arrayPos);
 				arrayPos = -1;
 				if (access.skip(deltaCycle, epsCycle)) {
 					if (listener != null) {
@@ -204,10 +204,10 @@ public final class LongFrame extends ExecutableFrame {
 					}
 					return;
 				}
-				long curr = access.getDataLong();
-				EncapsulatedAccess prevAcc = internals_prev[off];
+				final long curr = access.getDataLong();
+				final EncapsulatedAccess prevAcc = internals_prev[off];
 				prevAcc.offset = access.offset;
-				long prev = prevAcc.getDataLong();
+				final long prev = prevAcc.getDataLong();
 				if ((prev != 1) || (curr != 0)) {
 					if (listener != null) {
 						listener.skippingNotAnEdge(uniqueID, access.ii, false, this);
@@ -219,8 +219,8 @@ public final class LongFrame extends ExecutableFrame {
 				break;
 			}
 			case isRisingEdge: {
-				int off = fi.arg1;
-				EncapsulatedAccess access = getInternal(off, arrayPos);
+				final int off = fi.arg1;
+				final EncapsulatedAccess access = getInternal(off, arrayPos);
 				arrayPos = -1;
 				if (access.skip(deltaCycle, epsCycle)) {
 					if (listener != null) {
@@ -228,10 +228,10 @@ public final class LongFrame extends ExecutableFrame {
 					}
 					return;
 				}
-				long curr = access.getDataLong();
-				EncapsulatedAccess prevAcc = internals_prev[off];
+				final long curr = access.getDataLong();
+				final EncapsulatedAccess prevAcc = internals_prev[off];
 				prevAcc.offset = access.offset;
-				long prev = prevAcc.getDataLong();
+				final long prev = prevAcc.getDataLong();
 				if ((prev != 0) || (curr != 1)) {
 					if (listener != null) {
 						listener.skippingNotAnEdge(uniqueID, access.ii, true, this);
@@ -243,8 +243,8 @@ public final class LongFrame extends ExecutableFrame {
 				break;
 			}
 			case posPredicate: {
-				int off = fi.arg1;
-				EncapsulatedAccess access = getInternal(off, arrayPos);
+				final int off = fi.arg1;
+				final EncapsulatedAccess access = getInternal(off, arrayPos);
 				arrayPos = -1;
 				// If data is not from this deltaCycle it was not
 				// updated that means prior predicates failed
@@ -263,8 +263,8 @@ public final class LongFrame extends ExecutableFrame {
 				break;
 			}
 			case negPredicate: {
-				int off = fi.arg1;
-				EncapsulatedAccess access = getInternal(off, arrayPos);
+				final int off = fi.arg1;
+				final EncapsulatedAccess access = getInternal(off, arrayPos);
 				arrayPos = -1;
 				// If data is not from this deltaCycle it was not
 				// updated that means prior predicates failed
@@ -286,8 +286,8 @@ public final class LongFrame extends ExecutableFrame {
 				writeIndex[++arrayPos] = (int) a;
 				break;
 			case writeInternal:
-				int off = fi.arg1;
-				EncapsulatedAccess access = getInternal(off, -1);
+				final int off = fi.arg1;
+				final EncapsulatedAccess access = getInternal(off, -1);
 				access.fillDataLong(arrayPos, writeIndex, a, deltaCycle, epsCycle);
 				arrayPos = -1;
 				break;
@@ -316,7 +316,7 @@ public final class LongFrame extends ExecutableFrame {
 	}
 
 	public EncapsulatedAccess getInternal(int off, int arrayPos) {
-		EncapsulatedAccess ea = internals[off];
+		final EncapsulatedAccess ea = internals[off];
 		if (arrayPos != -1) {
 			ea.setOffset(writeIndex);
 		}

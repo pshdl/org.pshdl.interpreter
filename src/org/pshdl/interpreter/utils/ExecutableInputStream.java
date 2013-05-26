@@ -68,29 +68,29 @@ public class ExecutableInputStream extends DataInputStream {
 		type = read();
 		if (type == -1)
 			return null;
-		Enum<?> ne = e.getFromID(type);
+		final Enum<?> ne = e.getFromID(type);
 		len = readVarInt();
-		byte data[] = new byte[len];
+		final byte data[] = new byte[len];
 		readFully(data);
 		return new TLV(ne, data);
 	}
 
 	public ExecutableModel readExecutableModel(boolean verbose) throws IOException {
 		TLV tlv = null;
-		byte[] header = new byte[4];
+		final byte[] header = new byte[4];
 		readFully(header);
 		if (!"PSEX".equals(new String(header)))
 			throw new IllegalArgumentException("Not a PS Executable: Missing or wrong header!");
-		List<InternalInformation> internals = new LinkedList<InternalInformation>();
-		List<Frame> frameList = new LinkedList<Frame>();
-		List<VariableInformation> vars = new LinkedList<VariableInformation>();
+		final List<InternalInformation> internals = new LinkedList<InternalInformation>();
+		final List<Frame> frameList = new LinkedList<Frame>();
+		final List<VariableInformation> vars = new LinkedList<VariableInformation>();
 		while ((tlv = readTLV(ModelTypes.date)) != null) {
-			ModelTypes type = (ModelTypes) tlv.type;
-			ExecutableInputStream ex = new ExecutableInputStream(new ByteArrayInputStream(tlv.value));
+			final ModelTypes type = (ModelTypes) tlv.type;
+			final ExecutableInputStream ex = new ExecutableInputStream(new ByteArrayInputStream(tlv.value));
 			switch (type) {
 			case date:
 				if (verbose) {
-					long readDate = ex.readLong();
+					final long readDate = ex.readLong();
 					System.out.printf("Created on: %tF %<tR\n", new Date(readDate));
 				}
 				break;
@@ -105,13 +105,13 @@ public class ExecutableInputStream extends DataInputStream {
 				break;
 			case maxDataWidth:
 				if (verbose) {
-					int maxDataWidth = ex.readVarInt();
+					final int maxDataWidth = ex.readVarInt();
 					System.out.println("Max data width:" + maxDataWidth);
 				}
 				break;
 			case maxStackDepth:
 				if (verbose) {
-					int maxStackDepth = ex.readVarInt();
+					final int maxStackDepth = ex.readVarInt();
 					System.out.println("Max Stack depth:" + maxStackDepth);
 				}
 				break;
@@ -122,7 +122,7 @@ public class ExecutableInputStream extends DataInputStream {
 				break;
 			case version:
 				if (verbose) {
-					byte[] version = new byte[3];
+					final byte[] version = new byte[3];
 					ex.readFully(version);
 					System.out.printf("Compiled with version: %d.%d.%d\n", version[0], version[1], version[2]);
 				}
@@ -133,10 +133,10 @@ public class ExecutableInputStream extends DataInputStream {
 			}
 			ex.close();
 		}
-		Frame[] frames = frameList.toArray(new Frame[frameList.size()]);
-		InternalInformation[] iis = internals.toArray(new InternalInformation[internals.size()]);
-		VariableInformation[] fvars = vars.toArray(new VariableInformation[vars.size()]);
-		ExecutableModel executableModel = new ExecutableModel(frames, iis, fvars);
+		final Frame[] frames = frameList.toArray(new Frame[frameList.size()]);
+		final InternalInformation[] iis = internals.toArray(new InternalInformation[internals.size()]);
+		final VariableInformation[] fvars = vars.toArray(new VariableInformation[vars.size()]);
+		final ExecutableModel executableModel = new ExecutableModel(frames, iis, fvars);
 		// System.out.println("ExecutableInputStream.readExecutableModel()" +
 		// executableModel);
 		return executableModel;
@@ -151,14 +151,14 @@ public class ExecutableInputStream extends DataInputStream {
 		int width = -1;
 		int dimensions[] = new int[0];
 		while ((tlv = readTLV(VariableTypes.name)) != null) {
-			ExecutableInputStream ex = new ExecutableInputStream(new ByteArrayInputStream(tlv.value));
-			VariableTypes it = (VariableTypes) tlv.type;
+			final ExecutableInputStream ex = new ExecutableInputStream(new ByteArrayInputStream(tlv.value));
+			final VariableTypes it = (VariableTypes) tlv.type;
 			switch (it) {
 			case dimensions:
 				dimensions = ex.readIntArray();
 				break;
 			case flags:
-				int flags = ex.readVarInt();
+				final int flags = ex.readVarInt();
 				isRegister = (flags & IOUtil.REG_FLAG) == IOUtil.REG_FLAG;
 				if ((flags & IOUtil.IO_FLAG) == IOUtil.IO_FLAG) {
 					dir = Direction.INOUT;
@@ -186,7 +186,7 @@ public class ExecutableInputStream extends DataInputStream {
 			}
 			ex.close();
 		}
-		VariableInformation res = new VariableInformation(dir, name, width, type, isRegister, dimensions);
+		final VariableInformation res = new VariableInformation(dir, name, width, type, isRegister, dimensions);
 		return res;
 	}
 
@@ -197,8 +197,8 @@ public class ExecutableInputStream extends DataInputStream {
 		int[] arrayIdx = new int[0];
 		int varIdx = -1;
 		while ((tlv = readTLV(InternalTypes.flags)) != null) {
-			ExecutableInputStream ex = new ExecutableInputStream(new ByteArrayInputStream(tlv.value));
-			InternalTypes it = (InternalTypes) tlv.type;
+			final ExecutableInputStream ex = new ExecutableInputStream(new ByteArrayInputStream(tlv.value));
+			final InternalTypes it = (InternalTypes) tlv.type;
 			switch (it) {
 			case varIdx:
 				varIdx = ex.readVarInt();
@@ -218,9 +218,9 @@ public class ExecutableInputStream extends DataInputStream {
 			}
 			ex.close();
 		}
-		boolean isPred = (flags & IOUtil.PRED_FLAG) == IOUtil.PRED_FLAG;
-		boolean isReg = (flags & IOUtil.REG_FLAG) == IOUtil.REG_FLAG;
-		InternalInformation ii = new InternalInformation(isReg, isPred, bitStart, bitEnd, arrayIdx, varInfos.get(varIdx));
+		final boolean isPred = (flags & IOUtil.PRED_FLAG) == IOUtil.PRED_FLAG;
+		final boolean isReg = (flags & IOUtil.REG_FLAG) == IOUtil.REG_FLAG;
+		final InternalInformation ii = new InternalInformation(isReg, isPred, bitStart, bitEnd, arrayIdx, varInfos.get(varIdx));
 		return ii;
 	}
 
@@ -236,14 +236,14 @@ public class ExecutableInputStream extends DataInputStream {
 		FastInstruction[] instructions = new FastInstruction[0];
 		int[] intDeps = new int[0];
 		while ((tlv = readTLV(FrameTypes.constants)) != null) {
-			ExecutableInputStream ex = new ExecutableInputStream(new ByteArrayInputStream(tlv.value));
-			FrameTypes type = (FrameTypes) tlv.type;
+			final ExecutableInputStream ex = new ExecutableInputStream(new ByteArrayInputStream(tlv.value));
+			final FrameTypes type = (FrameTypes) tlv.type;
 			switch (type) {
 			case constants:
-				String[] strings = ex.readStringArray();
+				final String[] strings = ex.readStringArray();
 				consts = new BigInteger[strings.length];
 				for (int i = 0; i < strings.length; i++) {
-					String string = strings[i];
+					final String string = strings[i];
 					consts[i] = new BigInteger(string, 16);
 				}
 				break;
@@ -286,19 +286,19 @@ public class ExecutableInputStream extends DataInputStream {
 			}
 			ex.close();
 		}
-		Frame frame = new Frame(instructions, intDeps, predPosDep, predNegDep, edgePosDep, edgeNegDep, outputID, maxDataWidth, maxStackDepth, consts, uniqueID, false);
+		final Frame frame = new Frame(instructions, intDeps, predPosDep, predNegDep, edgePosDep, edgeNegDep, outputID, maxDataWidth, maxStackDepth, consts, uniqueID, false);
 		frame.executionDep = executionDep;
 		return frame;
 	}
 
 	public FastInstruction[] readInstructions(TLV tlv) throws IOException {
-		ExecutableInputStream ex = new ExecutableInputStream(new ByteArrayInputStream(tlv.value));
+		final ExecutableInputStream ex = new ExecutableInputStream(new ByteArrayInputStream(tlv.value));
 		FastInstruction[] instructions;
-		Instruction[] values = Instruction.values();
-		List<FastInstruction> instr = new LinkedList<FastInstruction>();
+		final Instruction[] values = Instruction.values();
+		final List<FastInstruction> instr = new LinkedList<FastInstruction>();
 		int read = -1;
 		while ((read = ex.read()) != -1) {
-			Instruction instruction = values[read & 0x3F];
+			final Instruction instruction = values[read & 0x3F];
 			int arg1 = 0;
 			int arg2 = 0;
 			if (instruction.argCount > 0) {
@@ -315,8 +315,8 @@ public class ExecutableInputStream extends DataInputStream {
 	}
 
 	public String[] readStringArray() throws IOException {
-		int amount = readVarInt();
-		String[] res = new String[amount];
+		final int amount = readVarInt();
+		final String[] res = new String[amount];
 		for (int i = 0; i < amount; i++) {
 			res[i] = readSubString();
 		}
@@ -324,15 +324,15 @@ public class ExecutableInputStream extends DataInputStream {
 	}
 
 	public String readSubString() throws IOException {
-		int len = readVarInt();
-		byte[] buf = new byte[len];
+		final int len = readVarInt();
+		final byte[] buf = new byte[len];
 		readFully(buf);
 		return new String(buf, "UTF-8");
 	}
 
 	public int[] readIntArray() throws IOException {
-		int amount = readVarInt();
-		int res[] = new int[amount];
+		final int amount = readVarInt();
+		final int res[] = new int[amount];
 		for (int i = 0; i < amount; i++) {
 			res[i] = readVarInt();
 		}

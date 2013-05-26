@@ -60,7 +60,7 @@ public abstract class ExecutableFrame {
 	public abstract void execute(int deltaCycle, int epsCycle);
 
 	public static void main(String[] args) {
-		for (Instruction i : Instruction.values()) {
+		for (final Instruction i : Instruction.values()) {
 			System.out.println("protected static final int " + i.name() + "=" + i.ordinal() + ";");
 		}
 	}

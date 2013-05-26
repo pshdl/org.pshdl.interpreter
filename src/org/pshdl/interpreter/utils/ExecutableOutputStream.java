@@ -54,24 +54,24 @@ public class ExecutableOutputStream extends DataOutputStream {
 		}
 		writeInt(ModelTypes.maxDataWidth, model.maxDataWidth);
 		writeInt(ModelTypes.maxStackDepth, model.maxStackDepth);
-		Map<String, Integer> varIdx = new HashMap<String, Integer>();
-		VariableInformation[] variables = model.variables;
+		final Map<String, Integer> varIdx = new HashMap<String, Integer>();
+		final VariableInformation[] variables = model.variables;
 		for (int i = 0; i < variables.length; i++) {
-			VariableInformation vi = variables[i];
+			final VariableInformation vi = variables[i];
 			varIdx.put(vi.name, i);
 			writeVariable(vi);
 		}
-		for (InternalInformation ii : model.internals) {
+		for (final InternalInformation ii : model.internals) {
 			writeInternal(ii, varIdx.get(ii.info.name));
 		}
-		for (Frame f : model.frames) {
+		for (final Frame f : model.frames) {
 			writeFrame(f);
 		}
 	}
 
 	public void writeVariable(VariableInformation vi) throws IOException {
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		ExecutableOutputStream obj = new ExecutableOutputStream(baos);
+		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		final ExecutableOutputStream obj = new ExecutableOutputStream(baos);
 		obj.writeString(VariableTypes.name, vi.name);
 		obj.writeInt(VariableTypes.width, vi.width);
 		int flags = 0;
@@ -109,8 +109,8 @@ public class ExecutableOutputStream extends DataOutputStream {
 	}
 
 	public void writeInternal(InternalInformation ii, int varIdx) throws IOException {
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		ExecutableOutputStream obj = new ExecutableOutputStream(baos);
+		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		final ExecutableOutputStream obj = new ExecutableOutputStream(baos);
 		obj.writeInt(InternalTypes.varIdx, varIdx);
 		if (ii.bitStart != -1) {
 			obj.writeInt(InternalTypes.bitStart, ii.bitStart);
@@ -127,8 +127,8 @@ public class ExecutableOutputStream extends DataOutputStream {
 	}
 
 	public void writeFrame(Frame f) throws IOException {
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		ExecutableOutputStream obj = new ExecutableOutputStream(baos);
+		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		final ExecutableOutputStream obj = new ExecutableOutputStream(baos);
 		obj.writeInt(FrameTypes.uniqueID, f.uniqueID);
 		obj.writeInt(FrameTypes.outputID, f.outputId);
 		obj.writeIntArray(FrameTypes.internalDep, f.internalDependencies);
@@ -148,7 +148,7 @@ public class ExecutableOutputStream extends DataOutputStream {
 		if (f.executionDep != -1) {
 			obj.writeInt(FrameTypes.executionDep, f.executionDep);
 		}
-		String[] consts = new String[f.constants.length];
+		final String[] consts = new String[f.constants.length];
 		for (int i = 0; i < consts.length; i++) {
 			consts[i] = f.constants[i].toString(16); // Represent as hex String
 		}
@@ -162,8 +162,8 @@ public class ExecutableOutputStream extends DataOutputStream {
 	}
 
 	private byte[] getInstructions(FastInstruction[] instructions) throws IOException {
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		for (FastInstruction fi : instructions) {
+		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		for (final FastInstruction fi : instructions) {
 			baos.write(fi.inst.toByte());
 			if (fi.inst.argCount > 0) {
 				baos.write(getVarInt(fi.arg1));
@@ -185,7 +185,7 @@ public class ExecutableOutputStream extends DataOutputStream {
 	public static byte[] getVarInt(int val) throws IOException {
 		int num = val;
 		int t = 0;
-		ByteArrayOutputStream os = new ByteArrayOutputStream(5);
+		final ByteArrayOutputStream os = new ByteArrayOutputStream(5);
 		while ((num > 127) || (num < 0)) {
 			t = 0x80 | (num & 0x7F);
 			os.write(t);
@@ -198,36 +198,36 @@ public class ExecutableOutputStream extends DataOutputStream {
 	}
 
 	public static void main(String[] args) throws IOException {
-		byte[] varInt = getVarInt(-1);
-		for (byte b : varInt) {
+		final byte[] varInt = getVarInt(-1);
+		for (final byte b : varInt) {
 			System.out.printf("%02X", b & 0xFF);
 		}
 	}
 
 	public void writeIntArray(IDType<?> e, int... data) throws IOException {
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		for (int i : data) {
+		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		for (final int i : data) {
 			baos.write(getVarInt(i));
 		}
-		byte[] lenHeader = getVarInt(data.length);
-		byte[] varIntArray = baos.toByteArray();
+		final byte[] lenHeader = getVarInt(data.length);
+		final byte[] varIntArray = baos.toByteArray();
 		writeHeader(e, varIntArray.length + lenHeader.length);
 		write(lenHeader); // Write the number of elements
 		write(varIntArray); // Write all VarInts
 	}
 
 	public void writeString(IDType<?> e, String data) throws IOException {
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		byte[] bytes = data.getBytes("UTF-8");
+		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		final byte[] bytes = data.getBytes("UTF-8");
 		baos.write(bytes);
 		writeByteArray(e, data.getBytes("UTF-8"));
 	}
 
 	public void writeStringArray(IDType<?> e, String... data) throws IOException {
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		baos.write(getVarInt(data.length));
-		for (String string : data) {
-			byte[] bytes = string.getBytes("UTF-8");
+		for (final String string : data) {
+			final byte[] bytes = string.getBytes("UTF-8");
 			baos.write(getVarInt(bytes.length));
 			baos.write(bytes);
 		}
@@ -240,7 +240,7 @@ public class ExecutableOutputStream extends DataOutputStream {
 	}
 
 	public void writeByteArray(IDType<?> e, byte[] bytes) throws IOException {
-		int len = bytes.length;
+		final int len = bytes.length;
 		writeHeader(e, len);
 		write(bytes, 0, len); // Write data
 	}

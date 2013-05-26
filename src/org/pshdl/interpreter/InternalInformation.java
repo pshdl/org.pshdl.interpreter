@@ -118,17 +118,17 @@ public class InternalInformation {
 		this.bitEnd = bitEnd;
 		this.arrayIdx = arrayIdx;
 		boolean isFixed = true;
-		for (int element : arrayIdx) {
+		for (final int element : arrayIdx) {
 			if (element == -1) {
 				isFixed = false;
 			}
 		}
 		this.fixedArray = isFixed;
 		this.info = info;
-		StringBuilder sb = new StringBuilder();
+		final StringBuilder sb = new StringBuilder();
 		sb.append(info.name);
 		if (isFixed) {
-			for (int idx : arrayIdx) {
+			for (final int idx : arrayIdx) {
 				sb.append('[').append(idx).append(']');
 			}
 		}
@@ -156,8 +156,8 @@ public class InternalInformation {
 		this.isShadowReg = fullName.endsWith(REG_POSTFIX);
 		this.isPred = fullName.startsWith(PRED_PREFIX);
 		this.info = info;
-		Matcher matcher = aiFormatName.matcher(fullName);
-		List<Integer> arrIdx = new LinkedList<Integer>();
+		final Matcher matcher = aiFormatName.matcher(fullName);
+		final List<Integer> arrIdx = new LinkedList<Integer>();
 		if (matcher.matches()) {
 			if (matcher.group(3) == null) {
 				this.bitStart = -1;
@@ -171,7 +171,7 @@ public class InternalInformation {
 				this.bitStart = this.bitEnd = Integer.parseInt(matcher.group(3));
 				this.actualWidth = 1;
 			}
-			Matcher m = array.matcher(matcher.group(2));
+			final Matcher m = array.matcher(matcher.group(2));
 			while (m.find()) {
 				arrIdx.add(Integer.parseInt(m.group(1)));
 			}
@@ -180,7 +180,7 @@ public class InternalInformation {
 		this.arrayIdx = new int[arrIdx.size()];
 		boolean isFixed = true;
 		for (int i = 0; i < arrIdx.size(); i++) {
-			Integer integer = arrIdx.get(i);
+			final Integer integer = arrIdx.get(i);
 			arrayIdx[i] = integer;
 			if (integer == -1) {
 				isFixed = false;
@@ -202,10 +202,10 @@ public class InternalInformation {
 	 *         potentially contain {@value #PRED_PREFIX}
 	 */
 	public String baseName(boolean includeArray, boolean includeReg) {
-		StringBuilder sb = new StringBuilder();
+		final StringBuilder sb = new StringBuilder();
 		sb.append(info.name);
 		if (includeArray && fixedArray) {
-			for (int idx : arrayIdx) {
+			for (final int idx : arrayIdx) {
 				sb.append('[').append(idx).append(']');
 			}
 		}
@@ -230,7 +230,7 @@ public class InternalInformation {
 	 *         potentially contain {@value #PRED_PREFIX}
 	 */
 	public static String getBaseName(String name, boolean includeArray, boolean includeReg) {
-		Matcher matcher = aiFormatName.matcher(name);
+		final Matcher matcher = aiFormatName.matcher(name);
 		if (matcher.matches()) {
 			String baseName = matcher.group(1);
 			if (includeArray) {

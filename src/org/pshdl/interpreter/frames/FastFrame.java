@@ -64,8 +64,8 @@ public class FastFrame {
 	public FastFrame(FastSimpleInterpreter fir, Frame f, boolean disableEdge) {
 		this.stack = new long[f.maxStackDepth];
 		this.constants = new long[f.constants.length];
-		List<FastInstruction> fi = new LinkedList<FastInstruction>();
-		for (FastInstruction fast : f.instructions) {
+		final List<FastInstruction> fi = new LinkedList<FastInstruction>();
+		for (final FastInstruction fast : f.instructions) {
 			if ((fast.inst == Instruction.isRisingEdge) || (fast.inst == Instruction.isFallingEdge)) {
 				if (!disableEdge) {
 					fi.add(fast);
@@ -78,7 +78,7 @@ public class FastFrame {
 		}
 		this.instructions = fi.toArray(new FastInstruction[fi.size()]);
 		for (int i = 0; i < f.constants.length; i++) {
-			BigInteger bi = f.constants[i];
+			final BigInteger bi = f.constants[i];
 			constants[i] = bi.longValue();
 		}
 		this.internals = fir.internals;
@@ -95,7 +95,7 @@ public class FastFrame {
 		}
 		long a = 0;
 		long b = 0;
-		for (FastInstruction fi : instructions) {
+		for (final FastInstruction fi : instructions) {
 			if (fi.popA) {
 				a = stack[stackPos--];
 			}
@@ -115,14 +115,14 @@ public class FastFrame {
 				stack[++stackPos] = ~a;
 				break;
 			case bitAccessSingle:
-				int bit = fi.arg1;
+				final int bit = fi.arg1;
 				long t = a >> bit;
 				t &= 1;
 				stack[++stackPos] = t;
 				break;
 			case bitAccessSingleRange:
-				int highBit = fi.arg1;
-				int lowBit = fi.arg2;
+				final int highBit = fi.arg1;
+				final int lowBit = fi.arg2;
 				long t2 = a >> lowBit;
 				t2 &= (1l << ((highBit - lowBit) + 1)) - 1;
 				stack[++stackPos] = t2;
@@ -134,17 +134,17 @@ public class FastFrame {
 				// value is 0xA (-6 int<4>)
 				// cast to int<3> result should be 0xE (-2)
 				// Resize sign correctly to correct size
-				int targetSize = fi.arg1;
+				final int targetSize = fi.arg1;
 				// Throw away unnecessary bits (only needed when
 				// targetsize>currentSize)
-				long temp = a << (64 - targetSize);
+				final long temp = a << (64 - targetSize);
 				stack[++stackPos] = (temp >> (64 - targetSize));
 				break;
 			case cast_uint:
 				// There is nothing special about uints, so we just mask
 				// them
 				if (fi.arg1 != 64) {
-					long mask = (1l << (fi.arg1)) - 1;
+					final long mask = (1l << (fi.arg1)) - 1;
 					stack[++stackPos] = a & mask;
 				} else {
 					stack[++stackPos] = a;
@@ -163,7 +163,7 @@ public class FastFrame {
 				stack[++stackPos] = 2;
 				break;
 			case constAll1:
-				int width = fi.arg1;
+				final int width = fi.arg1;
 				stack[++stackPos] = (1 << width) - 1;
 				break;
 			case div:
@@ -228,16 +228,16 @@ public class FastFrame {
 				stack[++stackPos] = b ^ a;
 				break;
 			case isFallingEdge: {
-				int off = fi.arg1;
-				LongAccess access = getInternal(off, arrayPos);
+				final int off = fi.arg1;
+				final LongAccess access = getInternal(off, arrayPos);
 				arrayPos = -1;
 				if (access.skip(deltaCycle, epsCycle))
 					return false;
-				long curr = access.getDataLong();
+				final long curr = access.getDataLong();
 				if (!disableEdge) {
-					LongAccess prevAcc = internals_prev[off];
+					final LongAccess prevAcc = internals_prev[off];
 					prevAcc.offset = access.offset;
-					long prev = prevAcc.getDataLong();
+					final long prev = prevAcc.getDataLong();
 					if ((prev != 1) || (curr != 0))
 						return false;
 				}
@@ -246,16 +246,16 @@ public class FastFrame {
 				break;
 			}
 			case isRisingEdge: {
-				int off = fi.arg1;
-				LongAccess access = getInternal(off, arrayPos);
+				final int off = fi.arg1;
+				final LongAccess access = getInternal(off, arrayPos);
 				arrayPos = -1;
 				if (access.skip(deltaCycle, epsCycle))
 					return false;
 				if (!disableEdge) {
-					long curr = access.getDataLong();
-					LongAccess prevAcc = internals_prev[off];
+					final long curr = access.getDataLong();
+					final LongAccess prevAcc = internals_prev[off];
 					prevAcc.offset = access.offset;
-					long prev = prevAcc.getDataLong();
+					final long prev = prevAcc.getDataLong();
 					if ((prev != 0) || (curr != 1))
 						return false;
 				}
@@ -264,8 +264,8 @@ public class FastFrame {
 				break;
 			}
 			case posPredicate: {
-				int off = fi.arg1;
-				LongAccess access = getInternal(off, arrayPos);
+				final int off = fi.arg1;
+				final LongAccess access = getInternal(off, arrayPos);
 				arrayPos = -1;
 				// If data is not from this deltaCycle it was not
 				// updated that means prior predicates failed
@@ -276,8 +276,8 @@ public class FastFrame {
 				break;
 			}
 			case negPredicate: {
-				int off = fi.arg1;
-				LongAccess access = getInternal(off, arrayPos);
+				final int off = fi.arg1;
+				final LongAccess access = getInternal(off, arrayPos);
 				arrayPos = -1;
 				// If data is not from this deltaCycle it was not
 				// updated that means prior predicates failed
@@ -291,8 +291,8 @@ public class FastFrame {
 				writeIndex[++arrayPos] = (int) a;
 				break;
 			case writeInternal:
-				int off = fi.arg1;
-				LongAccess access = getInternal(off, -1);
+				final int off = fi.arg1;
+				final LongAccess access = getInternal(off, -1);
 				access.fillDataLong(arrayPos, writeIndex, a, deltaCycle, epsCycle);
 				arrayPos = -1;
 				break;
@@ -307,7 +307,7 @@ public class FastFrame {
 	}
 
 	public LongAccess getInternal(int off, int arrayPos) {
-		LongAccess ea = internals[off];
+		final LongAccess ea = internals[off];
 		if (arrayPos != -1) {
 			ea.setOffset(writeIndex);
 		}

@@ -50,7 +50,7 @@ public class BigAccesses {
 
 		@Override
 		public void setDataLong(long dataIn, int deltaCycle, int epsCycle) {
-			BigInteger data = BigInteger.valueOf(dataIn);
+			final BigInteger data = BigInteger.valueOf(dataIn);
 			setDataBig(data, deltaCycle, epsCycle);
 		}
 
@@ -68,7 +68,7 @@ public class BigAccesses {
 
 		@Override
 		public String toString() {
-			StringBuilder builder = new StringBuilder();
+			final StringBuilder builder = new StringBuilder();
 			builder.append("DirectBigAccess [name=").append(ii).append(", accessIndex=").append(getAccessIndex()).append(", prev=").append(prev).append("]");
 			return builder.toString();
 		}
@@ -88,7 +88,7 @@ public class BigAccesses {
 
 		@Override
 		public void setDataBig(BigInteger data, int deltaCycle, int epsCycle) {
-			BigInteger initial = this.hdlFrameInterpreter.big_storage[getAccessIndex()];
+			final BigInteger initial = this.hdlFrameInterpreter.big_storage[getAccessIndex()];
 			if (BigInteger.ZERO.equals(data.and(BigInteger.ONE))) {
 				this.hdlFrameInterpreter.big_storage[getAccessIndex()] = initial.clearBit(bit);
 			} else {
@@ -101,7 +101,7 @@ public class BigAccesses {
 
 		@Override
 		public void setDataLong(long dataIn, int deltaCycle, int epsCycle) {
-			BigInteger data = BigInteger.valueOf(dataIn);
+			final BigInteger data = BigInteger.valueOf(dataIn);
 			setDataBig(data, deltaCycle, epsCycle);
 		}
 
@@ -119,7 +119,7 @@ public class BigAccesses {
 
 		@Override
 		public String toString() {
-			StringBuilder builder = new StringBuilder();
+			final StringBuilder builder = new StringBuilder();
 			builder.append(ii).append(" SingleBigAccess [bit=").append(bit).append("]");
 			return builder.toString();
 		}
@@ -128,9 +128,9 @@ public class BigAccesses {
 
 	private static final class RangeBigAccess extends EncapsulatedAccess {
 		private final HDLFrameInterpreter hdlFrameInterpreter;
-		private BigInteger writeMask;
-		private BigInteger mask;
-		private int shift;
+		private final BigInteger writeMask;
+		private final BigInteger mask;
+		private final int shift;
 
 		public RangeBigAccess(HDLFrameInterpreter hdlFrameInterpreter, InternalInformation name, int accessIndex, boolean prev) {
 			super(hdlFrameInterpreter, name, accessIndex, prev);
@@ -142,8 +142,8 @@ public class BigAccesses {
 
 		@Override
 		public void setDataBig(BigInteger data, int deltaCycle, int epsCycle) {
-			BigInteger initial = this.hdlFrameInterpreter.big_storage[getAccessIndex()];
-			BigInteger current = initial.and(writeMask);
+			final BigInteger initial = this.hdlFrameInterpreter.big_storage[getAccessIndex()];
+			final BigInteger current = initial.and(writeMask);
 			this.hdlFrameInterpreter.big_storage[getAccessIndex()] = current.or(data.and(mask).shiftLeft(shift));
 			if (ii.isPred) {
 				setLastUpdate(deltaCycle, epsCycle);
@@ -152,7 +152,7 @@ public class BigAccesses {
 
 		@Override
 		public void setDataLong(long dataIn, int deltaCycle, int epsCycle) {
-			BigInteger data = BigInteger.valueOf(dataIn);
+			final BigInteger data = BigInteger.valueOf(dataIn);
 			setDataBig(data, deltaCycle, epsCycle);
 		}
 

@@ -121,11 +121,11 @@ public class Frame implements Serializable {
 	}
 
 	public String toString(ExecutableModel em) {
-		StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder();
 		builder.append("Frame [").append(uniqueID).append(' ');
 		if (instructions != null) {
 			builder.append("instructions=");
-			for (FastInstruction fi : instructions) {
+			for (final FastInstruction fi : instructions) {
 				builder.append(fi.toString(em)).append(',');
 			}
 		}

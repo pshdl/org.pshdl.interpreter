@@ -45,7 +45,7 @@ public class LongAccesses {
 			super(hdlFrameInterpreter, name, accessIndex, prev);
 			this.intr = hdlFrameInterpreter;
 			if ((name.bitStart == -1) && (name.bitEnd == -1)) {
-				int width = name.info.width;
+				final int width = name.info.width;
 				if (width > 64)
 					throw new IllegalArgumentException("Unsupported bitWidth:" + width);
 				this.shift = 0;
@@ -56,7 +56,7 @@ public class LongAccesses {
 				}
 				this.writeMask = 0;
 			} else if (name.bitEnd != name.bitStart) {
-				int actualWidth = (name.bitStart - name.bitEnd) + 1;
+				final int actualWidth = (name.bitStart - name.bitEnd) + 1;
 				if (actualWidth > 64)
 					throw new IllegalArgumentException("Unsupported bitWidth:" + actualWidth);
 				this.shift = name.bitEnd;
@@ -71,7 +71,7 @@ public class LongAccesses {
 
 		@Override
 		public void setDataBig(BigInteger data, int deltaCycle, int epsCycle) {
-			long current = intr.storage[getAccessIndex()] & writeMask;
+			final long current = intr.storage[getAccessIndex()] & writeMask;
 			this.intr.storage[getAccessIndex()] = current | ((data.longValue() & mask) << shift);
 			if (ii.isPred) {
 				setLastUpdate(deltaCycle, epsCycle);
@@ -80,7 +80,7 @@ public class LongAccesses {
 
 		@Override
 		public void setDataLong(long data, int deltaCycle, int epsCycle) {
-			long current = intr.storage[getAccessIndex()] & writeMask;
+			final long current = intr.storage[getAccessIndex()] & writeMask;
 			this.intr.storage[getAccessIndex()] = current | ((data & mask) << shift);
 			if (ii.isPred) {
 				setLastUpdate(deltaCycle, epsCycle);
@@ -96,16 +96,16 @@ public class LongAccesses {
 
 		@Override
 		public long getDataLong() {
-			int accessIndex = getAccessIndex();
+			final int accessIndex = getAccessIndex();
 			if (prev)
 				return (intr.storage_prev[accessIndex] >> shift) & mask;
-			long rawVal = intr.storage[accessIndex];
+			final long rawVal = intr.storage[accessIndex];
 			return (rawVal >> shift) & mask;
 		}
 
 		@Override
 		public String toString() {
-			StringBuilder builder = new StringBuilder();
+			final StringBuilder builder = new StringBuilder();
 			builder.append("LongAccess [shift=").append(shift).append(", mask=").append(Long.toHexString(mask)).append(", writeMask=").append(Long.toHexString(writeMask))
 					.append(", name=").append(ii).append(", accessIndex=").append(getAccessIndex()).append(", prev=").append(prev).append("]");
 			return builder.toString();

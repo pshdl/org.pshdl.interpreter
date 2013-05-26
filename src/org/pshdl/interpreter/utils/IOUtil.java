@@ -102,14 +102,14 @@ public class IOUtil {
 	}
 
 	public static ExecutableModel readExecutableModel(File source, boolean verbose) throws IOException {
-		ExecutableInputStream fis = new ExecutableInputStream(new FileInputStream(source));
-		ExecutableModel res = fis.readExecutableModel(verbose);
+		final ExecutableInputStream fis = new ExecutableInputStream(new FileInputStream(source));
+		final ExecutableModel res = fis.readExecutableModel(verbose);
 		fis.close();
 		return res;
 	}
 
 	public static void writeExecutableModel(String source, long date, ExecutableModel model, File target) throws IOException {
-		ExecutableOutputStream fos = new ExecutableOutputStream(new FileOutputStream(target));
+		final ExecutableOutputStream fos = new ExecutableOutputStream(new FileOutputStream(target));
 		fos.writeExecutableModel(source, date, model);
 		fos.close();
 	}
@@ -117,31 +117,31 @@ public class IOUtil {
 	@SuppressWarnings("resource")
 	public static void main(String[] args) throws IOException {
 		System.out.println("Model types:");
-		for (ModelTypes type : ModelTypes.values()) {
+		for (final ModelTypes type : ModelTypes.values()) {
 			System.out.printf("0x%02x | %-16s|\n", type.getID(), type.name());
 		}
 		System.out.println("Frame types:");
-		for (FrameTypes type : FrameTypes.values()) {
+		for (final FrameTypes type : FrameTypes.values()) {
 			System.out.printf("0x%02x | %-16s|\n", type.getID(), type.name());
 		}
 		System.out.println("Internal types:");
-		for (InternalTypes type : InternalTypes.values()) {
+		for (final InternalTypes type : InternalTypes.values()) {
 			System.out.printf("0x%02x | %-16s|\n", type.getID(), type.name());
 		}
 		System.out.println("Variable types:");
-		for (VariableTypes type : VariableTypes.values()) {
+		for (final VariableTypes type : VariableTypes.values()) {
 			System.out.printf("0x%02x | %-16s|\n", type.getID(), type.name());
 		}
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		ExecutableOutputStream os = new ExecutableOutputStream(baos);
+		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		final ExecutableOutputStream os = new ExecutableOutputStream(baos);
 		os.writeInt(ModelTypes.date, 512);
 		// os.writeIntArray(ModelTypes.date, new int[] { 128 });
-		byte[] res = baos.toByteArray();
-		for (byte b : res) {
+		final byte[] res = baos.toByteArray();
+		for (final byte b : res) {
 			System.out.printf("%02X", b);
 		}
 		System.out.println();
-		ExecutableInputStream is = new ExecutableInputStream(new ByteArrayInputStream(res));
+		final ExecutableInputStream is = new ExecutableInputStream(new ByteArrayInputStream(res));
 		System.out.println(is.readVarInt());
 		System.out.println(is.readVarInt());
 		System.out.println(is.readVarInt());

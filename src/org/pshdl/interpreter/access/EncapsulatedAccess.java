@@ -81,8 +81,8 @@ public abstract class EncapsulatedAccess {
 	 * @return
 	 */
 	public boolean skip(int deltaCycle, int epsCycle) {
-		long local = intr.deltaUpdates[getAccessIndex()];
-		long dc = local >>> 16l;
+		final long local = intr.deltaUpdates[getAccessIndex()];
+		final long dc = local >>> 16l;
 		// Register was updated in previous delta cylce, that is ok
 		if (dc < deltaCycle)
 			return false;
@@ -99,7 +99,7 @@ public abstract class EncapsulatedAccess {
 		if (off.length == 0)
 			return;
 		for (int i = 0; i < dims.length; i++) {
-			int o = off[i];
+			final int o = off[i];
 			offset += o * dims[i];
 		}
 	}
@@ -114,9 +114,9 @@ public abstract class EncapsulatedAccess {
 	 *         <code>false</code> otherwise
 	 */
 	public boolean isFresh(int deltaCycle, int epsCycle) {
-		long raw = intr.deltaUpdates[getAccessIndex()];
-		boolean dc = (raw >>> 16l) == deltaCycle;
-		boolean ec = (raw & 0xFFFF) == epsCycle;
+		final long raw = intr.deltaUpdates[getAccessIndex()];
+		final boolean dc = (raw >>> 16l) == deltaCycle;
+		final boolean ec = (raw & 0xFFFF) == epsCycle;
 		return dc && ec;
 	}
 
@@ -139,11 +139,11 @@ public abstract class EncapsulatedAccess {
 	public void fillDataBig(int arrayPos, int[] writeIndex, BigInteger a, int deltaCycle, int epsCycle) {
 		int offset = 0;
 		for (int i = 0; i < (arrayPos + 1); i++) {
-			int o = writeIndex[i];
+			final int o = writeIndex[i];
 			offset += o * dims[i];
 		}
 		int fill = 1;
-		int[] dims = ii.info.dimensions;
+		final int[] dims = ii.info.dimensions;
 		for (int i = arrayPos + 1; i < dims.length; i++) {
 			fill *= dims[i];
 		}
@@ -156,11 +156,11 @@ public abstract class EncapsulatedAccess {
 	public void fillDataLong(int arrayPos, int[] writeIndex, long a, int deltaCycle, int epsCycle) {
 		int offset = 0;
 		for (int i = 0; i < (arrayPos + 1); i++) {
-			int o = writeIndex[i];
+			final int o = writeIndex[i];
 			offset += o * dims[i];
 		}
 		int fill = 1;
-		int[] dims = ii.info.dimensions;
+		final int[] dims = ii.info.dimensions;
 		for (int i = arrayPos + 1; i < dims.length; i++) {
 			fill *= dims[i];
 		}

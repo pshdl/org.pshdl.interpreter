@@ -45,14 +45,14 @@ public class Graph<T> {
 		}
 
 		public Node<T> addEdge(Node<T> node) {
-			Edge<T> e = new Edge<T>(this, node);
+			final Edge<T> e = new Edge<T>(this, node);
 			outEdges.add(e);
 			node.inEdges.add(e);
 			return this;
 		}
 
 		public Node<T> reverseAddEdge(Node<T> node) {
-			Edge<T> e = new Edge<T>(node, this);
+			final Edge<T> e = new Edge<T>(node, this);
 			node.outEdges.add(e);
 			inEdges.add(e);
 			return this;
@@ -90,7 +90,7 @@ public class Graph<T> {
 				return false;
 			if (getClass() != obj.getClass())
 				return false;
-			Edge<?> other = (Edge<?>) obj;
+			final Edge<?> other = (Edge<?>) obj;
 			if (from == null) {
 				if (other.from != null)
 					return false;
@@ -111,11 +111,11 @@ public class Graph<T> {
 
 	public ArrayList<Node<T>> sortNodes(List<Node<T>> allNodes) throws CycleException {
 		// L <- Empty list that will contain the sorted elements
-		ArrayList<Node<T>> L = new ArrayList<Node<T>>();
+		final ArrayList<Node<T>> L = new ArrayList<Node<T>>();
 
 		// S <- Set of all nodes with no incoming edges
-		LinkedHashSet<Node<T>> S = new LinkedHashSet<Node<T>>();
-		for (Node<T> n : allNodes) {
+		final LinkedHashSet<Node<T>> S = new LinkedHashSet<Node<T>>();
+		for (final Node<T> n : allNodes) {
 			if (n.inEdges.size() == 0) {
 				S.add(n);
 			}
@@ -124,17 +124,17 @@ public class Graph<T> {
 		// while S is non-empty do
 		while (!S.isEmpty()) {
 			// remove a node n from S
-			Node<T> n = S.iterator().next();
+			final Node<T> n = S.iterator().next();
 			S.remove(n);
 
 			// insert n into L
 			L.add(n);
 
 			// for each node m with an edge e from n to m do
-			for (Iterator<Edge<T>> it = n.outEdges.iterator(); it.hasNext();) {
+			for (final Iterator<Edge<T>> it = n.outEdges.iterator(); it.hasNext();) {
 				// remove edge e from the graph
-				Edge<T> e = it.next();
-				Node<T> m = e.to;
+				final Edge<T> e = it.next();
+				final Node<T> m = e.to;
 				it.remove();// Remove edge from n
 				m.inEdges.remove(e);// Remove edge from m
 
@@ -146,7 +146,7 @@ public class Graph<T> {
 		}
 		// Check to see if all edges are removed
 		boolean cycle = false;
-		for (Node<T> n : allNodes) {
+		for (final Node<T> n : allNodes) {
 			if (!n.inEdges.isEmpty()) {
 				cycle = true;
 				// for (Edge<T> e : n.inEdges) {

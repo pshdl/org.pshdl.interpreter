@@ -9,11 +9,11 @@ import org.pshdl.interpreter.Frame.FastInstruction;
 
 public class ConsoleDebugListener implements IDebugListener {
 	private final PrintStream out;
-	private ExecutableModel em;
-	private Set<Integer> frames = new HashSet<Integer>();
-	private Set<String> internals = new HashSet<String>();
-	private Set<Integer> framesOps = new HashSet<Integer>();
-	private Set<Integer> deltas = new HashSet<Integer>();
+	private final ExecutableModel em;
+	private final Set<Integer> frames = new HashSet<Integer>();
+	private final Set<String> internals = new HashSet<String>();
+	private final Set<Integer> framesOps = new HashSet<Integer>();
+	private final Set<Integer> deltas = new HashSet<Integer>();
 	public boolean dumpAllFrames = true;
 	public boolean dumpAllFramesOps = false;
 	private boolean enable = true;
@@ -37,7 +37,7 @@ public class ConsoleDebugListener implements IDebugListener {
 	}
 
 	public void addDelta(int... delta) {
-		for (int i : delta) {
+		for (final int i : delta) {
 			System.out.println("ConsoleDebugListener.addDelta() Adding delta: " + i);
 			this.deltas.add(i);
 		}
@@ -45,7 +45,7 @@ public class ConsoleDebugListener implements IDebugListener {
 	}
 
 	public void addInternal(String... internal) {
-		for (String i : internal) {
+		for (final String i : internal) {
 			System.out.println("ConsoleDebugListener.addInternal() Adding internal:" + i);
 			this.internals.add(i);
 		}
@@ -53,7 +53,7 @@ public class ConsoleDebugListener implements IDebugListener {
 	}
 
 	public void addFrames(boolean ops, int... frames) {
-		for (int i : frames) {
+		for (final int i : frames) {
 			System.out.println("ConsoleDebugListener.addFrames() Adding frame:" + i);
 			this.frames.add(i);
 			if (ops) {
@@ -65,7 +65,7 @@ public class ConsoleDebugListener implements IDebugListener {
 	}
 
 	public void addInternalsThatMatch(String internalRegex, boolean ops) {
-		for (InternalInformation ii : em.internals) {
+		for (final InternalInformation ii : em.internals) {
 			if (ii.fullName.matches(internalRegex)) {
 				addInternal(ii.fullName);
 			}
@@ -73,8 +73,8 @@ public class ConsoleDebugListener implements IDebugListener {
 	}
 
 	public void addFramesThatReadInternal(String internalRegex, boolean ops) {
-		for (Frame f : em.frames) {
-			for (int i : f.internalDependencies) {
+		for (final Frame f : em.frames) {
+			for (final int i : f.internalDependencies) {
 				if (em.internals[i].fullName.matches(internalRegex)) {
 					addFrames(ops, f.uniqueID);
 				}
@@ -93,7 +93,7 @@ public class ConsoleDebugListener implements IDebugListener {
 	 */
 	public void addFramesThatWriteInternal(String internalRegex, boolean ops) {
 		internalRegex = internalRegex.replaceAll("\\$", "\\\\\\$");
-		for (Frame f : em.frames) {
+		for (final Frame f : em.frames) {
 			if (em.internals[f.outputId].fullName.matches(internalRegex)) {
 				addFrames(ops, f.uniqueID);
 			}

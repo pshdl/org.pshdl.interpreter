@@ -56,7 +56,7 @@ public final class BigIntegerFrame extends ExecutableFrame {
 		if (listener != null) {
 			listener.startFrame(uniqueID, deltaCycle, epsCycle, this);
 		}
-		for (FastInstruction f : instructions) {
+		for (final FastInstruction f : instructions) {
 			if (f.popA) {
 				a = stack[stackPos--];
 			}
@@ -79,25 +79,25 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				break;
 			}
 			case bitAccessSingle: {
-				int bit = f.arg1;
+				final int bit = f.arg1;
 				stack[++stackPos] = a.shiftRight(bit).and(BigInteger.ONE);
 				break;
 			}
 			case bitAccessSingleRange: {
-				int highBit = f.arg1;
-				int lowBit = f.arg2;
-				BigInteger mask = BigInteger.ONE.shiftLeft((highBit - lowBit) + 1).subtract(BigInteger.ONE);
-				BigInteger current = a.shiftRight(lowBit).and(mask);
+				final int highBit = f.arg1;
+				final int lowBit = f.arg2;
+				final BigInteger mask = BigInteger.ONE.shiftLeft((highBit - lowBit) + 1).subtract(BigInteger.ONE);
+				final BigInteger current = a.shiftRight(lowBit).and(mask);
 				stack[++stackPos] = current;
 				break;
 			}
 			case cast_int: {
-				int targetWidth = f.arg1;
-				int currWidth = f.arg2;
+				final int targetWidth = f.arg1;
+				final int currWidth = f.arg2;
 				if (targetWidth >= currWidth) {
 					// Do nothing
 				} else {
-					BigInteger mask = BigInteger.ONE.shiftLeft(targetWidth).subtract(BigInteger.ONE);
+					final BigInteger mask = BigInteger.ONE.shiftLeft(targetWidth).subtract(BigInteger.ONE);
 					System.out.println("BigIntegerFrame.execute() cast int<" + currWidth + "> to int<" + targetWidth + "> masking with:" + mask.toString(16));
 					BigInteger t = a;
 					t = t.and(mask);
@@ -115,7 +115,7 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				break;
 			}
 			case cast_uint: {
-				BigInteger mask = BigInteger.ONE.shiftLeft(f.arg1).subtract(BigInteger.ONE);
+				final BigInteger mask = BigInteger.ONE.shiftLeft(f.arg1).subtract(BigInteger.ONE);
 				stack[++stackPos] = a.and(mask);
 				break;
 			}
@@ -219,8 +219,8 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				break;
 			}
 			case isFallingEdge: {
-				int off = f.arg1;
-				EncapsulatedAccess access = getInternal(off, arrayPos);
+				final int off = f.arg1;
+				final EncapsulatedAccess access = getInternal(off, arrayPos);
 				arrayPos = -1;
 				if (access.skip(deltaCycle, epsCycle)) {
 					if (listener != null) {
@@ -228,10 +228,10 @@ public final class BigIntegerFrame extends ExecutableFrame {
 					}
 					return;
 				}
-				long curr = access.getDataLong();
-				EncapsulatedAccess prevAccess = internals_prev[off];
+				final long curr = access.getDataLong();
+				final EncapsulatedAccess prevAccess = internals_prev[off];
 				prevAccess.offset = access.offset;
-				long prev = prevAccess.getDataLong();
+				final long prev = prevAccess.getDataLong();
 				if ((prev != 1) || (curr != 0)) {
 					if (listener != null) {
 						listener.skippingNotAnEdge(uniqueID, access.ii, false, this);
@@ -243,8 +243,8 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				break;
 			}
 			case isRisingEdge: {
-				int off = f.arg1;
-				EncapsulatedAccess access = getInternal(off, arrayPos);
+				final int off = f.arg1;
+				final EncapsulatedAccess access = getInternal(off, arrayPos);
 				arrayPos = -1;
 				if (access.skip(deltaCycle, epsCycle)) {
 					if (listener != null) {
@@ -252,10 +252,10 @@ public final class BigIntegerFrame extends ExecutableFrame {
 					}
 					return;
 				}
-				long curr = access.getDataLong();
-				EncapsulatedAccess prevAccess = internals_prev[off];
+				final long curr = access.getDataLong();
+				final EncapsulatedAccess prevAccess = internals_prev[off];
 				prevAccess.offset = access.offset;
-				long prev = prevAccess.getDataLong();
+				final long prev = prevAccess.getDataLong();
 				if ((prev != 0) || (curr != 1)) {
 					if (listener != null) {
 						listener.skippingNotAnEdge(uniqueID, access.ii, true, this);
@@ -267,8 +267,8 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				break;
 			}
 			case posPredicate: {
-				int off = f.arg1;
-				EncapsulatedAccess access = getInternal(off, arrayPos);
+				final int off = f.arg1;
+				final EncapsulatedAccess access = getInternal(off, arrayPos);
 				arrayPos = -1;
 				// If data is not from this deltaCycle it was not
 				// updated that means prior predicates failed
@@ -287,8 +287,8 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				break;
 			}
 			case negPredicate: {
-				int off = f.arg1;
-				EncapsulatedAccess access = getInternal(off, arrayPos);
+				final int off = f.arg1;
+				final EncapsulatedAccess access = getInternal(off, arrayPos);
 				arrayPos = -1;
 				// If data is not from this deltaCycle it was not
 				// updated that means prior predicates failed
@@ -310,8 +310,8 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				writeIndex[++arrayPos] = a.intValue();
 				break;
 			case writeInternal:
-				int off = f.arg1;
-				EncapsulatedAccess access = getInternal(off, -1);
+				final int off = f.arg1;
+				final EncapsulatedAccess access = getInternal(off, -1);
 				access.fillDataBig(arrayPos, writeIndex, a, deltaCycle, epsCycle);
 				arrayPos = -1;
 				break;
@@ -341,7 +341,7 @@ public final class BigIntegerFrame extends ExecutableFrame {
 	}
 
 	public EncapsulatedAccess getInternal(int off, int arrayPos) {
-		EncapsulatedAccess res = internals[off];
+		final EncapsulatedAccess res = internals[off];
 		if (arrayPos != -1) {
 			res.setOffset(writeIndex);
 		}
@@ -351,10 +351,10 @@ public final class BigIntegerFrame extends ExecutableFrame {
 	public static BigInteger srl(BigInteger l, int width, int shiftBy) {
 		if (l.signum() >= 0)
 			return l.shiftRight(shiftBy);
-		BigInteger opener = BigInteger.ONE.shiftLeft(width + 1);
-		BigInteger opened = l.subtract(opener);
-		BigInteger mask = opener.subtract(BigInteger.ONE).shiftRight(shiftBy + 1);
-		BigInteger res = opened.shiftRight(shiftBy).and(mask);
+		final BigInteger opener = BigInteger.ONE.shiftLeft(width + 1);
+		final BigInteger opened = l.subtract(opener);
+		final BigInteger mask = opener.subtract(BigInteger.ONE).shiftRight(shiftBy + 1);
+		final BigInteger res = opened.shiftRight(shiftBy).and(mask);
 		return res;
 	}
 }

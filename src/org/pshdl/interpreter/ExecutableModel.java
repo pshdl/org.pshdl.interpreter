@@ -48,14 +48,14 @@ public class ExecutableModel implements Serializable {
 		this.internals = internals;
 		int maxWidth = -1, maxExecWidth = -1;
 		int maxStack = -1;
-		for (InternalInformation ii : internals) {
+		for (final InternalInformation ii : internals) {
 			maxWidth = Math.max(ii.info.width, maxWidth);
 			maxExecWidth = Math.max(ii.actualWidth, maxExecWidth);
 		}
 		this.maxDataWidth = maxWidth;
 		this.maxExecutionWidth = maxExecWidth;
-		List<Integer> regOuts = new ArrayList<Integer>();
-		for (Frame frame : frames) {
+		final List<Integer> regOuts = new ArrayList<Integer>();
+		for (final Frame frame : frames) {
 			if (frame.isReg()) {
 				regOuts.add(frame.outputId);
 			}
@@ -67,11 +67,11 @@ public class ExecutableModel implements Serializable {
 
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder();
 		builder.append("ExecutableModel [maxDataWidth=").append(maxDataWidth).append(", maxStackDepth=").append(maxStackDepth).append(", ");
 		if (frames != null) {
 			builder.append("frames=\n");
-			for (Frame f : frames) {
+			for (final Frame f : frames) {
 				builder.append(f.toString(this));
 			}
 			builder.append('\n').append(", ");
@@ -81,34 +81,34 @@ public class ExecutableModel implements Serializable {
 	}
 
 	public ExecutableModel sortTopological() throws CycleException {
-		Graph<String> graph = new Graph<String>();
-		ArrayList<Node<String>> nodes = new ArrayList<Graph.Node<String>>();
-		Map<String, Node<String>> nodeNames = new HashMap<String, Graph.Node<String>>();
-		Map<String, Frame> frameNames = new HashMap<String, Frame>();
-		for (Frame f : frames) {
-			String string = getFrame(f.uniqueID);
-			Node<String> node = new Node<String>(string);
+		final Graph<String> graph = new Graph<String>();
+		final ArrayList<Node<String>> nodes = new ArrayList<Graph.Node<String>>();
+		final Map<String, Node<String>> nodeNames = new HashMap<String, Graph.Node<String>>();
+		final Map<String, Frame> frameNames = new HashMap<String, Frame>();
+		for (final Frame f : frames) {
+			final String string = getFrame(f.uniqueID);
+			final Node<String> node = new Node<String>(string);
 			nodes.add(node);
 			nodeNames.put(string, node);
 			frameNames.put(string, f);
 		}
 		for (int i = 0; i < internals.length; i++) {
-			String string = getInternal(i);
+			final String string = getInternal(i);
 			// System.out.println(i + " " + internals[i]);
-			Node<String> node = new Node<String>(string);
+			final Node<String> node = new Node<String>(string);
 			nodes.add(node);
 			nodeNames.put(string, node);
 		}
-		for (Frame f : frames) {
-			Node<String> node = nodeNames.get(getFrame(f.uniqueID));
-			Node<String> outNode = nodeNames.get(getInternal(f.outputId));
+		for (final Frame f : frames) {
+			final Node<String> node = nodeNames.get(getFrame(f.uniqueID));
+			final Node<String> outNode = nodeNames.get(getInternal(f.outputId));
 			outNode.reverseAddEdge(node);
-			for (int i : f.internalDependencies) {
-				Node<String> ni = nodeNames.get(getInternal(i));
+			for (final int i : f.internalDependencies) {
+				final Node<String> ni = nodeNames.get(getInternal(i));
 				node.reverseAddEdge(ni);
 			}
 			if (f.executionDep != -1) {
-				Node<String> ni = nodeNames.get(getFrame(f.executionDep));
+				final Node<String> ni = nodeNames.get(getFrame(f.executionDep));
 				node.reverseAddEdge(ni);
 			}
 		}
@@ -122,14 +122,14 @@ public class ExecutableModel implements Serializable {
 		// if (f != null)
 		// System.out.println(f.toString(this));
 		// }
-		ArrayList<Node<String>> sortNodes = graph.sortNodes(nodes);
+		final ArrayList<Node<String>> sortNodes = graph.sortNodes(nodes);
 		// for (Node<String> node : sortNodes) {
 		// System.out.println(node.object);
 		// }
 		int pos = 0;
-		for (Node<String> node : sortNodes) {
-			String obj = node.object;
-			Frame f = frameNames.get(obj);
+		for (final Node<String> node : sortNodes) {
+			final String obj = node.object;
+			final Frame f = frameNames.get(obj);
 			if (f != null) {
 				frames[pos++] = f;
 			}
@@ -146,7 +146,7 @@ public class ExecutableModel implements Serializable {
 	}
 
 	public String toDotFile() {
-		StringBuilder sb = new StringBuilder();
+		final StringBuilder sb = new StringBuilder();
 		sb.append("digraph ExecutableModel {\n");
 		for (int i = 0; i < internals.length; i++) {
 			String label = internals[i].fullName;
@@ -166,7 +166,7 @@ public class ExecutableModel implements Serializable {
 			sb.append(" int").append(i);
 			sb.append(";\n");
 		}
-		for (Frame frame : frames) {
+		for (final Frame frame : frames) {
 			String color = "black";
 			if ((frame.predPosDepRes != null) && (frame.predPosDepRes.length > 0)) {
 				color = "darkgreen";
@@ -185,9 +185,9 @@ public class ExecutableModel implements Serializable {
 			sb.append(" frame").append(frame.uniqueID);
 			sb.append(";\n");
 		}
-		for (Frame frame : frames) {
-			String frameId = "frame" + frame.uniqueID;
-			for (int in : frame.internalDependencies) {
+		for (final Frame frame : frames) {
+			final String frameId = "frame" + frame.uniqueID;
+			for (final int in : frame.internalDependencies) {
 				sb.append("int").append(in).append(" -> ").append(frameId);
 				if (in == frame.edgeNegDepRes) {
 					sb.append(" [style=dotted, color=red, arrowType=empty]");
@@ -196,13 +196,13 @@ public class ExecutableModel implements Serializable {
 					sb.append(" [style=dotted, color=darkgreen, arrowType=empty]");
 				}
 				if (frame.predNegDepRes != null) {
-					for (int p : frame.predNegDepRes)
+					for (final int p : frame.predNegDepRes)
 						if (in == p) {
 							sb.append(" [style=dotted, color=red]");
 						}
 				}
 				if (frame.predPosDepRes != null) {
-					for (int p : frame.predPosDepRes)
+					for (final int p : frame.predPosDepRes)
 						if (in == p) {
 							sb.append(" [style=dotted, color=darkgreen]");
 						}
@@ -226,7 +226,7 @@ public class ExecutableModel implements Serializable {
 	}
 
 	public InternalInformation getInternal(String string) {
-		for (InternalInformation ii : internals) {
+		for (final InternalInformation ii : internals) {
 			if (ii.fullName.equals(string))
 				return ii;
 		}

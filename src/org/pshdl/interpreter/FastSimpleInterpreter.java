@@ -52,7 +52,7 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 				setOffset(name.arrayIdx);
 			}
 			if ((name.bitStart == -1) && (name.bitEnd == -1)) {
-				int width = name.info.width;
+				final int width = name.info.width;
 				if (width > 64)
 					throw new IllegalArgumentException("Unsupported bitWidth:" + width);
 				this.shift = 0;
@@ -63,7 +63,7 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 				}
 				this.writeMask = 0;
 			} else if (name.bitEnd != name.bitStart) {
-				int actualWidth = (name.bitStart - name.bitEnd) + 1;
+				final int actualWidth = (name.bitStart - name.bitEnd) + 1;
 				if (actualWidth > 64)
 					throw new IllegalArgumentException("Unsupported bitWidth:" + actualWidth);
 				this.shift = name.bitEnd;
@@ -100,14 +100,14 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 		 *         <code>false</code> otherwise
 		 */
 		public boolean isFresh(int deltaCycle, int epsCycle) {
-			long raw = deltaUpdates[getAccessIndex()];
-			boolean dc = (raw >>> 16l) == deltaCycle;
-			boolean ec = (raw & 0xFFFF) == epsCycle;
+			final long raw = deltaUpdates[getAccessIndex()];
+			final boolean dc = (raw >>> 16l) == deltaCycle;
+			final boolean ec = (raw & 0xFFFF) == epsCycle;
 			return dc && ec;
 		}
 
 		public void setDataLong(long data, int deltaCycle, int epsCycle) {
-			long current = storage[getAccessIndex()] & writeMask;
+			final long current = storage[getAccessIndex()] & writeMask;
 			storage[getAccessIndex()] = current | ((data & mask) << shift);
 			if (ii.isPred) {
 				setLastUpdate(deltaCycle, epsCycle);
@@ -123,7 +123,7 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 			if (off.length == 0)
 				return;
 			for (int i = 0; i < dims.length; i++) {
-				int o = off[i];
+				final int o = off[i];
 				offset += o * dims[i];
 			}
 		}
@@ -131,11 +131,11 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 		public void fillDataLong(int arrayPos, int[] writeIndex, long a, int deltaCycle, int epsCycle) {
 			int offset = 0;
 			for (int i = 0; i < (arrayPos + 1); i++) {
-				int o = writeIndex[i];
+				final int o = writeIndex[i];
 				offset += o * dims[i];
 			}
 			int fill = 1;
-			int[] dims = ii.info.dimensions;
+			final int[] dims = ii.info.dimensions;
 			for (int i = arrayPos + 1; i < dims.length; i++) {
 				fill *= dims[i];
 			}
@@ -155,8 +155,8 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 		 * @return
 		 */
 		public boolean skip(int deltaCycle, int epsCycle) {
-			long local = deltaUpdates[getAccessIndex()];
-			long dc = local >>> 16l;
+			final long local = deltaUpdates[getAccessIndex()];
+			final long dc = local >>> 16l;
 			// Register was updated in previous delta cylce, that is ok
 			if (dc < deltaCycle)
 				return false;
@@ -170,7 +170,7 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 
 		@Override
 		public String toString() {
-			StringBuilder builder = new StringBuilder();
+			final StringBuilder builder = new StringBuilder();
 			builder.append("LongAccess [shift=").append(shift).append(", mask=").append(Long.toHexString(mask)).append(", writeMask=").append(Long.toHexString(writeMask))
 					.append(", name=").append(ii).append(", accessIndex=").append(getAccessIndex()).append(", prev=").append(prev).append("]");
 			return builder.toString();
@@ -183,20 +183,22 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 	public LongAccess internals_prev[];
 	public long storage[];
 	public long storage_prev[];
-	private LongAccess[] full;
-	private FastFrame[] frames;
+	private final LongAccess[] full;
+	private final FastFrame[] frames;
 	private final Map<String, Integer> accessIdxMap = new TreeMap<String, Integer>();
 	private final Map<String, Integer> varIdxMap = new TreeMap<String, Integer>();
 	private int deltaCycle;
-	private boolean disableEdge;
+	private final boolean disableEdge;
+	private final boolean disabledRegOutputlogic;
 
-	public FastSimpleInterpreter(ExecutableModel model, boolean disableEdge) {
-		Map<String, Integer> index = new HashMap<String, Integer>();
+	public FastSimpleInterpreter(ExecutableModel model, boolean disableEdge, boolean disabledRegOutputlogic) {
+		this.disabledRegOutputlogic = disabledRegOutputlogic;
+		final Map<String, Integer> index = new HashMap<String, Integer>();
 		int currentIdx = 0;
-		for (VariableInformation var : model.variables) {
+		for (final VariableInformation var : model.variables) {
 			index.put(var.name, currentIdx);
 			int size = 1;
-			for (int d : var.dimensions) {
+			for (final int d : var.dimensions) {
 				size *= d;
 			}
 			currentIdx += size;
@@ -208,12 +210,12 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 		this.internals = new LongAccess[model.internals.length];
 		this.internals_prev = new LongAccess[model.internals.length];
 		this.full = new LongAccess[model.variables.length];
-		int storageSize = createInternals(model);
+		final int storageSize = createInternals(model);
 		createVarIndex(model);
 		this.storage = new long[storageSize];
 		this.storage_prev = new long[storageSize];
 		deltaUpdates = new long[storageSize];
-		Frame[] frames = model.frames;
+		final Frame[] frames = model.frames;
 		this.frames = new FastFrame[frames.length];
 		for (int i = 0; i < frames.length; i++) {
 			this.frames[i] = new FastFrame(this, frames[i], disableEdge);
@@ -223,8 +225,8 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 
 	private void createVarIndex(ExecutableModel model) {
 		for (int i = 0; i < model.variables.length; i++) {
-			VariableInformation vi = model.variables[i];
-			Integer accessIndex = accessIdxMap.get(vi.name);
+			final VariableInformation vi = model.variables[i];
+			final Integer accessIndex = accessIdxMap.get(vi.name);
 			if (accessIndex != null) {
 				full[i] = new LongAccess(new InternalInformation(vi.name, vi), accessIndex, false);
 				varIdxMap.put(vi.name, i);
@@ -235,14 +237,14 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 	private int createInternals(ExecutableModel model) {
 		int currentIdx = 0;
 		for (int i = 0; i < model.internals.length; i++) {
-			InternalInformation ii = model.internals[i];
+			final InternalInformation ii = model.internals[i];
 			// System.out.println("HDLFrameInterpreter.createInternals()" + ii);
-			String baseName = ii.baseName(false, true);
+			final String baseName = ii.baseName(false, true);
 			Integer accessIndex = accessIdxMap.get(baseName);
 			if (accessIndex == null) {
 				accessIndex = currentIdx;
 				int size = 1;
-				for (int d : ii.info.dimensions) {
+				for (final int d : ii.info.dimensions) {
 					size *= d;
 				}
 				currentIdx += size;
@@ -253,7 +255,7 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 			internals[i] = new LongAccess(ii, accessIndex, false);
 			internals_prev[i] = new LongAccess(ii, accessIndex, true);
 		}
-		for (LongAccess ea : internals) {
+		for (final LongAccess ea : internals) {
 			if (ea.ii.isShadowReg) {
 				ea.targetAccessIndex = accessIdxMap.get(ea.ii.baseName(false, false));
 			}
@@ -266,24 +268,24 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 		boolean regUpdated = false;
 		this.deltaCycle++;
 		int epsCycle = 0;
-		List<RegUpdater> updatedRegs = new ArrayList<RegUpdater>();
+		final List<RegUpdater> updatedRegs = new ArrayList<RegUpdater>();
 		do {
 			epsCycle++;
 			regUpdated = false;
-			for (FastFrame ef : frames) {
-				boolean execute = ef.execute(deltaCycle, epsCycle);
+			for (final FastFrame ef : frames) {
+				final boolean execute = ef.execute(deltaCycle, epsCycle);
 				if (execute && ef.regUpdated) {
 					updatedRegs.add(ef.outputAccess.getRegUpdater());
 					regUpdated = true;
 				}
 			}
 			if (regUpdated) {
-				for (RegUpdater ea : updatedRegs) {
+				for (final RegUpdater ea : updatedRegs) {
 					storage[ea.accessIdx] = storage[ea.shadowAccessIdx];
 				}
 				updatedRegs.clear();
 			}
-		} while (regUpdated && !disableEdge);
+		} while (regUpdated && !disabledRegOutputlogic);
 		System.arraycopy(storage, 0, storage_prev, 0, storage.length);
 	}
 
@@ -294,7 +296,7 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 
 	@Override
 	public void setInput(int idx, long value, int... arrayIdx) {
-		LongAccess acc = full[idx];
+		final LongAccess acc = full[idx];
 		if (arrayIdx != null) {
 			acc.setOffset(arrayIdx);
 		}
@@ -303,7 +305,7 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 
 	@Override
 	public int getIndex(String name) {
-		Integer integer = varIdxMap.get(name);
+		final Integer integer = varIdxMap.get(name);
 		if (integer == null)
 			throw new IllegalArgumentException("Could not find a variable named:" + name + " valid names are:" + accessIdxMap.keySet());
 		return integer;
@@ -316,7 +318,7 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 
 	@Override
 	public long getOutputLong(int idx, int... arrayIdx) {
-		LongAccess acc = full[idx];
+		final LongAccess acc = full[idx];
 		if (arrayIdx != null) {
 			acc.setOffset(arrayIdx);
 		}
@@ -345,7 +347,7 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 
 	@Override
 	public String getName(int idx) {
-		for (Entry<String, Integer> e : varIdxMap.entrySet()) {
+		for (final Entry<String, Integer> e : varIdxMap.entrySet()) {
 			if (e.getValue() == idx)
 				return e.getKey();
 		}

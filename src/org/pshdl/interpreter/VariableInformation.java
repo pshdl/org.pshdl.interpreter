@@ -65,7 +65,7 @@ public class VariableInformation {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		VariableInformation other = (VariableInformation) obj;
+		final VariableInformation other = (VariableInformation) obj;
 		if (!Arrays.equals(dimensions, other.dimensions))
 			return false;
 		if (dir != other.dir)

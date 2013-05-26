@@ -104,7 +104,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 		this.internals_prev = new EncapsulatedAccess[model.internals.length];
 		this.full = new EncapsulatedAccess[model.variables.length];
 		this.listener = listener;
-		int storageSize = createInternals(model);
+		final int storageSize = createInternals(model);
 		createVarIndex(model);
 		this.storage = new long[storageSize];
 		this.storage_prev = new long[storageSize];
@@ -115,7 +115,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 			big_storage_prev[i] = BigInteger.ZERO;
 		}
 		deltaUpdates = new long[storageSize];
-		Frame[] frames = model.frames;
+		final Frame[] frames = model.frames;
 		this.frames = new ExecutableFrame[frames.length];
 		for (int i = 0; i < frames.length; i++) {
 			if (frames[i].maxDataWidth > 64) {
@@ -128,8 +128,8 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 
 	private void createVarIndex(ExecutableModel model) {
 		for (int i = 0; i < model.variables.length; i++) {
-			VariableInformation vi = model.variables[i];
-			Integer accessIndex = accessIdxMap.get(vi.name);
+			final VariableInformation vi = model.variables[i];
+			final Integer accessIndex = accessIdxMap.get(vi.name);
 			if (accessIndex != null) {
 				if (vi.width > 64) {
 					full[i] = BigAccesses.getInternal(new InternalInformation(vi.name, vi), accessIndex & BIG_MASK, false, this);
@@ -144,8 +144,8 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 	private int createInternals(ExecutableModel model) {
 		int currentIdx = 0;
 		for (int i = 0; i < model.internals.length; i++) {
-			InternalInformation ii = model.internals[i];
-			String baseName = ii.baseName(false, true);
+			final InternalInformation ii = model.internals[i];
+			final String baseName = ii.baseName(false, true);
 			Integer accessIndex = accessIdxMap.get(baseName);
 			if (accessIndex == null) {
 				if ((ii.info.width > 64)) {
@@ -154,7 +154,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 					accessIndex = currentIdx;
 				}
 				int size = 1;
-				for (int d : ii.info.dimensions) {
+				for (final int d : ii.info.dimensions) {
 					size *= d;
 				}
 				currentIdx += size;
@@ -168,7 +168,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 				internals_prev[i] = LongAccesses.getInternal(ii, accessIndex, true, this);
 			}
 		}
-		for (EncapsulatedAccess ea : internals) {
+		for (final EncapsulatedAccess ea : internals) {
 			if (ea.ii.isShadowReg) {
 				ea.targetAccessIndex = accessIdxMap.get(ea.ii.baseName(false, false));
 			}
@@ -195,7 +195,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 	 */
 	@Override
 	public void setInput(int idx, BigInteger value, int... arrayIdx) {
-		EncapsulatedAccess acc = full[idx];
+		final EncapsulatedAccess acc = full[idx];
 		if (arrayIdx != null) {
 			acc.setOffset(arrayIdx);
 		}
@@ -220,7 +220,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 	 */
 	@Override
 	public void setInput(int idx, long value, int... arrayIdx) {
-		EncapsulatedAccess acc = full[idx];
+		final EncapsulatedAccess acc = full[idx];
 		if (arrayIdx != null) {
 			acc.setOffset(arrayIdx);
 		}
@@ -234,7 +234,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 	 */
 	@Override
 	public int getIndex(String name) {
-		Integer integer = varIdxMap.get(name);
+		final Integer integer = varIdxMap.get(name);
 		if (integer == null)
 			throw new IllegalArgumentException("Could not find a variable named:" + name + " valid names are:" + accessIdxMap.keySet());
 		return integer;
@@ -259,7 +259,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 	 */
 	@Override
 	public long getOutputLong(int idx, int... arrayIdx) {
-		EncapsulatedAccess acc = full[idx];
+		final EncapsulatedAccess acc = full[idx];
 		if (arrayIdx != null) {
 			acc.setOffset(arrayIdx);
 		}
@@ -284,7 +284,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 	 */
 	@Override
 	public BigInteger getOutputBig(int idx, int... arrayIdx) {
-		EncapsulatedAccess acc = full[idx];
+		final EncapsulatedAccess acc = full[idx];
 		if (arrayIdx != null) {
 			acc.setOffset(arrayIdx);
 		}
@@ -309,14 +309,14 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 		boolean regUpdated = false;
 		deltaCycle++;
 		int epsCycle = 0;
-		List<RegUpdater> updatedRegs = new ArrayList<EncapsulatedAccess.RegUpdater>();
+		final List<RegUpdater> updatedRegs = new ArrayList<EncapsulatedAccess.RegUpdater>();
 		do {
 			epsCycle++;
 			if (listener != null) {
 				listener.startCycle(deltaCycle, epsCycle, this);
 			}
 			regUpdated = false;
-			for (ExecutableFrame ef : frames) {
+			for (final ExecutableFrame ef : frames) {
 				ef.execute(deltaCycle, epsCycle);
 				if (ef.regUpdated) {
 					updatedRegs.add(ef.outputAccess.getRegUpdater());
@@ -327,7 +327,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 				if (listener != null) {
 					listener.copyingRegisterValues(this);
 				}
-				for (RegUpdater ea : updatedRegs) {
+				for (final RegUpdater ea : updatedRegs) {
 					if (ea.isBig) {
 						big_storage[ea.accessIdx & BIG_MASK] = big_storage[ea.shadowAccessIdx & BIG_MASK];
 					} else {
@@ -346,9 +346,9 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder();
+		final StringBuilder sb = new StringBuilder();
 		sb.append("Current Cycle:" + deltaCycle + "\n");
-		for (Entry<String, Integer> e : accessIdxMap.entrySet()) {
+		for (final Entry<String, Integer> e : accessIdxMap.entrySet()) {
 			sb.append('\t').append(e.getKey()).append("=").append(storage[e.getValue() & BIG_MASK]).append('\n');
 		}
 		return sb.toString();
@@ -356,7 +356,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 
 	@Override
 	public String getName(int idx) {
-		for (Entry<String, Integer> e : varIdxMap.entrySet()) {
+		for (final Entry<String, Integer> e : varIdxMap.entrySet()) {
 			if (e.getValue() == idx)
 				return e.getKey();
 		}
