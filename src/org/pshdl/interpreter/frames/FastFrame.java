@@ -1,12 +1,10 @@
 package org.pshdl.interpreter.frames;
 
 import java.math.*;
-import java.util.*;
 
 import org.pshdl.interpreter.*;
 import org.pshdl.interpreter.FastSimpleInterpreter.LongAccess;
 import org.pshdl.interpreter.Frame.FastInstruction;
-import org.pshdl.interpreter.utils.*;
 
 public class FastFrame {
 
@@ -64,19 +62,7 @@ public class FastFrame {
 	public FastFrame(FastSimpleInterpreter fir, Frame f, boolean disableEdge) {
 		this.stack = new long[f.maxStackDepth];
 		this.constants = new long[f.constants.length];
-		final List<FastInstruction> fi = new LinkedList<FastInstruction>();
-		for (final FastInstruction fast : f.instructions) {
-			if ((fast.inst == Instruction.isRisingEdge) || (fast.inst == Instruction.isFallingEdge)) {
-				if (!disableEdge) {
-					fi.add(fast);
-				} else {
-					regUpdated = true;
-				}
-			} else {
-				fi.add(fast);
-			}
-		}
-		this.instructions = fi.toArray(new FastInstruction[fi.size()]);
+		this.instructions = f.instructions;
 		for (int i = 0; i < f.constants.length; i++) {
 			final BigInteger bi = f.constants[i];
 			constants[i] = bi.longValue();
