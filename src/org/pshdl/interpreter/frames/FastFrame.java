@@ -226,6 +226,9 @@ public class FastFrame {
 					final long prev = prevAcc.getDataLong();
 					if ((prev != 1) || (curr != 0))
 						return false;
+				} else {
+					if (curr != 0)
+						return false;
 				}
 				access.setLastUpdate(deltaCycle, epsCycle);
 				regUpdated = true;
@@ -237,12 +240,15 @@ public class FastFrame {
 				arrayPos = -1;
 				if (access.skip(deltaCycle, epsCycle))
 					return false;
+				final long curr = access.getDataLong();
 				if (!disableEdge) {
-					final long curr = access.getDataLong();
 					final LongAccess prevAcc = internals_prev[off];
 					prevAcc.offset = access.offset;
 					final long prev = prevAcc.getDataLong();
 					if ((prev != 0) || (curr != 1))
+						return false;
+				} else {
+					if (curr != 1)
 						return false;
 				}
 				access.setLastUpdate(deltaCycle, epsCycle);
