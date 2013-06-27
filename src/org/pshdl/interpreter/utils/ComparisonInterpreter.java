@@ -66,7 +66,11 @@ public class ComparisonInterpreter implements IHDLInterpreter {
 		this.a = a;
 		this.b = b;
 		this.em = em;
-		this.report = report;
+		if (report != null) {
+			this.report = report;
+		} else {
+			this.report = new ConsoleReporter();
+		}
 		final VariableInformation[] variables = em.variables;
 		for (int i = 0; i < variables.length; i++) {
 			final VariableInformation v = variables[i];
