@@ -150,6 +150,7 @@ public class ExecutableInputStream extends DataInputStream {
 		String name = null;
 		int width = -1;
 		int dimensions[] = new int[0];
+		boolean isClock = false, isReset = false;
 		while ((tlv = readTLV(VariableTypes.name)) != null) {
 			final ExecutableInputStream ex = new ExecutableInputStream(new ByteArrayInputStream(tlv.value));
 			final VariableTypes it = (VariableTypes) tlv.type;
@@ -176,6 +177,12 @@ public class ExecutableInputStream extends DataInputStream {
 				if ((flags & IOUtil.UINT_FLAG) == IOUtil.UINT_FLAG) {
 					type = Type.UINT;
 				}
+				if ((flags & IOUtil.CLOCK_FLAG) == IOUtil.CLOCK_FLAG) {
+					isClock = true;
+				}
+				if ((flags & IOUtil.RESET_FLAG) == IOUtil.RESET_FLAG) {
+					isReset = true;
+				}
 				break;
 			case name:
 				name = tlv.asString();
@@ -186,7 +193,7 @@ public class ExecutableInputStream extends DataInputStream {
 			}
 			ex.close();
 		}
-		final VariableInformation res = new VariableInformation(dir, name, width, type, isRegister, dimensions);
+		final VariableInformation res = new VariableInformation(dir, name, width, type, isRegister, isClock, isReset, dimensions);
 		return res;
 	}
 

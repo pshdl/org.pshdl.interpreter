@@ -38,6 +38,8 @@ public class IOUtil {
 	public static final int IO_FLAG = IN_FLAG | OUT_FLAG;
 	public static final int INT_FLAG = 0x10;
 	public static final int UINT_FLAG = 0x20;
+	public static final int CLOCK_FLAG = 0x40;
+	public static final int RESET_FLAG = 0x80;
 
 	public static interface IDType<T extends Enum<T>> {
 		public int getID();

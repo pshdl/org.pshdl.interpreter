@@ -100,6 +100,12 @@ public class ExecutableOutputStream extends DataOutputStream {
 		if (vi.isRegister) {
 			flags |= IOUtil.REG_FLAG;
 		}
+		if (vi.isClock) {
+			flags |= IOUtil.CLOCK_FLAG;
+		}
+		if (vi.isReset) {
+			flags |= IOUtil.RESET_FLAG;
+		}
 		obj.writeInt(VariableTypes.flags, flags);
 		if (vi.dimensions.length != 0) {
 			obj.writeIntArray(VariableTypes.dimensions, vi.dimensions);

@@ -33,28 +33,29 @@ public class VariableInformation {
 		IN, INOUT, OUT, INTERNAL
 	}
 
+	public static enum Type {
+		UINT, INT, BIT
+	}
+
 	public final Direction dir;
 	public final String name;
 	public final int width;
 	public final boolean isRegister;
+	public final Type type;
+	public final int[] dimensions;
+	public final boolean isClock;
+	public final boolean isReset;
 
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = (prime * result) + Arrays.hashCode(dimensions);
-		result = (prime * result) + ((dir == null) ? 0 : dir.hashCode());
-		result = (prime * result) + (isRegister ? 1231 : 1237);
-		result = (prime * result) + ((name == null) ? 0 : name.hashCode());
-		result = (prime * result) + ((type == null) ? 0 : type.hashCode());
-		result = (prime * result) + width;
-		return result;
-	}
-
-	@Override
-	public String toString() {
-		return "VariableInformation [dir=" + dir + ", name=" + name + ", width=" + width + ", isRegister=" + isRegister + ", type=" + type + ", dimensions="
-				+ Arrays.toString(dimensions) + "]";
+	public VariableInformation(Direction dir, String name, int width, Type type, boolean isRegister, boolean isClock, boolean isReset, int... dimensions) {
+		super();
+		this.isClock = isClock;
+		this.isReset = isReset;
+		this.dir = dir;
+		this.name = name;
+		this.width = width;
+		this.type = type;
+		this.isRegister = isRegister;
+		this.dimensions = dimensions;
 	}
 
 	@Override
@@ -84,20 +85,22 @@ public class VariableInformation {
 		return true;
 	}
 
-	public static enum Type {
-		UINT, INT, BIT
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = (prime * result) + Arrays.hashCode(dimensions);
+		result = (prime * result) + ((dir == null) ? 0 : dir.hashCode());
+		result = (prime * result) + (isRegister ? 1231 : 1237);
+		result = (prime * result) + ((name == null) ? 0 : name.hashCode());
+		result = (prime * result) + ((type == null) ? 0 : type.hashCode());
+		result = (prime * result) + width;
+		return result;
 	}
 
-	public final Type type;
-	public final int[] dimensions;
-
-	public VariableInformation(Direction dir, String name, int width, Type type, boolean isRegister, int... dimensions) {
-		super();
-		this.dir = dir;
-		this.name = name;
-		this.width = width;
-		this.type = type;
-		this.isRegister = isRegister;
-		this.dimensions = dimensions;
+	@Override
+	public String toString() {
+		return "VariableInformation [dir=" + dir + ", name=" + name + ", width=" + width + ", isRegister=" + isRegister + ", type=" + type + ", dimensions="
+				+ Arrays.toString(dimensions) + "]";
 	}
 }
