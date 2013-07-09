@@ -50,7 +50,6 @@ public final class BigIntegerFrame extends ExecutableFrame {
 	public void execute(int deltaCycle, int epsCycle) {
 		int stackPos = -1;
 		currentPos = 0;
-		regUpdated = false;
 		int arrayPos = -1;
 		BigInteger b = BigInteger.ZERO, a = BigInteger.ZERO;
 		if (listener != null) {
@@ -239,7 +238,6 @@ public final class BigIntegerFrame extends ExecutableFrame {
 					return;
 				}
 				access.setLastUpdate(deltaCycle, epsCycle);
-				regUpdated = true;
 				break;
 			}
 			case isRisingEdge: {
@@ -263,7 +261,6 @@ public final class BigIntegerFrame extends ExecutableFrame {
 					return;
 				}
 				access.setLastUpdate(deltaCycle, epsCycle);
-				regUpdated = true;
 				break;
 			}
 			case posPredicate: {

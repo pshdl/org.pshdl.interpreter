@@ -234,4 +234,12 @@ public class ConsoleDebugListener implements IDebugListener {
 		}
 	}
 
+	@Override
+	public void writeInternal(int frameUniqueID, int arrayPos, int[] writeIndex, BigInteger value, InternalInformation ii, Object longFrame) {
+		if (doShowOp(frameUniqueID)) {
+			out.printf("\tWrite internal %s value: 0x%s writeIndex:%s arrayPos:%d\n", ii.fullName, value.toString(16), Arrays.toString(writeIndex), arrayPos);
+		}
+
+	}
+
 }

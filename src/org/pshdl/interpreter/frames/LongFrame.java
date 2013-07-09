@@ -55,7 +55,6 @@ public final class LongFrame extends ExecutableFrame {
 		int stackPos = -1;
 		int arrayPos = -1;
 		currentPos = 0;
-		regUpdated = false;
 		long a = 0;
 		long b = 0;
 		if (listener != null) {
@@ -215,7 +214,6 @@ public final class LongFrame extends ExecutableFrame {
 					return;
 				}
 				access.setLastUpdate(deltaCycle, epsCycle);
-				regUpdated = true;
 				break;
 			}
 			case isRisingEdge: {
@@ -239,7 +237,6 @@ public final class LongFrame extends ExecutableFrame {
 					return;
 				}
 				access.setLastUpdate(deltaCycle, epsCycle);
-				regUpdated = true;
 				break;
 			}
 			case posPredicate: {
@@ -289,6 +286,9 @@ public final class LongFrame extends ExecutableFrame {
 				final int off = fi.arg1;
 				final EncapsulatedAccess access = getInternal(off, -1);
 				access.fillDataLong(arrayPos, writeIndex, a, deltaCycle, epsCycle);
+				if (listener != null) {
+					listener.writeInternal(uniqueID, arrayPos, writeIndex, BigInteger.valueOf(a), access.ii, this);
+				}
 				arrayPos = -1;
 				break;
 			}

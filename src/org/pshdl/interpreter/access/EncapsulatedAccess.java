@@ -48,9 +48,46 @@ public abstract class EncapsulatedAccess {
 			super();
 			// This may be caused by a check on the edge as caused by the #null
 			// output for reset frames
-			this.shadowAccessIdx = shadowAccessIdx == -1 ? accessIdx : shadowAccessIdx;
-			this.accessIdx = accessIdx == -1 ? shadowAccessIdx : accessIdx;
+			this.shadowAccessIdx = shadowAccessIdx;
+			this.accessIdx = accessIdx;
 		}
+
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = (prime * result) + accessIdx;
+			result = (prime * result) + shadowAccessIdx;
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			final RegUpdater other = (RegUpdater) obj;
+			if (accessIdx != other.accessIdx)
+				return false;
+			if (shadowAccessIdx != other.shadowAccessIdx)
+				return false;
+			return true;
+		}
+
+		@Override
+		public String toString() {
+			final StringBuilder builder = new StringBuilder();
+			builder.append("RegUpdater [shadowAccessIdx=");
+			builder.append(shadowAccessIdx);
+			builder.append(", accessIdx=");
+			builder.append(accessIdx);
+			builder.append("]");
+			return builder.toString();
+		}
+
 	}
 
 	public EncapsulatedAccess(HDLFrameInterpreter hdlFrameInterpreter, InternalInformation ii, int accessIndex, boolean prev) {
@@ -109,7 +146,6 @@ public abstract class EncapsulatedAccess {
 	 * 
 	 * @param deltaCycle
 	 * @param epsCycle
-	 *            TODO
 	 * @return <code>true</code> if it was calculated in this delta cycle,
 	 *         <code>false</code> otherwise
 	 */
@@ -120,8 +156,10 @@ public abstract class EncapsulatedAccess {
 		return dc && ec;
 	}
 
-	public RegUpdater getRegUpdater() {
-		return new RegUpdater(getAccessIndex(), targetAccessIndex + offset);
+	public void generateRegupdate() {
+		if (targetAccessIndex != -1) {
+			intr.addRegUpdate(new RegUpdater(accessIndex + offset, targetAccessIndex + offset));
+		}
 	}
 
 	public int getAccessIndex() {

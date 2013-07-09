@@ -42,9 +42,14 @@ public class BigAccesses {
 
 		@Override
 		public void setDataBig(BigInteger data, int deltaCycle, int epsCycle) {
-			this.hdlFrameInterpreter.big_storage[getAccessIndex()] = data;
+			final int accessIndex = getAccessIndex();
+			final BigInteger val = this.hdlFrameInterpreter.big_storage[accessIndex];
+			this.hdlFrameInterpreter.big_storage[accessIndex] = data;
 			if (ii.isPred) {
 				setLastUpdate(deltaCycle, epsCycle);
+			}
+			if (!val.equals(data)) {
+				generateRegupdate();
 			}
 		}
 
@@ -88,14 +93,20 @@ public class BigAccesses {
 
 		@Override
 		public void setDataBig(BigInteger data, int deltaCycle, int epsCycle) {
-			final BigInteger initial = this.hdlFrameInterpreter.big_storage[getAccessIndex()];
+			final int accessIndex = getAccessIndex();
+			final BigInteger val = this.hdlFrameInterpreter.big_storage[accessIndex];
+			BigInteger newVal;
 			if (BigInteger.ZERO.equals(data.and(BigInteger.ONE))) {
-				this.hdlFrameInterpreter.big_storage[getAccessIndex()] = initial.clearBit(bit);
+				newVal = val.clearBit(bit);
 			} else {
-				this.hdlFrameInterpreter.big_storage[getAccessIndex()] = initial.setBit(bit);
+				newVal = val.setBit(bit);
 			}
+			this.hdlFrameInterpreter.big_storage[accessIndex] = newVal;
 			if (ii.isPred) {
 				setLastUpdate(deltaCycle, epsCycle);
+			}
+			if (!val.equals(newVal)) {
+				generateRegupdate();
 			}
 		}
 
@@ -142,11 +153,16 @@ public class BigAccesses {
 
 		@Override
 		public void setDataBig(BigInteger data, int deltaCycle, int epsCycle) {
-			final BigInteger initial = this.hdlFrameInterpreter.big_storage[getAccessIndex()];
+			final int accessIndex = getAccessIndex();
+			final BigInteger initial = this.hdlFrameInterpreter.big_storage[accessIndex];
 			final BigInteger current = initial.and(writeMask);
-			this.hdlFrameInterpreter.big_storage[getAccessIndex()] = current.or(data.and(mask).shiftLeft(shift));
+			final BigInteger newVal = current.or(data.and(mask).shiftLeft(shift));
+			this.hdlFrameInterpreter.big_storage[accessIndex] = newVal;
 			if (ii.isPred) {
 				setLastUpdate(deltaCycle, epsCycle);
+			}
+			if (!initial.equals(newVal)) {
+				generateRegupdate();
 			}
 		}
 

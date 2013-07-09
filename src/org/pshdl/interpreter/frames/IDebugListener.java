@@ -61,4 +61,6 @@ public interface IDebugListener {
 
 	void doneCycle(int deltaCycle, IHDLInterpreter interpreter);
 
+	void writeInternal(int uniqueID, int arrayPos, int[] writeIndex, BigInteger value, InternalInformation ii, Object longFrame);
+
 }

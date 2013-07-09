@@ -298,6 +298,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 	 * SignedCastTest.main() cast (int<16>) -255 to (int<32>) : FFFFFF01
 	 * SignedCastTest.main() cast (uint<16>) 65535 to (int<32>) : 0000FFFF
 	 */
+	final Set<RegUpdater> updatedRegs = new HashSet<RegUpdater>();
 
 	/*
 	 * (non-Javadoc)
@@ -306,24 +307,18 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 	 */
 	@Override
 	public void run() {
-		boolean regUpdated = false;
 		deltaCycle++;
 		int epsCycle = 0;
-		final List<RegUpdater> updatedRegs = new ArrayList<EncapsulatedAccess.RegUpdater>();
 		do {
+			updatedRegs.clear();
 			epsCycle++;
 			if (listener != null) {
 				listener.startCycle(deltaCycle, epsCycle, this);
 			}
-			regUpdated = false;
 			for (final ExecutableFrame ef : frames) {
 				ef.execute(deltaCycle, epsCycle);
-				if (ef.regUpdated) {
-					updatedRegs.add(ef.outputAccess.getRegUpdater());
-					regUpdated = true;
-				}
 			}
-			if (regUpdated) {
+			if (!updatedRegs.isEmpty()) {
 				if (listener != null) {
 					listener.copyingRegisterValues(this);
 				}
@@ -333,10 +328,10 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 					} else {
 						storage[ea.accessIdx] = storage[ea.shadowAccessIdx];
 					}
+					System.out.println("HDLFrameInterpreter.run()" + ea);
 				}
-				updatedRegs.clear();
 			}
-		} while (regUpdated);
+		} while (!updatedRegs.isEmpty());
 		if (listener != null) {
 			listener.doneCycle(deltaCycle, this);
 		}
@@ -366,5 +361,9 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 	@Override
 	public int getDeltaCycle() {
 		return deltaCycle;
+	}
+
+	public void addRegUpdate(RegUpdater regUpdater) {
+		updatedRegs.add(regUpdater);
 	}
 }

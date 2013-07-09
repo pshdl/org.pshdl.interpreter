@@ -40,7 +40,6 @@ public abstract class ExecutableFrame {
 
 	protected final int outputID;
 
-	public boolean regUpdated;
 	public final int uniqueID;
 	public final EncapsulatedAccess outputAccess;
 	protected final int[] writeIndex = new int[10];

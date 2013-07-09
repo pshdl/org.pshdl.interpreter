@@ -71,19 +71,31 @@ public class LongAccesses {
 
 		@Override
 		public void setDataBig(BigInteger data, int deltaCycle, int epsCycle) {
-			final long current = intr.storage[getAccessIndex()] & writeMask;
-			this.intr.storage[getAccessIndex()] = current | ((data.longValue() & mask) << shift);
+			final int accessIndex = getAccessIndex();
+			final long val = intr.storage[accessIndex];
+			final long current = val & writeMask;
+			final long newVal = current | ((data.longValue() & mask) << shift);
+			this.intr.storage[accessIndex] = newVal;
 			if (ii.isPred) {
 				setLastUpdate(deltaCycle, epsCycle);
+			}
+			if (newVal != val) {
+				generateRegupdate();
 			}
 		}
 
 		@Override
 		public void setDataLong(long data, int deltaCycle, int epsCycle) {
-			final long current = intr.storage[getAccessIndex()] & writeMask;
-			this.intr.storage[getAccessIndex()] = current | ((data & mask) << shift);
+			final int accessIndex = getAccessIndex();
+			final long val = intr.storage[accessIndex];
+			final long current = val & writeMask;
+			final long newVal = current | ((data & mask) << shift);
+			this.intr.storage[accessIndex] = newVal;
 			if (ii.isPred) {
 				setLastUpdate(deltaCycle, epsCycle);
+			}
+			if (newVal != val) {
+				generateRegupdate();
 			}
 		}
 
