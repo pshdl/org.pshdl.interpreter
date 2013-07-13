@@ -26,6 +26,8 @@
  ******************************************************************************/
 package org.pshdl.interpreter.utils;
 
+import java.util.*;
+
 public enum Instruction {
 	noop(0, 0, "Does nothing"), //
 	// Bit Accesses
@@ -45,38 +47,38 @@ public enum Instruction {
 	const2(0, 1, "Loads a 2 to the stack"), //
 	constAll1(0, 1, "Loads a all 1's constant to the stack with the given width", "width"), //
 	// Execution control edges
-	isFallingEdge(0, 0, "Checks for an falling edge on from an internal signal", "inernalIdx"), //
-	isRisingEdge(0, 0, "Checks for an rising edge on from an internal signal", "inernalIdx"), //
+	isFallingEdge(0, 0, "Checks for an falling edge on from an internal signal", "internalIdx"), //
+	isRisingEdge(0, 0, "Checks for an rising edge on from an internal signal", "internalIdx"), //
 	// Execution control predicates
-	posPredicate(0, 0, "Checks if the given predicate has evaluated to true", "inernalIdx"), //
-	negPredicate(0, 0, "Checks if the given predicate has evaluated to false", "inernalIdx"), //
+	posPredicate(0, 0, "Checks if the given predicate has evaluated to true", "internalIdx"), //
+	negPredicate(0, 0, "Checks if the given predicate has evaluated to false", "internalIdx"), //
 	// Bit operations
-	and(2, 1, "A binary & operation"), //
-	or(2, 1, "A binary | operation"), //
-	xor(2, 1, "A binary ^ operation"), //
+	and(2, 1, "A binary & operation", "targetSizeWithType"), //
+	or(2, 1, "A binary | operation", "targetSizeWithType"), //
+	xor(2, 1, "A binary ^ operation", "targetSizeWithType"), //
 	// Arithemetic operations
-	div(2, 1, "An arithmetic / operation"), //
-	minus(2, 1, "An arithmetic - operation"), //
-	mul(2, 1, "An arithmetic * operation"), //
-	plus(2, 1, "An arithmetic + operation"), //
+	div(2, 1, "An arithmetic / operation", "targetSizeWithType"), //
+	minus(2, 1, "An arithmetic - operation", "targetSizeWithType"), //
+	mul(2, 1, "An arithmetic * operation", "targetSizeWithType"), //
+	plus(2, 1, "An arithmetic + operation", "targetSizeWithType"), //
 	// Equality operations
-	eq(2, 1, "An equality == operation"), //
-	greater(2, 1, "An equality > operation"), //
-	greater_eq(2, 1, "An equality >= operation"), //
-	less(2, 1, "An equality < operation"), //
-	less_eq(2, 1, "An equality <= operation"), //
-	not_eq(2, 1, "An equality != operation"), //
+	eq(2, 1, "An equality == operation, result is boolean (0/1)"), //
+	greater(2, 1, "An equality > operation, result is boolean (0/1)"), //
+	greater_eq(2, 1, "An equality >= operation, result is boolean (0/1)"), //
+	less(2, 1, "An equality < operation, result is boolean (0/1)"), //
+	less_eq(2, 1, "An equality <= operation, result is boolean (0/1)"), //
+	not_eq(2, 1, "An equality != operation, result is boolean (0/1)"), //
 	// Logical operations
-	logiOr(2, 1, "A logical || operation"), //
-	logiAnd(2, 1, "A logical && operation"), //
-	logiNeg(1, 1, "Logically negates"), //
+	logiOr(2, 1, "A logical || operation, result is boolean (0/1)"), //
+	logiAnd(2, 1, "A logical && operation, result is boolean (0/1)"), //
+	logiNeg(1, 1, "Logically negates, result is boolean (0/1)"), //
 	// Negation operations
-	arith_neg(1, 1, "Arithmetically negates"), //
-	bit_neg(1, 1, "Bit inverts"), //
+	arith_neg(1, 1, "Arithmetically negates", "targetSizeWithType"), //
+	bit_neg(1, 1, "Bit inverts", "targetSizeWithType"), //
 	// Shift operations
-	sll(2, 1, "A shift << operation"), //
-	sra(2, 1, "A shift >> operation"), //
-	srl(2, 1, "A shift >>> operation"), //
+	sll(2, 1, "A shift << operation", "targetSizeWithType"), //
+	sra(2, 1, "A shift >> operation", "targetSizeWithType"), //
+	srl(2, 1, "A shift >>> operation", "targetSizeWithType"), //
 	// Memory
 	pushAddIndex(1, 0, "Pushes an additional index into the write stack for that memory"), //
 	writeInternal(1, 0, "Writes a value to an internal (and every array position)", "internal"), //
@@ -105,5 +107,28 @@ public enum Instruction {
 		if (argCount == 2)
 			return ordinal() | 0x80;
 		return ordinal();
+	}
+
+	public static void main(String[] args) {
+		final Formatter f = new Formatter();
+		f.format("Name                  |byte| Stack|Description   | first argument | second argument\n");
+		f.format(":--------------------:|----|------|--------------|----------------|----------------\n");
+		for (final Instruction i : Instruction.values()) {
+			f.format("%21s |0x%02X| %s | %s | %s | %s\n", i.name(), i.toByte(), toStack(i), i.description, i.argCount > 0 ? i.args[0] : "", i.argCount > 1 ? i.args[1] : "");
+		}
+		System.out.println(f);
+	}
+
+	private static String toStack(Instruction i) {
+		if ((i.pop == 0) && (i.push == 0))
+			return "±0";
+		final StringBuilder sb = new StringBuilder();
+		if (i.pop != 0) {
+			sb.append(-i.pop).append(' ');
+		}
+		if (i.push != 0) {
+			sb.append('+').append(i.push);
+		}
+		return sb.toString();
 	}
 }

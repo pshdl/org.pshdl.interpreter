@@ -67,6 +67,40 @@ public class Frame implements Serializable {
 				return inst.name() + "[" + inst.args[0] + "=" + arg1 + "]";
 			return inst.name();
 		}
+
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = (prime * result) + arg1;
+			result = (prime * result) + arg2;
+			result = (prime * result) + ((inst == null) ? 0 : inst.hashCode());
+			result = (prime * result) + (popA ? 1231 : 1237);
+			result = (prime * result) + (popB ? 1231 : 1237);
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			final FastInstruction other = (FastInstruction) obj;
+			if (arg1 != other.arg1)
+				return false;
+			if (arg2 != other.arg2)
+				return false;
+			if (inst != other.inst)
+				return false;
+			if (popA != other.popA)
+				return false;
+			if (popB != other.popB)
+				return false;
+			return true;
+		}
 	}
 
 	public final FastInstruction[] instructions;
@@ -93,7 +127,6 @@ public class Frame implements Serializable {
 	public final int outputId;
 	public int maxDataWidth;
 	public final int maxStackDepth;
-	transient public int lastUpdate;
 	public final int uniqueID;
 	public final boolean constant;
 	private static final long serialVersionUID = -1690021519637432408L;
@@ -111,8 +144,8 @@ public class Frame implements Serializable {
 		this.edgePosDepRes = edgePosDepRes;
 		this.maxDataWidth = maxDataWidth;
 		this.maxStackDepth = maxStackDepth;
-		this.uniqueID = uniqueID;
 		this.constant = constant;
+		this.uniqueID = uniqueID;
 	}
 
 	@Override
@@ -147,5 +180,51 @@ public class Frame implements Serializable {
 
 	public boolean isReg() {
 		return (edgeNegDepRes != -1) || (edgePosDepRes != -1);
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = (prime * result) + (constant ? 1231 : 1237);
+		result = (prime * result) + Arrays.hashCode(constants);
+		result = (prime * result) + edgeNegDepRes;
+		result = (prime * result) + edgePosDepRes;
+		result = (prime * result) + Arrays.hashCode(instructions);
+		result = (prime * result) + Arrays.hashCode(internalDependencies);
+		result = (prime * result) + outputId;
+		result = (prime * result) + Arrays.hashCode(predNegDepRes);
+		result = (prime * result) + Arrays.hashCode(predPosDepRes);
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		final Frame other = (Frame) obj;
+		if (constant != other.constant)
+			return false;
+		if (!Arrays.equals(constants, other.constants))
+			return false;
+		if (edgeNegDepRes != other.edgeNegDepRes)
+			return false;
+		if (edgePosDepRes != other.edgePosDepRes)
+			return false;
+		if (!Arrays.equals(instructions, other.instructions))
+			return false;
+		if (!Arrays.equals(internalDependencies, other.internalDependencies))
+			return false;
+		if (outputId != other.outputId)
+			return false;
+		if (!Arrays.equals(predNegDepRes, other.predNegDepRes))
+			return false;
+		if (!Arrays.equals(predPosDepRes, other.predPosDepRes))
+			return false;
+		return true;
 	}
 }

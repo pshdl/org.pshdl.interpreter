@@ -328,7 +328,6 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 					} else {
 						storage[ea.accessIdx] = storage[ea.shadowAccessIdx];
 					}
-					System.out.println("HDLFrameInterpreter.run()" + ea);
 				}
 			}
 		} while (!updatedRegs.isEmpty());

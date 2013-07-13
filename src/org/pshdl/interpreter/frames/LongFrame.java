@@ -71,13 +71,13 @@ public final class LongFrame extends ExecutableFrame {
 			case noop:
 				break;
 			case and:
-				stack[++stackPos] = b & a;
+				stack[++stackPos] = fixOp(b & a, fi.arg1);
 				break;
 			case arith_neg:
-				stack[++stackPos] = -a;
+				stack[++stackPos] = fixOp(-a, fi.arg1);
 				break;
 			case bit_neg:
-				stack[++stackPos] = ~a;
+				stack[++stackPos] = fixOp(~a, fi.arg1);
 				break;
 			case bitAccessSingle:
 				final int bit = fi.arg1;
@@ -99,11 +99,10 @@ public final class LongFrame extends ExecutableFrame {
 				// value is 0xA (-6 int<4>)
 				// cast to int<3> result should be 0xE (-2)
 				// Resize sign correctly to correct size
-				final int targetSize = fi.arg1;
+				final int shift = 64 - Math.min(fi.arg1, fi.arg2);
 				// Throw away unnecessary bits (only needed when
 				// targetsize>currentSize)
-				final long temp = a << (64 - targetSize);
-				stack[++stackPos] = (temp >> (64 - targetSize));
+				stack[++stackPos] = (a << shift) >> shift;
 				break;
 			case cast_uint:
 				// There is nothing special about uints, so we just mask
@@ -133,7 +132,7 @@ public final class LongFrame extends ExecutableFrame {
 				stack[++stackPos] = (1 << width) - 1;
 				break;
 			case div:
-				stack[++stackPos] = b / a;
+				stack[++stackPos] = fixOp(b / a, fi.arg1);
 				break;
 			case eq:
 				stack[++stackPos] = b == a ? 1 : 0;
@@ -149,6 +148,9 @@ public final class LongFrame extends ExecutableFrame {
 				break;
 			case less_eq:
 				stack[++stackPos] = b <= a ? 1 : 0;
+				break;
+			case not_eq:
+				stack[++stackPos] = b != a ? 1 : 0;
 				break;
 			case loadConstant:
 				stack[++stackPos] = constants[fi.arg1];
@@ -167,31 +169,28 @@ public final class LongFrame extends ExecutableFrame {
 				stack[++stackPos] = a == 0 ? 1 : 0;
 				break;
 			case minus:
-				stack[++stackPos] = b - a;
+				stack[++stackPos] = fixOp(b - a, fi.arg1);
 				break;
 			case mul:
-				stack[++stackPos] = b * a;
-				break;
-			case not_eq:
-				stack[++stackPos] = b != a ? 1 : 0;
+				stack[++stackPos] = fixOp(b * a, fi.arg1);
 				break;
 			case or:
-				stack[++stackPos] = b | a;
+				stack[++stackPos] = fixOp(b | a, fi.arg1);
 				break;
 			case plus:
-				stack[++stackPos] = b + a;
+				stack[++stackPos] = fixOp(b + a, fi.arg1);
 				break;
 			case sll:
-				stack[++stackPos] = b << a;
+				stack[++stackPos] = fixOp(b << a, fi.arg1);
 				break;
 			case sra:
-				stack[++stackPos] = b >> a;
+				stack[++stackPos] = fixOp(b >> a, fi.arg1);
 				break;
 			case srl:
-				stack[++stackPos] = b >>> a;
+				stack[++stackPos] = fixOp(b >>> a, fi.arg1);
 				break;
 			case xor:
-				stack[++stackPos] = b ^ a;
+				stack[++stackPos] = fixOp(b ^ a, fi.arg1);
 				break;
 			case isFallingEdge: {
 				final int off = fi.arg1;
@@ -313,6 +312,13 @@ public final class LongFrame extends ExecutableFrame {
 			listener.writingResult(uniqueID, outputAccess.ii, BigInteger.valueOf(stack[0]), this);
 		}
 		return;
+	}
+
+	private long fixOp(long l, int arg1) {
+		final int val = arg1 >> 1;
+		if ((arg1 & 1) == 1)
+			return ((l << val) >> val);
+		return l & ((1l << val) - 1);
 	}
 
 	public EncapsulatedAccess getInternal(int off, int arrayPos) {
