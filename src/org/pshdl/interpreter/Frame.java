@@ -150,31 +150,90 @@ public class Frame implements Serializable {
 
 	@Override
 	public String toString() {
-		return toString(null);
+		return toString(null, false);
 	}
 
-	public String toString(ExecutableModel em) {
+	public String toString(ExecutableModel em, boolean formatted) {
 		final StringBuilder builder = new StringBuilder();
-		builder.append("Frame [").append(uniqueID).append(' ');
+		builder.append("Frame ").append(uniqueID);
+		if (formatted) {
+			builder.append("\n\t");
+		} else {
+			builder.append(' ');
+		}
 		if (instructions != null) {
-			builder.append("instructions=");
+			builder.append("Instructions");
+			if (formatted) {
+				builder.append(":\n");
+			} else {
+				builder.append('{');
+			}
 			for (final FastInstruction fi : instructions) {
-				builder.append(fi.toString(em)).append(',');
+				if (formatted) {
+					builder.append("\t\t");
+				}
+				builder.append(fi.toString(em));
+				if (formatted) {
+					builder.append('\n');
+				} else {
+					builder.append(',');
+				}
+			}
+			if (!formatted) {
+				builder.append('}');
 			}
 		}
 		if (internalDependencies != null) {
-			builder.append("internalDependencies=").append(Arrays.toString(internalDependencies)).append(", ");
+			if (formatted) {
+				builder.append('\t');
+			}
+			builder.append("internalDependencies=").append(Arrays.toString(internalDependencies));
+			if (formatted) {
+				builder.append("\n");
+			} else {
+				builder.append(", ");
+			}
 		}
 		if (constants != null) {
-			builder.append("constants=").append(Arrays.toString(constants)).append(", ");
+			if (formatted) {
+				builder.append('\t');
+			}
+			builder.append("constants=").append(Arrays.toString(constants));
+			if (formatted) {
+				builder.append("\n");
+			} else {
+				builder.append(", ");
+			}
+		}
+		if (formatted) {
+			builder.append('\t');
 		}
 		String outputName = Integer.toString(outputId);
 		if (em != null) {
 			outputName = em.internals[outputId].toString();
 		}
-		builder.append("outputId=").append(outputName).append(", maxDataWidth=").append(maxDataWidth).append(", maxStackDepth=").append(maxStackDepth).append(", ");
+		builder.append("outputId=").append(outputName);
+		if (formatted) {
+			builder.append("\n\t");
+		} else {
+			builder.append(", ");
+		}
+		builder.append("maxDataWidth=").append(maxDataWidth);
+		if (formatted) {
+			builder.append("\n\t");
+		} else {
+			builder.append(", ");
+		}
+		builder.append("maxStackDepth=").append(maxStackDepth);
+		if (formatted) {
+			builder.append("\n\t");
+		} else {
+			builder.append(", ");
+		}
 		builder.append("executionDep=").append(executionDep);
-		builder.append("]");
+		if (formatted) {
+			builder.append("\n");
+		}
 		return builder.toString();
 	}
 
