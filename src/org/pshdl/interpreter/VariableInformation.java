@@ -46,6 +46,8 @@ public class VariableInformation {
 	public final boolean isClock;
 	public final boolean isReset;
 
+	public int readCount = 0, writeCount = 0;
+
 	public VariableInformation(Direction dir, String name, int width, Type type, boolean isRegister, boolean isClock, boolean isReset, int... dimensions) {
 		super();
 		this.isClock = isClock;

@@ -233,6 +233,7 @@ public class ExecutableInputStream extends DataInputStream {
 
 	public Frame readFrame(boolean verbose) throws IOException {
 		TLV tlv = null;
+		boolean constant = false;
 		BigInteger consts[] = new BigInteger[0];
 		int edgeNegDep = -1, edgePosDep = -1;
 		int[] predNegDep = null;
@@ -287,13 +288,19 @@ public class ExecutableInputStream extends DataInputStream {
 			case uniqueID:
 				uniqueID = ex.readVarInt();
 				break;
+			case flags:
+				final int flags = ex.readVarInt();
+				if ((flags & IOUtil.CONST_FLAG) == IOUtil.CONST_FLAG) {
+					constant = true;
+				}
+				break;
 			default:
 				ex.close();
 				throw new IllegalArgumentException("The type:" + type + " is not handled");
 			}
 			ex.close();
 		}
-		final Frame frame = new Frame(instructions, intDeps, predPosDep, predNegDep, edgePosDep, edgeNegDep, outputID, maxDataWidth, maxStackDepth, consts, uniqueID, false);
+		final Frame frame = new Frame(instructions, intDeps, predPosDep, predNegDep, edgePosDep, edgeNegDep, outputID, maxDataWidth, maxStackDepth, consts, uniqueID, constant);
 		frame.executionDep = executionDep;
 		return frame;
 	}

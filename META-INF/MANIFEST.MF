@@ -6,5 +6,6 @@ Bundle-Version: 1.0.0.qualifier
 Export-Package: org.pshdl.interpreter,
  org.pshdl.interpreter.access,
  org.pshdl.interpreter.frames,
+ org.pshdl.interpreter.optimizer,
  org.pshdl.interpreter.utils
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6

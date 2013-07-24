@@ -31,6 +31,8 @@ import java.io.*;
 import org.pshdl.interpreter.*;
 
 public class IOUtil {
+
+	// Variable Flags
 	public static final int PRED_FLAG = 0x01;
 	public static final int REG_FLAG = 0x02;
 	public static final int IN_FLAG = 0x4;
@@ -40,6 +42,9 @@ public class IOUtil {
 	public static final int UINT_FLAG = 0x20;
 	public static final int CLOCK_FLAG = 0x40;
 	public static final int RESET_FLAG = 0x80;
+
+	// Frame flags
+	public static final int CONST_FLAG = 0x01;
 
 	public static interface IDType<T extends Enum<T>> {
 		public int getID();
@@ -62,7 +67,7 @@ public class IOUtil {
 	}
 
 	public static enum FrameTypes implements IDType<FrameTypes> {
-		uniqueID, outputID, internalDep, edgePosDep, edgeNegDep, predPosDep, predNegDep, executionDep, constants, instructions, maxDataWidth, maxStackDepth;
+		uniqueID, outputID, internalDep, edgePosDep, edgeNegDep, predPosDep, predNegDep, executionDep, constants, instructions, maxDataWidth, maxStackDepth, flags;
 
 		@Override
 		public int getID() {

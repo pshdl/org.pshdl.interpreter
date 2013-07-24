@@ -162,7 +162,13 @@ public class ExecutableOutputStream extends DataOutputStream {
 		obj.writeByteArray(FrameTypes.instructions, getInstructions(f.instructions));
 		obj.writeInt(FrameTypes.maxDataWidth, f.maxDataWidth);
 		obj.writeInt(FrameTypes.maxStackDepth, f.maxStackDepth);
-
+		int flags = 0;
+		if (f.constant) {
+			flags |= IOUtil.CONST_FLAG;
+		}
+		if (flags != 0) {
+			obj.writeInt(FrameTypes.flags, flags);
+		}
 		writeByteArray(ModelTypes.frame, baos.toByteArray());
 		obj.close();
 	}
