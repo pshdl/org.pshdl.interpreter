@@ -210,7 +210,7 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				break;
 			}
 			case srl: {
-				stack[++stackPos] = srl(b, 1024, a.intValue());
+				stack[++stackPos] = srl(b, f.arg1, a.intValue());
 				break;
 			}
 			case xor: {
@@ -346,6 +346,8 @@ public final class BigIntegerFrame extends ExecutableFrame {
 	}
 
 	public static BigInteger srl(BigInteger l, int width, int shiftBy) {
+		if (shiftBy == 0)
+			return l;
 		if (l.signum() >= 0)
 			return l.shiftRight(shiftBy);
 		final BigInteger opener = BigInteger.ONE.shiftLeft(width + 1);
