@@ -123,14 +123,15 @@ public class ExecutableModel implements Serializable {
 		// System.out.println(f.toString(this));
 		// }
 		final ArrayList<Node<String>> sortNodes = graph.sortNodes(nodes);
-		// for (Node<String> node : sortNodes) {
-		// System.out.println(node.object);
+		// for (final Node<String> node : sortNodes) {
+		// System.out.println(node.object + "->" + node.stage);
 		// }
 		int pos = 0;
 		for (final Node<String> node : sortNodes) {
 			final String obj = node.object;
 			final Frame f = frameNames.get(obj);
 			if (f != null) {
+				f.scheduleStage = node.stage;
 				frames[pos++] = f;
 			}
 		}

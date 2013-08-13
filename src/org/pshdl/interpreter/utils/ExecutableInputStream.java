@@ -241,6 +241,7 @@ public class ExecutableInputStream extends DataInputStream {
 		int executionDep = -1;
 		int maxDataWidth = -1, maxStackDepth = -1;
 		int outputID = -1, uniqueID = -1;
+		int scheduleStage = -1;
 		FastInstruction[] instructions = new FastInstruction[0];
 		int[] intDeps = new int[0];
 		while ((tlv = readTLV(FrameTypes.constants)) != null) {
@@ -294,13 +295,17 @@ public class ExecutableInputStream extends DataInputStream {
 					constant = true;
 				}
 				break;
+			case scheduleStage:
+				scheduleStage = ex.readVarInt();
+				break;
 			default:
 				ex.close();
 				throw new IllegalArgumentException("The type:" + type + " is not handled");
 			}
 			ex.close();
 		}
-		final Frame frame = new Frame(instructions, intDeps, predPosDep, predNegDep, edgePosDep, edgeNegDep, outputID, maxDataWidth, maxStackDepth, consts, uniqueID, constant);
+		final Frame frame = new Frame(instructions, intDeps, predPosDep, predNegDep, edgePosDep, edgeNegDep, outputID, maxDataWidth, maxStackDepth, consts, uniqueID, constant,
+				scheduleStage);
 		frame.executionDep = executionDep;
 		return frame;
 	}

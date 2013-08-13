@@ -129,10 +129,11 @@ public class Frame implements Serializable {
 	public final int maxStackDepth;
 	public final int uniqueID;
 	public final boolean constant;
+	public int scheduleStage;
 	private static final long serialVersionUID = -1690021519637432408L;
 
 	public Frame(FastInstruction[] instructions, int[] internalDependencies, int[] predPosDepRes, int[] predNegDepRes, int edgePosDepRes, int edgeNegDepRes, int outputId,
-			int maxDataWidth, int maxStackDepth, BigInteger[] constants, int uniqueID, boolean constant) {
+			int maxDataWidth, int maxStackDepth, BigInteger[] constants, int uniqueID, boolean constant, int scheduleStage) {
 		super();
 		this.constants = constants;
 		this.instructions = instructions;
@@ -146,6 +147,7 @@ public class Frame implements Serializable {
 		this.maxStackDepth = maxStackDepth;
 		this.constant = constant;
 		this.uniqueID = uniqueID;
+		this.scheduleStage = scheduleStage;
 	}
 
 	@Override

@@ -67,7 +67,7 @@ public class IOUtil {
 	}
 
 	public static enum FrameTypes implements IDType<FrameTypes> {
-		uniqueID, outputID, internalDep, edgePosDep, edgeNegDep, predPosDep, predNegDep, executionDep, constants, instructions, maxDataWidth, maxStackDepth, flags;
+		uniqueID, outputID, internalDep, edgePosDep, edgeNegDep, predPosDep, predNegDep, executionDep, constants, instructions, maxDataWidth, maxStackDepth, flags, scheduleStage;
 
 		@Override
 		public int getID() {

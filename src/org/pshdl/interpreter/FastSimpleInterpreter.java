@@ -218,6 +218,9 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 
 	public FastSimpleInterpreter(ExecutableModel model, boolean disableEdge, boolean disabledRegOutputlogic) {
 		this.disabledRegOutputlogic = disabledRegOutputlogic;
+		final Frame[] frames = model.frames;
+		this.frames = new FastFrame[frames.length];
+		this.full = new LongAccess[model.variables.length];
 		final Map<String, Integer> index = new HashMap<String, Integer>();
 		int currentIdx = 0;
 		for (final VariableInformation var : model.variables) {
@@ -234,14 +237,11 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 		}
 		this.internals = new LongAccess[model.internals.length];
 		this.internals_prev = new LongAccess[model.internals.length];
-		this.full = new LongAccess[model.variables.length];
 		final int storageSize = createInternals(model);
 		createVarIndex(model);
 		this.storage = new long[storageSize];
 		this.storage_prev = new long[storageSize];
 		deltaUpdates = new long[storageSize];
-		final Frame[] frames = model.frames;
-		this.frames = new FastFrame[frames.length];
 		for (int i = 0; i < frames.length; i++) {
 			this.frames[i] = new FastFrame(this, frames[i], disableEdge);
 		}
