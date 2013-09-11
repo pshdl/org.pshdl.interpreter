@@ -84,6 +84,8 @@ public class ExecutableInputStream extends DataInputStream {
 		final List<InternalInformation> internals = new LinkedList<InternalInformation>();
 		final List<Frame> frameList = new LinkedList<Frame>();
 		final List<VariableInformation> vars = new LinkedList<VariableInformation>();
+		String moduleName = null;
+		String src = null;
 		while ((tlv = readTLV(ModelTypes.date)) != null) {
 			final ModelTypes type = (ModelTypes) tlv.type;
 			final ExecutableInputStream ex = new ExecutableInputStream(new ByteArrayInputStream(tlv.value));
@@ -116,8 +118,9 @@ public class ExecutableInputStream extends DataInputStream {
 				}
 				break;
 			case src:
+				src = tlv.asString();
 				if (verbose) {
-					System.out.println("Generated from resource:" + tlv.asString());
+					System.out.println("Generated from resource:" + src);
 				}
 				break;
 			case version:
@@ -126,6 +129,9 @@ public class ExecutableInputStream extends DataInputStream {
 					ex.readFully(version);
 					System.out.printf("Compiled with version: %d.%d.%d\n", version[0], version[1], version[2]);
 				}
+				break;
+			case moduleName:
+				moduleName = tlv.asString();
 				break;
 			default:
 				ex.close();
@@ -136,9 +142,7 @@ public class ExecutableInputStream extends DataInputStream {
 		final Frame[] frames = frameList.toArray(new Frame[frameList.size()]);
 		final InternalInformation[] iis = internals.toArray(new InternalInformation[internals.size()]);
 		final VariableInformation[] fvars = vars.toArray(new VariableInformation[vars.size()]);
-		final ExecutableModel executableModel = new ExecutableModel(frames, iis, fvars);
-		// System.out.println("ExecutableInputStream.readExecutableModel()" +
-		// executableModel);
+		final ExecutableModel executableModel = new ExecutableModel(frames, iis, fvars, moduleName, src);
 		return executableModel;
 	}
 

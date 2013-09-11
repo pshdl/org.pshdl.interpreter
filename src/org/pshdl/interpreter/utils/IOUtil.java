@@ -53,7 +53,7 @@ public class IOUtil {
 	}
 
 	public static enum ModelTypes implements IDType<ModelTypes> {
-		version, src, date, maxDataWidth, maxStackDepth, internal, frame, variable;
+		version, src, date, maxDataWidth, maxStackDepth, internal, frame, variable, moduleName;
 
 		@Override
 		public int getID() {
@@ -115,9 +115,9 @@ public class IOUtil {
 		return res;
 	}
 
-	public static void writeExecutableModel(String source, long date, ExecutableModel model, File target) throws IOException {
+	public static void writeExecutableModel(long date, ExecutableModel model, File target) throws IOException {
 		final ExecutableOutputStream fos = new ExecutableOutputStream(new FileOutputStream(target));
-		fos.writeExecutableModel(source, date, model);
+		fos.writeExecutableModel(date, model);
 		fos.close();
 	}
 

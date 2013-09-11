@@ -43,12 +43,15 @@ public class ExecutableOutputStream extends DataOutputStream {
 		super(out);
 	}
 
-	public void writeExecutableModel(String source, long date, ExecutableModel model) throws IOException {
+	public void writeExecutableModel(long date, ExecutableModel model) throws IOException {
 		// System.out.println("ExecutableOutputStream.writeExecutableModel()" +
 		// model);
 		write("PSEX".getBytes());
 		writeByteArray(ModelTypes.version, new byte[] { 0, 2, 0 });
-		writeString(ModelTypes.src, source);
+		writeString(ModelTypes.src, model.source);
+		if (model.moduleName != null) {
+			writeString(ModelTypes.moduleName, model.moduleName);
+		}
 		if (date != -1) {
 			writeLong(ModelTypes.date, date);
 		}

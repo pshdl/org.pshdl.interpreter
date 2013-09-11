@@ -37,12 +37,14 @@ public class ExecutableModel implements Serializable {
 	public final int maxDataWidth;
 	public final int maxExecutionWidth;
 	public final int maxStackDepth;
+	public final String moduleName;
 	public final Frame[] frames;
 	public final InternalInformation[] internals;
 	public final VariableInformation[] variables;
+	public final String source;
 	private static final long serialVersionUID = 7515137334641792104L;
 
-	public ExecutableModel(Frame[] frames, InternalInformation[] internals, VariableInformation[] variables) {
+	public ExecutableModel(Frame[] frames, InternalInformation[] internals, VariableInformation[] variables, String moduleName, String source) {
 		super();
 		this.frames = frames;
 		this.internals = internals;
@@ -63,6 +65,8 @@ public class ExecutableModel implements Serializable {
 		}
 		this.maxStackDepth = maxStack;
 		this.variables = variables;
+		this.moduleName = moduleName;
+		this.source = source;
 	}
 
 	@Override
