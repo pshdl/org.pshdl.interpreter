@@ -45,10 +45,11 @@ public class VariableInformation {
 	public final int[] dimensions;
 	public final boolean isClock;
 	public final boolean isReset;
+	public final String[] annotations;
 
 	public int readCount = 0, writeCount = 0;
 
-	public VariableInformation(Direction dir, String name, int width, Type type, boolean isRegister, boolean isClock, boolean isReset, int... dimensions) {
+	public VariableInformation(Direction dir, String name, int width, Type type, boolean isRegister, boolean isClock, boolean isReset, String[] annotations, int... dimensions) {
 		super();
 		this.isClock = isClock;
 		this.isReset = isReset;
@@ -58,6 +59,7 @@ public class VariableInformation {
 		this.type = type;
 		this.isRegister = isRegister;
 		this.dimensions = dimensions;
+		this.annotations = annotations;
 	}
 
 	@Override

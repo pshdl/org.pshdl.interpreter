@@ -86,6 +86,7 @@ public class ExecutableInputStream extends DataInputStream {
 		final List<VariableInformation> vars = new LinkedList<VariableInformation>();
 		String moduleName = null;
 		String src = null;
+		String[] annotations = null;
 		while ((tlv = readTLV(ModelTypes.date)) != null) {
 			final ModelTypes type = (ModelTypes) tlv.type;
 			final ExecutableInputStream ex = new ExecutableInputStream(new ByteArrayInputStream(tlv.value));
@@ -133,6 +134,9 @@ public class ExecutableInputStream extends DataInputStream {
 			case moduleName:
 				moduleName = tlv.asString();
 				break;
+			case annotations:
+				annotations = ex.readStringArray();
+				break;
 			default:
 				ex.close();
 				throw new IllegalArgumentException("The type:" + type + " is not handled");
@@ -142,7 +146,7 @@ public class ExecutableInputStream extends DataInputStream {
 		final Frame[] frames = frameList.toArray(new Frame[frameList.size()]);
 		final InternalInformation[] iis = internals.toArray(new InternalInformation[internals.size()]);
 		final VariableInformation[] fvars = vars.toArray(new VariableInformation[vars.size()]);
-		final ExecutableModel executableModel = new ExecutableModel(frames, iis, fvars, moduleName, src);
+		final ExecutableModel executableModel = new ExecutableModel(frames, iis, fvars, moduleName, src, annotations);
 		return executableModel;
 	}
 
@@ -155,6 +159,7 @@ public class ExecutableInputStream extends DataInputStream {
 		int width = -1;
 		int dimensions[] = new int[0];
 		boolean isClock = false, isReset = false;
+		String[] annotations = null;
 		while ((tlv = readTLV(VariableTypes.name)) != null) {
 			final ExecutableInputStream ex = new ExecutableInputStream(new ByteArrayInputStream(tlv.value));
 			final VariableTypes it = (VariableTypes) tlv.type;
@@ -194,10 +199,13 @@ public class ExecutableInputStream extends DataInputStream {
 			case width:
 				width = ex.readVarInt();
 				break;
+			case annotations:
+				annotations = ex.readStringArray();
+				break;
 			}
 			ex.close();
 		}
-		final VariableInformation res = new VariableInformation(dir, name, width, type, isRegister, isClock, isReset, dimensions);
+		final VariableInformation res = new VariableInformation(dir, name, width, type, isRegister, isClock, isReset, annotations, dimensions);
 		return res;
 	}
 

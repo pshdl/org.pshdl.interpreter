@@ -28,6 +28,7 @@ package org.pshdl.interpreter;
 
 import java.io.*;
 import java.util.*;
+import java.util.Map.Entry;
 
 import org.pshdl.interpreter.utils.*;
 import org.pshdl.interpreter.utils.Graph.CycleException;
@@ -42,9 +43,10 @@ public class ExecutableModel implements Serializable {
 	public final InternalInformation[] internals;
 	public final VariableInformation[] variables;
 	public final String source;
+	public final String[] annotations;
 	private static final long serialVersionUID = 7515137334641792104L;
 
-	public ExecutableModel(Frame[] frames, InternalInformation[] internals, VariableInformation[] variables, String moduleName, String source) {
+	public ExecutableModel(Frame[] frames, InternalInformation[] internals, VariableInformation[] variables, String moduleName, String source, String[] annotations) {
 		super();
 		this.frames = frames;
 		this.internals = internals;
@@ -67,6 +69,7 @@ public class ExecutableModel implements Serializable {
 		this.variables = variables;
 		this.moduleName = moduleName;
 		this.source = source;
+		this.annotations = annotations;
 	}
 
 	@Override
@@ -84,6 +87,14 @@ public class ExecutableModel implements Serializable {
 		return builder.toString();
 	}
 
+	/**
+	 * Sorts the ExecutableModel in such a way, that all Frames can be executed
+	 * sequentially. This is happening in-place.
+	 * 
+	 * @return this
+	 * @throws CycleException
+	 *             if a combinatorial loop has been detected
+	 */
 	public ExecutableModel sortTopological() throws CycleException {
 		final Graph<String> graph = new Graph<String>();
 		final ArrayList<Node<String>> nodes = new ArrayList<Graph.Node<String>>();
@@ -98,7 +109,6 @@ public class ExecutableModel implements Serializable {
 		}
 		for (int i = 0; i < internals.length; i++) {
 			final String string = getInternal(i);
-			// System.out.println(i + " " + internals[i]);
 			final Node<String> node = new Node<String>(string);
 			nodes.add(node);
 			nodeNames.put(string, node);
@@ -116,20 +126,7 @@ public class ExecutableModel implements Serializable {
 				node.reverseAddEdge(ni);
 			}
 		}
-		// for (Node<String> node : nodes) {
-		// System.out.print(node.object + " -> ");
-		// for (Edge<String> i : node.inEdges) {
-		// System.out.print(i.from.object + " ");
-		// }
-		// System.out.println();
-		// Frame f = frameNames.get(node.object);
-		// if (f != null)
-		// System.out.println(f.toString(this));
-		// }
 		final ArrayList<Node<String>> sortNodes = graph.sortNodes(nodes);
-		// for (final Node<String> node : sortNodes) {
-		// System.out.println(node.object + "->" + node.stage);
-		// }
 		int pos = 0;
 		for (final Node<String> node : sortNodes) {
 			final String obj = node.object;
@@ -228,6 +225,92 @@ public class ExecutableModel implements Serializable {
 		}
 		sb.append("}");
 		return sb.toString();
+	}
+
+	public String toRegisterDot() {
+		final Map<String, Set<String>> connections = new HashMap<String, Set<String>>();
+		final Map<String, VariableInformation> varNames = new HashMap<String, VariableInformation>();
+		for (final VariableInformation var : variables) {
+			final HashSet<String> connSet = new HashSet<String>();
+			connections.put(var.name, connSet);
+			varNames.put(var.name, var);
+		}
+		for (final Frame f : frames) {
+			final String output = getVarName(f.outputId);
+			for (final int intDep : f.internalDependencies) {
+				final Set<String> set = connections.get(getVarName(intDep));
+				set.add(output);
+			}
+			for (final int intDep : f.predNegDepRes) {
+				final Set<String> set = connections.get(getVarName(intDep));
+				set.add(output);
+			}
+			for (final int intDep : f.predPosDepRes) {
+				final Set<String> set = connections.get(getVarName(intDep));
+				set.add(output);
+			}
+			if (f.edgeNegDepRes != -1) {
+				final Set<String> set = connections.get(getVarName(f.edgeNegDepRes));
+				set.add(output);
+			}
+			if (f.edgePosDepRes != -1) {
+				final Set<String> set = connections.get(getVarName(f.edgePosDepRes));
+				set.add(output);
+			}
+		}
+		final Map<String, Set<String>> regConnections = new HashMap<String, Set<String>>();
+		for (final VariableInformation var : variables) {
+			if (var.isRegister) {
+				final HashSet<String> connSet = new HashSet<String>();
+				regConnections.put(var.name, connSet);
+				follow(true, var.name, connections, connSet, varNames);
+			}
+		}
+		// System.out.println("ExecutableModel.toRegisterDot()" +
+		// regConnections);
+		final int skipLen = moduleName.length();
+		final StringBuilder sb = new StringBuilder();
+		sb.append("digraph ExecutableModelRegister {\n");
+		for (final String regName : regConnections.keySet()) {
+			final VariableInformation key = varNames.get(regName);
+			final int keyID = System.identityHashCode(key);
+			sb.append("\tnode [shape=\"box\" label=\"" + key.name.substring(skipLen + 1) + "\"] " + keyID + ";\n");
+		}
+		for (final Entry<String, Set<String>> e : regConnections.entrySet()) {
+			final Set<String> value = e.getValue();
+			final VariableInformation key = varNames.get(e.getKey());
+			final int keyID = System.identityHashCode(key);
+			for (final String val : value) {
+				final VariableInformation remoteVar = varNames.get(val);
+				if (remoteVar.isRegister) {
+					sb.append('\t').append(keyID).append(" -> ").append(System.identityHashCode(remoteVar)).append(";\n");
+				}
+			}
+		}
+		sb.append('}');
+		return sb.toString();
+	}
+
+	private void follow(boolean first, String varName, Map<String, Set<String>> connections, HashSet<String> connSet, Map<String, VariableInformation> varNames) {
+		if (connSet.contains(varName))
+			return;
+		if (!first) {
+			connSet.add(varName);
+		}
+		final Set<String> set = connections.get(varName);
+		for (final String connVarName : set) {
+			final VariableInformation var = varNames.get(connVarName);
+			if (!var.isRegister) {
+				follow(false, connVarName, connections, connSet, varNames);
+			} else {
+				connSet.add(var.name);
+			}
+		}
+	}
+
+	private String getVarName(int intDep) {
+		final InternalInformation ii = internals[intDep];
+		return ii.info.name;
 	}
 
 	public InternalInformation getInternal(String string) {

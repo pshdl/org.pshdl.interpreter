@@ -53,7 +53,7 @@ public class IOUtil {
 	}
 
 	public static enum ModelTypes implements IDType<ModelTypes> {
-		version, src, date, maxDataWidth, maxStackDepth, internal, frame, variable, moduleName;
+		version, src, date, maxDataWidth, maxStackDepth, internal, frame, variable, moduleName, annotations;
 
 		@Override
 		public int getID() {
@@ -81,7 +81,7 @@ public class IOUtil {
 	}
 
 	public static enum VariableTypes implements IDType<VariableTypes> {
-		name, width, flags, dimensions;
+		name, width, flags, dimensions, annotations;
 
 		@Override
 		public int getID() {

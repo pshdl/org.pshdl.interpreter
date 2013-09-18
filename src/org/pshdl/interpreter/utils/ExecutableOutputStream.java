@@ -57,12 +57,15 @@ public class ExecutableOutputStream extends DataOutputStream {
 		}
 		writeInt(ModelTypes.maxDataWidth, model.maxDataWidth);
 		writeInt(ModelTypes.maxStackDepth, model.maxStackDepth);
+		if ((model.annotations != null) && (model.annotations.length != 0)) {
+			writeStringArray(ModelTypes.annotations, model.annotations);
+		}
 		final Map<String, Integer> varIdx = new HashMap<String, Integer>();
 		final VariableInformation[] variables = model.variables;
 		for (int i = 0; i < variables.length; i++) {
 			final VariableInformation vi = variables[i];
 			varIdx.put(vi.name, i);
-			writeVariable(vi);
+			writeVariable(vi, model.moduleName);
 		}
 		for (final InternalInformation ii : model.internals) {
 			writeInternal(ii, varIdx.get(ii.info.name));
@@ -72,10 +75,15 @@ public class ExecutableOutputStream extends DataOutputStream {
 		}
 	}
 
-	public void writeVariable(VariableInformation vi) throws IOException {
+	public void writeVariable(VariableInformation vi, String baseName) throws IOException {
 		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		final ExecutableOutputStream obj = new ExecutableOutputStream(baos);
-		obj.writeString(VariableTypes.name, vi.name);
+		String name = vi.name;
+		if ((baseName != null) && vi.name.startsWith(baseName)) {
+			name = vi.name.substring(baseName.length() + 1, vi.name.length());
+		}
+		// System.out.println("ExecutableOutputStream.writeVariable()" + name);
+		obj.writeString(VariableTypes.name, name);
 		obj.writeInt(VariableTypes.width, vi.width);
 		int flags = 0;
 		switch (vi.dir) {
@@ -112,6 +120,9 @@ public class ExecutableOutputStream extends DataOutputStream {
 		obj.writeInt(VariableTypes.flags, flags);
 		if (vi.dimensions.length != 0) {
 			obj.writeIntArray(VariableTypes.dimensions, vi.dimensions);
+		}
+		if ((vi.annotations != null) && (vi.annotations.length != 0)) {
+			obj.writeStringArray(VariableTypes.annotations, vi.annotations);
 		}
 		writeByteArray(ModelTypes.variable, baos.toByteArray());
 		obj.close();
