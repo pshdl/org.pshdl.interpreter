@@ -26,6 +26,7 @@
  ******************************************************************************/
 package org.pshdl.interpreter;
 
+import java.io.*;
 import java.util.*;
 import java.util.regex.*;
 
@@ -35,7 +36,12 @@ import java.util.regex.*;
  * @author Karsten Becker
  * 
  */
-public class InternalInformation {
+public class InternalInformation implements Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 4954890462211632791L;
+
 	/**
 	 * An internal that ends with this string is the shadow register of a
 	 * regular internal

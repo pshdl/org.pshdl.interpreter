@@ -26,9 +26,16 @@
  ******************************************************************************/
 package org.pshdl.interpreter;
 
+import java.io.*;
 import java.util.*;
 
-public class VariableInformation {
+public class VariableInformation implements Serializable {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 7590745375562877673L;
+
 	public static enum Direction {
 		IN, INOUT, OUT, INTERNAL
 	}

@@ -34,7 +34,11 @@ import org.pshdl.interpreter.utils.*;
 
 public class Frame implements Serializable {
 
-	public static class FastInstruction {
+	public static class FastInstruction implements Serializable {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = -322363811192724107L;
 		public final Instruction inst;
 		public final int arg1, arg2;
 		public final boolean popA;
