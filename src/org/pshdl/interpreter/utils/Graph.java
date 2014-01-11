@@ -41,19 +41,19 @@ public class Graph<T> {
 
 		public Node(T object) {
 			this.object = object;
-			inEdges = new LinkedHashSet<Edge<T>>();
-			outEdges = new LinkedHashSet<Edge<T>>();
+			inEdges = new LinkedHashSet<>();
+			outEdges = new LinkedHashSet<>();
 		}
 
 		public Node<T> addEdge(Node<T> node) {
-			final Edge<T> e = new Edge<T>(this, node);
+			final Edge<T> e = new Edge<>(this, node);
 			outEdges.add(e);
 			node.inEdges.add(e);
 			return this;
 		}
 
 		public Node<T> reverseAddEdge(Node<T> node) {
-			final Edge<T> e = new Edge<T>(node, this);
+			final Edge<T> e = new Edge<>(node, this);
 			node.outEdges.add(e);
 			inEdges.add(e);
 			return this;
@@ -107,16 +107,16 @@ public class Graph<T> {
 	}
 
 	public Node<T> createNode(T object) {
-		return new Node<T>(object);
+		return new Node<>(object);
 	}
 
 	public ArrayList<Node<T>> sortNodes(List<Node<T>> allNodes) throws CycleException {
 		// L <- Empty list that will contain the sorted elements
-		final ArrayList<Node<T>> L = new ArrayList<Node<T>>();
+		final ArrayList<Node<T>> L = new ArrayList<>();
 
 		// S <- Set of all nodes with no incoming edges
-		LinkedHashSet<Node<T>> S = new LinkedHashSet<Node<T>>();
-		LinkedHashSet<Node<T>> nextS = new LinkedHashSet<Node<T>>();
+		LinkedHashSet<Node<T>> S = new LinkedHashSet<>();
+		LinkedHashSet<Node<T>> nextS = new LinkedHashSet<>();
 		for (final Node<T> n : allNodes) {
 			if (n.inEdges.size() == 0) {
 				S.add(n);
@@ -150,7 +150,7 @@ public class Graph<T> {
 			}
 			stage++;
 			S = nextS;
-			nextS = new LinkedHashSet<Graph.Node<T>>();
+			nextS = new LinkedHashSet<>();
 		} while (!S.isEmpty());
 		// Check to see if all edges are removed
 		boolean cycle = false;

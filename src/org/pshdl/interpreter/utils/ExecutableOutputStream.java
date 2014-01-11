@@ -60,7 +60,7 @@ public class ExecutableOutputStream extends DataOutputStream {
 		if ((model.annotations != null) && (model.annotations.length != 0)) {
 			writeStringArray(ModelTypes.annotations, model.annotations);
 		}
-		final Map<String, Integer> varIdx = new HashMap<String, Integer>();
+		final Map<String, Integer> varIdx = new HashMap<>();
 		final VariableInformation[] variables = model.variables;
 		for (int i = 0; i < variables.length; i++) {
 			final VariableInformation vi = variables[i];

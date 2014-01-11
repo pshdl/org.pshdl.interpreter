@@ -211,8 +211,8 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 	public long storage_prev[];
 	private final LongAccess[] full;
 	private final FastFrame[] frames;
-	private final Map<String, Integer> accessIdxMap = new TreeMap<String, Integer>();
-	private final Map<String, Integer> varIdxMap = new TreeMap<String, Integer>();
+	private final Map<String, Integer> accessIdxMap = new TreeMap<>();
+	private final Map<String, Integer> varIdxMap = new TreeMap<>();
 	private int deltaCycle;
 	private final boolean disabledRegOutputlogic;
 
@@ -221,7 +221,7 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 		final Frame[] frames = model.frames;
 		this.frames = new FastFrame[frames.length];
 		this.full = new LongAccess[model.variables.length];
-		final Map<String, Integer> index = new HashMap<String, Integer>();
+		final Map<String, Integer> index = new HashMap<>();
 		int currentIdx = 0;
 		for (final VariableInformation var : model.variables) {
 			index.put(var.name, currentIdx);
@@ -292,7 +292,7 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 		boolean regUpdated = false;
 		this.deltaCycle++;
 		int epsCycle = 0;
-		final List<RegUpdater> updatedRegs = new ArrayList<RegUpdater>();
+		final List<RegUpdater> updatedRegs = new ArrayList<>();
 		do {
 			epsCycle++;
 			regUpdated = false;

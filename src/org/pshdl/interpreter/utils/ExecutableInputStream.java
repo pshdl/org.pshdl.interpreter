@@ -81,9 +81,9 @@ public class ExecutableInputStream extends DataInputStream {
 		readFully(header);
 		if (!"PSEX".equals(new String(header)))
 			throw new IllegalArgumentException("Not a PS Executable: Missing or wrong header!");
-		final List<InternalInformation> internals = new LinkedList<InternalInformation>();
-		final List<Frame> frameList = new LinkedList<Frame>();
-		final List<VariableInformation> vars = new LinkedList<VariableInformation>();
+		final List<InternalInformation> internals = new LinkedList<>();
+		final List<Frame> frameList = new LinkedList<>();
+		final List<VariableInformation> vars = new LinkedList<>();
 		String moduleName = null;
 		String src = null;
 		String[] annotations = null;
@@ -326,7 +326,7 @@ public class ExecutableInputStream extends DataInputStream {
 		final ExecutableInputStream ex = new ExecutableInputStream(new ByteArrayInputStream(tlv.value));
 		FastInstruction[] instructions;
 		final Instruction[] values = Instruction.values();
-		final List<FastInstruction> instr = new LinkedList<FastInstruction>();
+		final List<FastInstruction> instr = new LinkedList<>();
 		int read = -1;
 		while ((read = ex.read()) != -1) {
 			final Instruction instruction = values[read & 0x3F];

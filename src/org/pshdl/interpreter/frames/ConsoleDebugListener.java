@@ -36,10 +36,10 @@ import org.pshdl.interpreter.Frame.FastInstruction;
 public class ConsoleDebugListener implements IDebugListener {
 	private final PrintStream out;
 	private final ExecutableModel em;
-	private final Set<Integer> frames = new HashSet<Integer>();
-	private final Set<String> internals = new HashSet<String>();
-	private final Set<Integer> framesOps = new HashSet<Integer>();
-	private final Set<Integer> deltas = new HashSet<Integer>();
+	private final Set<Integer> frames = new HashSet<>();
+	private final Set<String> internals = new HashSet<>();
+	private final Set<Integer> framesOps = new HashSet<>();
+	private final Set<Integer> deltas = new HashSet<>();
 	public boolean dumpAllFrames = true;
 	public boolean dumpAllFramesOps = false;
 	private boolean enable = true;

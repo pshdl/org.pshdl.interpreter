@@ -163,7 +163,7 @@ public class InternalInformation implements Serializable {
 		this.isPred = fullName.startsWith(PRED_PREFIX);
 		this.info = info;
 		final Matcher matcher = aiFormatName.matcher(fullName);
-		final List<Integer> arrIdx = new LinkedList<Integer>();
+		final List<Integer> arrIdx = new LinkedList<>();
 		if (matcher.matches()) {
 			if (matcher.group(3) == null) {
 				this.bitStart = -1;

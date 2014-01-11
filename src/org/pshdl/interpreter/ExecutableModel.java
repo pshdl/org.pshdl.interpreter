@@ -58,7 +58,7 @@ public class ExecutableModel implements Serializable {
 		}
 		this.maxDataWidth = maxWidth;
 		this.maxExecutionWidth = maxExecWidth;
-		final List<Integer> regOuts = new ArrayList<Integer>();
+		final List<Integer> regOuts = new ArrayList<>();
 		for (final Frame frame : frames) {
 			if (frame.isReg()) {
 				regOuts.add(frame.outputId);
@@ -96,20 +96,20 @@ public class ExecutableModel implements Serializable {
 	 *             if a combinatorial loop has been detected
 	 */
 	public ExecutableModel sortTopological() throws CycleException {
-		final Graph<String> graph = new Graph<String>();
-		final ArrayList<Node<String>> nodes = new ArrayList<Graph.Node<String>>();
-		final Map<String, Node<String>> nodeNames = new HashMap<String, Graph.Node<String>>();
-		final Map<String, Frame> frameNames = new HashMap<String, Frame>();
+		final Graph<String> graph = new Graph<>();
+		final ArrayList<Node<String>> nodes = new ArrayList<>();
+		final Map<String, Node<String>> nodeNames = new HashMap<>();
+		final Map<String, Frame> frameNames = new HashMap<>();
 		for (final Frame f : frames) {
 			final String string = getFrame(f.uniqueID);
-			final Node<String> node = new Node<String>(string);
+			final Node<String> node = new Node<>(string);
 			nodes.add(node);
 			nodeNames.put(string, node);
 			frameNames.put(string, f);
 		}
 		for (int i = 0; i < internals.length; i++) {
 			final String string = getInternal(i);
-			final Node<String> node = new Node<String>(string);
+			final Node<String> node = new Node<>(string);
 			nodes.add(node);
 			nodeNames.put(string, node);
 		}
@@ -228,10 +228,10 @@ public class ExecutableModel implements Serializable {
 	}
 
 	public String toRegisterDot() {
-		final Map<String, Set<String>> connections = new HashMap<String, Set<String>>();
-		final Map<String, VariableInformation> varNames = new HashMap<String, VariableInformation>();
+		final Map<String, Set<String>> connections = new HashMap<>();
+		final Map<String, VariableInformation> varNames = new HashMap<>();
 		for (final VariableInformation var : variables) {
-			final HashSet<String> connSet = new HashSet<String>();
+			final HashSet<String> connSet = new HashSet<>();
 			connections.put(var.name, connSet);
 			varNames.put(var.name, var);
 		}
@@ -258,10 +258,10 @@ public class ExecutableModel implements Serializable {
 				set.add(output);
 			}
 		}
-		final Map<String, Set<String>> regConnections = new HashMap<String, Set<String>>();
+		final Map<String, Set<String>> regConnections = new HashMap<>();
 		for (final VariableInformation var : variables) {
 			if (var.isRegister) {
-				final HashSet<String> connSet = new HashSet<String>();
+				final HashSet<String> connSet = new HashSet<>();
 				regConnections.put(var.name, connSet);
 				follow(true, var.name, connections, connSet, varNames);
 			}

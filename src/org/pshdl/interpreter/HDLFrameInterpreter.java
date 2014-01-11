@@ -74,12 +74,12 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 	 * A mapping from baseName of internal to the accessIndex (for accessing
 	 * {@link #internals} or {@link #internals_prev})
 	 */
-	private final Map<String, Integer> accessIdxMap = new TreeMap<String, Integer>();
+	private final Map<String, Integer> accessIdxMap = new TreeMap<>();
 
 	/**
 	 * A mapping from baseName to the index in {@link #full}
 	 */
-	private final Map<String, Integer> varIdxMap = new TreeMap<String, Integer>();
+	private final Map<String, Integer> varIdxMap = new TreeMap<>();
 
 	/**
 	 * The current simulation deltaCycle. That is, how often the run method was
@@ -298,7 +298,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 	 * SignedCastTest.main() cast (int<16>) -255 to (int<32>) : FFFFFF01
 	 * SignedCastTest.main() cast (uint<16>) 65535 to (int<32>) : 0000FFFF
 	 */
-	final Set<RegUpdater> updatedRegs = new HashSet<RegUpdater>();
+	final Set<RegUpdater> updatedRegs = new HashSet<>();
 
 	/*
 	 * (non-Javadoc)

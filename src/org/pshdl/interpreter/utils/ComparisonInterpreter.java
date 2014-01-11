@@ -82,9 +82,9 @@ public class ComparisonInterpreter implements IHDLInterpreter {
 
 	private final IHDLInterpreter b;
 	private final IHDLInterpreter a;
-	private final List<Integer> varListA = new ArrayList<Integer>();
-	private final List<Integer> varListB = new ArrayList<Integer>();
-	private final Map<String, Integer> varIdx = new HashMap<String, Integer>();
+	private final List<Integer> varListA = new ArrayList<>();
+	private final List<Integer> varListB = new ArrayList<>();
+	private final Map<String, Integer> varIdx = new HashMap<>();
 	private final DiffReport report;
 	private final ExecutableModel em;
 
