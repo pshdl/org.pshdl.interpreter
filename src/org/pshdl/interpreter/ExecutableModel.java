@@ -79,9 +79,9 @@ public class ExecutableModel implements Serializable {
 		if (frames != null) {
 			builder.append("frames=\n");
 			for (final Frame f : frames) {
-				builder.append(f.toString(this, false));
+				builder.append(f.toString(this, false)).append('\n');
 			}
-			builder.append('\n').append(", ");
+			builder.append(", ");
 		}
 		builder.append("]");
 		return builder.toString();

@@ -45,6 +45,9 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 				super();
 				this.shadowAccessIdx = shadowAccessIdx == -1 ? accessIdx : shadowAccessIdx;
 				this.accessIdx = accessIdx == -1 ? shadowAccessIdx : accessIdx;
+				if (this.accessIdx == this.shadowAccessIdx) {
+					System.out.println(shadowAccessIdx + " -> " + accessIdx + " = " + this.shadowAccessIdx + " -> " + this.accessIdx);
+				}
 			}
 		}
 
@@ -198,7 +201,7 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 		public String toString() {
 			final StringBuilder builder = new StringBuilder();
 			builder.append("LongAccess [shift=").append(shift).append(", mask=").append(Long.toHexString(mask)).append(", writeMask=").append(Long.toHexString(writeMask))
-			.append(", name=").append(ii).append(", accessIndex=").append(getAccessIndex()).append(", prev=").append(prev).append("]");
+					.append(", name=").append(ii).append(", accessIndex=").append(getAccessIndex()).append(", prev=").append(prev).append("]");
 			return builder.toString();
 		}
 
@@ -281,7 +284,8 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 		}
 		for (final LongAccess ea : internals) {
 			if (ea.ii.isShadowReg) {
-				ea.targetAccessIndex = accessIdxMap.get(ea.ii.baseName(false, false));
+				final String baseName = ea.ii.baseName(false, false);
+				ea.targetAccessIndex = accessIdxMap.get(baseName);
 			}
 		}
 		return currentIdx;
@@ -298,8 +302,8 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 			regUpdated = false;
 			for (final FastFrame ef : frames) {
 				final boolean execute = ef.execute(deltaCycle, epsCycle);
-				if (execute && ef.regUpdated) {
-					updatedRegs.add(ef.outputAccess.getRegUpdater());
+				if (execute && !ef.regUpdates.isEmpty()) {
+					updatedRegs.addAll(ef.regUpdates);
 					regUpdated = true;
 				}
 			}
@@ -381,5 +385,16 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 	@Override
 	public int getDeltaCycle() {
 		return deltaCycle;
+	}
+
+	@Override
+	public String toString() {
+		try (final Formatter f = new Formatter()) {
+			f.format("Dump of deltaCycle %d\n", deltaCycle);
+			for (final LongAccess la : internals) {
+				f.format("\t%20s: 0x%04x\n", la.ii.fullName, la.getDataLong());
+			}
+			return f.toString();
+		}
 	}
 }
