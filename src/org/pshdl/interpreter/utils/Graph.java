@@ -167,7 +167,7 @@ public class Graph<T> {
 			}
 		}
 		if (cycle)
-			throw new RuntimeException("Cycle present, topological sort not possible");
+			throw new CycleException(null);
 		return L;
 	}
 
@@ -183,7 +183,7 @@ public class Graph<T> {
 		public ExecutableModel model;
 
 		public CycleException(Cycle cycle) {
-			super();
+			super("Cycle present, topological sort not possible");
 			this.cycle = cycle;
 		}
 
@@ -207,6 +207,7 @@ public class Graph<T> {
 					current.prior.frame.uniqueID);
 
 		}
+
 	}
 
 	public static class Cycle {

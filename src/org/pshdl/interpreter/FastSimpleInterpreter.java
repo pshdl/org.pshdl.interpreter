@@ -35,7 +35,27 @@ import org.pshdl.interpreter.frames.*;
 
 public class FastSimpleInterpreter implements IHDLInterpreter {
 
-	public final class LongAccess {
+	public final class NullAcccess extends LongAccess {
+
+		public NullAcccess(InternalInformation name, int accessIndex, boolean prev) {
+			super(name, accessIndex, prev);
+		}
+
+		private long last;
+
+		@Override
+		public long getDataLong() {
+			return last;
+		}
+
+		@Override
+		public void setDataLong(long data, int deltaCycle, int epsCycle) {
+			last = data;
+		}
+
+	}
+
+	public class LongAccess {
 
 		public class RegUpdater {
 			public final int accessIdx;
@@ -254,10 +274,13 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 		for (int i = 0; i < model.variables.length; i++) {
 			final VariableInformation vi = model.variables[i];
 			final Integer accessIndex = accessIdxMap.get(vi.name);
-			if (accessIndex != null) {
+			if (accessIndex == null) {
+				full[i] = new NullAcccess(new InternalInformation(vi.name, vi), -1, false);
+			} else {
 				full[i] = new LongAccess(new InternalInformation(vi.name, vi), accessIndex, false);
-				varIdxMap.put(vi.name, i);
 			}
+			varIdxMap.put(vi.name, i);
+			// }
 		}
 	}
 
