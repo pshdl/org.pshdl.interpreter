@@ -308,7 +308,12 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 		for (final LongAccess ea : internals) {
 			if (ea.ii.isShadowReg) {
 				final String baseName = ea.ii.baseName(false, false);
-				ea.targetAccessIndex = accessIdxMap.get(baseName);
+				final Integer idx = accessIdxMap.get(baseName);
+				if (idx != null) {
+					ea.targetAccessIndex = idx;
+				} else {
+					ea.targetAccessIndex = ea.accessIndex;
+				}
 			}
 		}
 		return currentIdx;
