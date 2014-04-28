@@ -26,10 +26,11 @@
  ******************************************************************************/
 package org.pshdl.interpreter.frames;
 
-import java.math.*;
+import java.math.BigInteger;
 
 import org.pshdl.interpreter.Frame.FastInstruction;
-import org.pshdl.interpreter.*;
+import org.pshdl.interpreter.IHDLInterpreter;
+import org.pshdl.interpreter.InternalInformation;
 
 public interface IDebugListener {
 

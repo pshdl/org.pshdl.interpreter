@@ -26,9 +26,10 @@
  ******************************************************************************/
 package org.pshdl.interpreter.access;
 
-import java.math.*;
+import java.math.BigInteger;
 
-import org.pshdl.interpreter.*;
+import org.pshdl.interpreter.HDLFrameInterpreter;
+import org.pshdl.interpreter.InternalInformation;
 
 public abstract class EncapsulatedAccess {
 	protected final HDLFrameInterpreter intr;

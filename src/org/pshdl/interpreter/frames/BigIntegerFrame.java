@@ -26,13 +26,15 @@
  ******************************************************************************/
 package org.pshdl.interpreter.frames;
 
-import static java.math.BigInteger.*;
+import static java.math.BigInteger.ONE;
+import static java.math.BigInteger.ZERO;
 
-import java.math.*;
+import java.math.BigInteger;
 
-import org.pshdl.interpreter.*;
+import org.pshdl.interpreter.Frame;
 import org.pshdl.interpreter.Frame.FastInstruction;
-import org.pshdl.interpreter.access.*;
+import org.pshdl.interpreter.HDLFrameInterpreter;
+import org.pshdl.interpreter.access.EncapsulatedAccess;
 
 public final class BigIntegerFrame extends ExecutableFrame {
 	private final BigInteger stack[];

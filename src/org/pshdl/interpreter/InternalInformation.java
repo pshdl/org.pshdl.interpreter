@@ -26,9 +26,11 @@
  ******************************************************************************/
 package org.pshdl.interpreter;
 
-import java.io.*;
-import java.util.*;
-import java.util.regex.*;
+import java.io.Serializable;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * This class contains all information about an internal

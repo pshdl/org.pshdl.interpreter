@@ -26,12 +26,17 @@
  ******************************************************************************/
 package org.pshdl.interpreter;
 
-import java.math.*;
-import java.util.*;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Formatter;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 
 import org.pshdl.interpreter.FastSimpleInterpreter.LongAccess.RegUpdater;
-import org.pshdl.interpreter.frames.*;
+import org.pshdl.interpreter.frames.FastFrame;
 
 public class FastSimpleInterpreter implements IHDLInterpreter {
 
@@ -221,7 +226,7 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 		public String toString() {
 			final StringBuilder builder = new StringBuilder();
 			builder.append("LongAccess [shift=").append(shift).append(", mask=").append(Long.toHexString(mask)).append(", writeMask=").append(Long.toHexString(writeMask))
-					.append(", name=").append(ii).append(", accessIndex=").append(getAccessIndex()).append(", prev=").append(prev).append("]");
+			.append(", name=").append(ii).append(", accessIndex=").append(getAccessIndex()).append(", prev=").append(prev).append("]");
 			return builder.toString();
 		}
 

@@ -26,10 +26,11 @@
  ******************************************************************************/
 package org.pshdl.interpreter.frames;
 
-import org.pshdl.interpreter.*;
+import org.pshdl.interpreter.Frame;
 import org.pshdl.interpreter.Frame.FastInstruction;
-import org.pshdl.interpreter.access.*;
-import org.pshdl.interpreter.utils.*;
+import org.pshdl.interpreter.HDLFrameInterpreter;
+import org.pshdl.interpreter.access.EncapsulatedAccess;
+import org.pshdl.interpreter.utils.Instruction;
 
 public abstract class ExecutableFrame {
 

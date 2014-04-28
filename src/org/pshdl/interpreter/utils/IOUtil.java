@@ -26,9 +26,14 @@
  ******************************************************************************/
 package org.pshdl.interpreter.utils;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
-import org.pshdl.interpreter.*;
+import org.pshdl.interpreter.ExecutableModel;
 
 public class IOUtil {
 

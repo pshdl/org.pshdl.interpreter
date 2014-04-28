@@ -26,11 +26,18 @@
  ******************************************************************************/
 package org.pshdl.interpreter.utils;
 
-import java.io.*;
-import java.util.*;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.pshdl.interpreter.*;
+import org.pshdl.interpreter.ExecutableModel;
+import org.pshdl.interpreter.Frame;
 import org.pshdl.interpreter.Frame.FastInstruction;
+import org.pshdl.interpreter.InternalInformation;
+import org.pshdl.interpreter.VariableInformation;
 import org.pshdl.interpreter.utils.IOUtil.FrameTypes;
 import org.pshdl.interpreter.utils.IOUtil.IDType;
 import org.pshdl.interpreter.utils.IOUtil.InternalTypes;

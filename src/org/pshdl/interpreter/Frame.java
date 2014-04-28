@@ -26,11 +26,11 @@
  ******************************************************************************/
 package org.pshdl.interpreter;
 
-import java.io.*;
-import java.math.*;
-import java.util.*;
+import java.io.Serializable;
+import java.math.BigInteger;
+import java.util.Arrays;
 
-import org.pshdl.interpreter.utils.*;
+import org.pshdl.interpreter.utils.Instruction;
 
 public class Frame implements Serializable {
 

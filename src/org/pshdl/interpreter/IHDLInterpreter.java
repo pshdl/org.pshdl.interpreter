@@ -26,7 +26,7 @@
  ******************************************************************************/
 package org.pshdl.interpreter;
 
-import java.math.*;
+import java.math.BigInteger;
 
 public interface IHDLInterpreter {
 

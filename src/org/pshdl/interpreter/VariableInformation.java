@@ -26,8 +26,8 @@
  ******************************************************************************/
 package org.pshdl.interpreter;
 
-import java.io.*;
-import java.util.*;
+import java.io.Serializable;
+import java.util.Arrays;
 
 public class VariableInformation implements Serializable {
 

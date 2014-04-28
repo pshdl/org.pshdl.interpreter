@@ -26,7 +26,7 @@
  ******************************************************************************/
 package org.pshdl.interpreter.utils;
 
-import java.util.*;
+import java.util.Formatter;
 
 public enum Instruction {
 	noop(0, 0, "Does nothing"), //

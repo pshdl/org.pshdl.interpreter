@@ -26,9 +26,10 @@
  ******************************************************************************/
 package org.pshdl.interpreter.access;
 
-import java.math.*;
+import java.math.BigInteger;
 
-import org.pshdl.interpreter.*;
+import org.pshdl.interpreter.HDLFrameInterpreter;
+import org.pshdl.interpreter.InternalInformation;
 
 public class LongAccesses {
 
@@ -119,7 +120,7 @@ public class LongAccesses {
 		public String toString() {
 			final StringBuilder builder = new StringBuilder();
 			builder.append("LongAccess [shift=").append(shift).append(", mask=").append(Long.toHexString(mask)).append(", writeMask=").append(Long.toHexString(writeMask))
-			.append(", name=").append(ii).append(", accessIndex=").append(getAccessIndex()).append(", prev=").append(prev).append("]");
+					.append(", name=").append(ii).append(", accessIndex=").append(getAccessIndex()).append(", prev=").append(prev).append("]");
 			return builder.toString();
 		}
 

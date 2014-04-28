@@ -26,10 +26,14 @@
  ******************************************************************************/
 package org.pshdl.interpreter.utils;
 
-import java.io.*;
-import java.util.*;
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
 
-import org.pshdl.interpreter.*;
+import org.pshdl.interpreter.ExecutableModel;
+import org.pshdl.interpreter.Frame;
 
 public class Graph<T> {
 

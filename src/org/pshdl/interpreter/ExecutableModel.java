@@ -26,11 +26,16 @@
  ******************************************************************************/
 package org.pshdl.interpreter;
 
-import java.io.*;
-import java.util.*;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
-import org.pshdl.interpreter.utils.*;
+import org.pshdl.interpreter.utils.Graph;
 import org.pshdl.interpreter.utils.Graph.CycleException;
 import org.pshdl.interpreter.utils.Graph.Node;
 

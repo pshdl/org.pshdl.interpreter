@@ -26,12 +26,17 @@
  ******************************************************************************/
 package org.pshdl.interpreter.frames;
 
-import java.io.*;
-import java.math.*;
-import java.util.*;
+import java.io.PrintStream;
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
-import org.pshdl.interpreter.*;
+import org.pshdl.interpreter.ExecutableModel;
+import org.pshdl.interpreter.Frame;
 import org.pshdl.interpreter.Frame.FastInstruction;
+import org.pshdl.interpreter.IHDLInterpreter;
+import org.pshdl.interpreter.InternalInformation;
 
 public class ConsoleDebugListener implements IDebugListener {
 	private final PrintStream out;

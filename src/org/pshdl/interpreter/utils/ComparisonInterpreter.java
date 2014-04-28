@@ -26,11 +26,17 @@
  ******************************************************************************/
 package org.pshdl.interpreter.utils;
 
-import java.io.*;
-import java.math.*;
-import java.util.*;
+import java.io.PrintStream;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import org.pshdl.interpreter.*;
+import org.pshdl.interpreter.ExecutableModel;
+import org.pshdl.interpreter.IHDLInterpreter;
+import org.pshdl.interpreter.VariableInformation;
 
 public class ComparisonInterpreter implements IHDLInterpreter {
 

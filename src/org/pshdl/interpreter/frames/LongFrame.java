@@ -26,11 +26,12 @@
  ******************************************************************************/
 package org.pshdl.interpreter.frames;
 
-import java.math.*;
+import java.math.BigInteger;
 
-import org.pshdl.interpreter.*;
+import org.pshdl.interpreter.Frame;
 import org.pshdl.interpreter.Frame.FastInstruction;
-import org.pshdl.interpreter.access.*;
+import org.pshdl.interpreter.HDLFrameInterpreter;
+import org.pshdl.interpreter.access.EncapsulatedAccess;
 
 public final class LongFrame extends ExecutableFrame {
 
@@ -82,28 +83,28 @@ public final class LongFrame extends ExecutableFrame {
 			case bitAccessSingle:
 				final int bit = fi.arg1;
 				long t = a >> bit;
-		t &= 1;
-		stack[++stackPos] = t;
-		break;
-		case bitAccessSingleRange:
-			final int highBit = fi.arg1;
-			final int lowBit = fi.arg2;
-			long t2 = a >> lowBit;
-			t2 &= (1l << ((highBit - lowBit) + 1)) - 1;
-			stack[++stackPos] = t2;
-			break;
-		case cast_int:
-			// Corner cases:
-			// value is 0xF (-1 int<4>)
-			// cast to int<8> result should be 0xFF
-			// value is 0xA (-6 int<4>)
-			// cast to int<3> result should be 0xE (-2)
-			// Resize sign correctly to correct size
-			final int shift = 64 - Math.min(fi.arg1, fi.arg2);
-			// Throw away unnecessary bits (only needed when
-			// targetsize>currentSize)
-			stack[++stackPos] = (a << shift) >> shift;
-			break;
+				t &= 1;
+				stack[++stackPos] = t;
+				break;
+			case bitAccessSingleRange:
+				final int highBit = fi.arg1;
+				final int lowBit = fi.arg2;
+				long t2 = a >> lowBit;
+				t2 &= (1l << ((highBit - lowBit) + 1)) - 1;
+				stack[++stackPos] = t2;
+				break;
+			case cast_int:
+				// Corner cases:
+				// value is 0xF (-1 int<4>)
+				// cast to int<8> result should be 0xFF
+				// value is 0xA (-6 int<4>)
+				// cast to int<3> result should be 0xE (-2)
+				// Resize sign correctly to correct size
+				final int shift = 64 - Math.min(fi.arg1, fi.arg2);
+				// Throw away unnecessary bits (only needed when
+				// targetsize>currentSize)
+				stack[++stackPos] = (a << shift) >> shift;
+				break;
 			case cast_uint:
 				// There is nothing special about uints, so we just mask
 				// them
@@ -316,9 +317,9 @@ public final class LongFrame extends ExecutableFrame {
 
 	private long fixOp(long l, int arg1) {
 		final int val = arg1 >> 1;
-					if ((arg1 & 1) == 1)
-						return ((l << val) >> val);
-					return l & ((1l << val) - 1);
+		if ((arg1 & 1) == 1)
+			return ((l << val) >> val);
+		return l & ((1l << val) - 1);
 	}
 
 	public EncapsulatedAccess getInternal(int off, int arrayPos) {

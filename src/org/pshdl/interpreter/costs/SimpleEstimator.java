@@ -1,9 +1,15 @@
 package org.pshdl.interpreter.costs;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import org.pshdl.interpreter.*;
+import org.pshdl.interpreter.ExecutableModel;
+import org.pshdl.interpreter.Frame;
 import org.pshdl.interpreter.Frame.FastInstruction;
+import org.pshdl.interpreter.InternalInformation;
 
 public class SimpleEstimator {
 	public static class ResourceCosts {
@@ -132,7 +138,7 @@ public class SimpleEstimator {
 			case xor:
 				current = current.add(LUT_COSTS, targetWidth, 1);
 				break;
-			// Usually cost about one adder
+				// Usually cost about one adder
 			case arith_neg:
 			case greater:
 			case greater_eq:
@@ -144,8 +150,8 @@ public class SimpleEstimator {
 				// here)
 				current = current.add(LUT_COSTS, targetWidth * 2, targetWidth);
 				break;
-			// Virtually free on most FPGAs (usually just occupy routing
-			// resources)
+				// Virtually free on most FPGAs (usually just occupy routing
+				// resources)
 			case bitAccessSingle:
 			case bitAccessSingleRange:
 			case sll:
@@ -167,23 +173,23 @@ public class SimpleEstimator {
 			case mul:
 				current = current.add(LUT_COSTS, targetWidth * targetWidth, targetWidth);
 				break;
-			// These would be realized as multiplexers
+				// These would be realized as multiplexers
 			case posPredicate:
 			case negPredicate:
 				current = current.add(LUT_COSTS, model.internals[f.outputId].actualWidth, 1);
 				break;
-			// Only exists due to the nature of the byte code
+				// Only exists due to the nature of the byte code
 			case noop:
 			case isFallingEdge:
 			case isRisingEdge:
 			case loadInternal:
 			case writeInternal:
 				break;
-			// This is probably a block ram memory access
+				// This is probably a block ram memory access
 			case pushAddIndex:
 				current = current.add(ROUTING_COSTS, targetWidth, 1);
 				break;
-			// Single bit ops
+				// Single bit ops
 			case logiAnd:
 			case logiNeg:
 			case logiOr:
