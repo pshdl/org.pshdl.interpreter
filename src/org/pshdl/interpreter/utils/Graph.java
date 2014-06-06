@@ -194,22 +194,21 @@ public class Graph<T> {
 		public void explain(PrintStream out) {
 			if (model == null)
 				throw new IllegalArgumentException("You need to set the model first");
-			out.printf("In order to compute %s (Frame %d) the following other variables need to be computed:\n", model.internals[cycle.frame.outputId], cycle.frame.uniqueID);
+			out.printf("In order to compute %s (Frame %d) the following other variables need to be computed:%n", model.internals[cycle.frame.outputId], cycle.frame.uniqueID);
 			explain(out, cycle);
 		}
 
 		public void explain(PrintStream out, Cycle current) {
-			if (current.type == null)
+			if ((current == null) || (current.type == null))
 				return;
 			if (current.prior != null) {
 				explain(out, current.prior);
+			} else {
+				if (model == null)
+					throw new IllegalArgumentException("You need to set the model first");
+				out.printf("\t%s (Frame %d) depency type %s prior frame: %s%n", model.internals[current.frame.outputId], current.frame.uniqueID, current.type,
+						current.prior.frame.uniqueID);
 			}
-
-			if (model == null)
-				throw new IllegalArgumentException("You need to set the model first");
-			out.printf("\t%s (Frame %d) depency type %s prior frame: %s\n", model.internals[current.frame.outputId], current.frame.uniqueID, current.type,
-					current.prior.frame.uniqueID);
-
 		}
 
 	}
