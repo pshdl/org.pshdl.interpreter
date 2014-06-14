@@ -57,7 +57,7 @@ public class ComparisonInterpreter implements IHDLInterpreter {
 			if (idx != null) {
 				sIdx = Arrays.toString(idx);
 			}
-			out.printf("%s%s aVal=%X bVal=%X\n", name, sIdx, aVal, bVal);
+			out.printf("%s%s aVal=%X bVal=%X%n", name, sIdx, aVal, bVal);
 		}
 
 		@Override
@@ -66,7 +66,7 @@ public class ComparisonInterpreter implements IHDLInterpreter {
 			if (idx != null) {
 				sIdx = Arrays.toString(idx);
 			}
-			out.printf("%s%s aVal=%X bVal=%X\n", name, sIdx, aVal, bVal);
+			out.printf("%s%s aVal=%X bVal=%X%n", name, sIdx, aVal, bVal);
 		}
 
 		@Override

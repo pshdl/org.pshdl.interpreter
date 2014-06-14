@@ -206,8 +206,10 @@ public class Graph<T> {
 			} else {
 				if (model == null)
 					throw new IllegalArgumentException("You need to set the model first");
-				out.printf("\t%s (Frame %d) depency type %s prior frame: %s%n", model.internals[current.frame.outputId], current.frame.uniqueID, current.type,
-						current.prior.frame.uniqueID);
+				if (current.prior != null) {
+					out.printf("\t%s (Frame %d) depency type %s prior frame: %s%n", model.internals[current.frame.outputId], current.frame.uniqueID, current.type,
+							current.prior.frame.uniqueID);
+				}
 			}
 		}
 

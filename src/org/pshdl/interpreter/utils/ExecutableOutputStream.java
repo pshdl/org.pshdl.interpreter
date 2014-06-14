@@ -30,6 +30,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -53,7 +54,7 @@ public class ExecutableOutputStream extends DataOutputStream {
 	public void writeExecutableModel(long date, ExecutableModel model) throws IOException {
 		// System.out.println("ExecutableOutputStream.writeExecutableModel()" +
 		// model);
-		write("PSEX".getBytes());
+		write("PSEX".getBytes(StandardCharsets.UTF_8));
 		writeByteArray(ModelTypes.version, new byte[] { 0, 2, 0 });
 		writeString(ModelTypes.src, model.source);
 		if (model.moduleName != null) {

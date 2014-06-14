@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -55,7 +56,7 @@ public class ExecutableInputStream extends DataInputStream {
 		super(in);
 	}
 
-	private class TLV {
+	private static class TLV {
 		public final Enum<?> type;
 		public final byte[] value;
 
@@ -88,7 +89,7 @@ public class ExecutableInputStream extends DataInputStream {
 		TLV tlv = null;
 		final byte[] header = new byte[4];
 		readFully(header);
-		if (!"PSEX".equals(new String(header)))
+		if (!"PSEX".equals(new String(header, StandardCharsets.UTF_8)))
 			throw new IllegalArgumentException("Not a PS Executable: Missing or wrong header!");
 		final List<InternalInformation> internals = new LinkedList<>();
 		final List<Frame> frameList = new LinkedList<>();
@@ -103,7 +104,7 @@ public class ExecutableInputStream extends DataInputStream {
 			case date:
 				if (verbose) {
 					final long readDate = ex.readLong();
-					System.out.printf("Created on: %tF %<tR\n", new Date(readDate));
+					System.out.printf("Created on: %tF %<tR%n", new Date(readDate));
 				}
 				break;
 			case frame:
@@ -137,7 +138,7 @@ public class ExecutableInputStream extends DataInputStream {
 				if (verbose) {
 					final byte[] version = new byte[3];
 					ex.readFully(version);
-					System.out.printf("Compiled with version: %d.%d.%d\n", version[0], version[1], version[2]);
+					System.out.printf("Compiled with version: %d.%d.%d%n", version[0], version[1], version[2]);
 				}
 				break;
 			case moduleName:

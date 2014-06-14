@@ -130,19 +130,19 @@ public class IOUtil {
 	public static void main(String[] args) throws IOException {
 		System.out.println("Model types:");
 		for (final ModelTypes type : ModelTypes.values()) {
-			System.out.printf("0x%02x | %-16s|\n", type.getID(), type.name());
+			System.out.printf("0x%02x | %-16s|%n", type.getID(), type.name());
 		}
 		System.out.println("Frame types:");
 		for (final FrameTypes type : FrameTypes.values()) {
-			System.out.printf("0x%02x | %-16s|\n", type.getID(), type.name());
+			System.out.printf("0x%02x | %-16s|%n", type.getID(), type.name());
 		}
 		System.out.println("Internal types:");
 		for (final InternalTypes type : InternalTypes.values()) {
-			System.out.printf("0x%02x | %-16s|\n", type.getID(), type.name());
+			System.out.printf("0x%02x | %-16s|%n", type.getID(), type.name());
 		}
 		System.out.println("Variable types:");
 		for (final VariableTypes type : VariableTypes.values()) {
-			System.out.printf("0x%02x | %-16s|\n", type.getID(), type.name());
+			System.out.printf("0x%02x | %-16s|%n", type.getID(), type.name());
 		}
 		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		final ExecutableOutputStream os = new ExecutableOutputStream(baos);

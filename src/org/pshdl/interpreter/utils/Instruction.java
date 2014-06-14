@@ -111,10 +111,10 @@ public enum Instruction {
 
 	public static void main(String[] args) {
 		final Formatter f = new Formatter();
-		f.format("Name                  |byte| Stack|Description   | first argument | second argument\n");
-		f.format(":--------------------:|----|------|--------------|----------------|----------------\n");
+		f.format("Name                  |byte| Stack|Description   | first argument | second argument%n");
+		f.format(":--------------------:|----|------|--------------|----------------|----------------%n");
 		for (final Instruction i : Instruction.values()) {
-			f.format("%21s |0x%02X| %s | %s | %s | %s\n", i.name(), i.toByte(), toStack(i), i.description, i.argCount > 0 ? i.args[0] : "", i.argCount > 1 ? i.args[1] : "");
+			f.format("%21s |0x%02X| %s | %s | %s | %s%n", i.name(), i.toByte(), toStack(i), i.description, i.argCount > 0 ? i.args[0] : "", i.argCount > 1 ? i.args[1] : "");
 		}
 		System.out.println(f);
 	}

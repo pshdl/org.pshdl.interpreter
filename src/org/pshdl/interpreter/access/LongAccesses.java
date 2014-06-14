@@ -61,8 +61,13 @@ public class LongAccesses {
 				if (actualWidth > 64)
 					throw new IllegalArgumentException("Unsupported bitWidth:" + actualWidth);
 				this.shift = name.bitEnd;
-				this.mask = (1l << actualWidth) - 1;
-				this.writeMask = ~(mask << shift);
+				if (actualWidth == 64) {
+					this.mask = 0xFFFFFFFFFFFFFFFFL;
+					this.writeMask = 0;
+				} else {
+					this.mask = (1l << actualWidth) - 1;
+					this.writeMask = ~(mask << shift);
+				}
 			} else {
 				this.shift = name.bitStart;
 				this.mask = 1;
