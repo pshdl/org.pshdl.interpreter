@@ -1,3 +1,29 @@
+/*******************************************************************************
+ * PSHDL is a library and (trans-)compiler for PSHDL input. It generates
+ *     output suitable for implementation or simulation of it.
+ *
+ *     Copyright (C) 2014 Karsten Becker (feedback (at) pshdl (dot) org)
+ *
+ *     This program is free software: you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation, either version 3 of the License, or
+ *     (at your option) any later version.
+ *
+ *     This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public License
+ *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *     This License does not grant permission to use the trade names, trademarks,
+ *     service marks, or product names of the Licensor, except as required for
+ *     reasonable and customary use in describing the origin of the Work.
+ *
+ * Contributors:
+ *     Karsten Becker - initial API and implementation
+ ******************************************************************************/
 package org.pshdl.interpreter.costs;
 
 import java.util.ArrayList;
@@ -138,7 +164,7 @@ public class SimpleEstimator {
 			case xor:
 				current = current.add(LUT_COSTS, targetWidth, 1);
 				break;
-				// Usually cost about one adder
+			// Usually cost about one adder
 			case arith_neg:
 			case greater:
 			case greater_eq:
@@ -150,8 +176,8 @@ public class SimpleEstimator {
 				// here)
 				current = current.add(LUT_COSTS, targetWidth * 2, targetWidth);
 				break;
-				// Virtually free on most FPGAs (usually just occupy routing
-				// resources)
+			// Virtually free on most FPGAs (usually just occupy routing
+			// resources)
 			case bitAccessSingle:
 			case bitAccessSingleRange:
 			case sll:
@@ -173,23 +199,23 @@ public class SimpleEstimator {
 			case mul:
 				current = current.add(LUT_COSTS, targetWidth * targetWidth, targetWidth);
 				break;
-				// These would be realized as multiplexers
+			// These would be realized as multiplexers
 			case posPredicate:
 			case negPredicate:
 				current = current.add(LUT_COSTS, model.internals[f.outputId].actualWidth, 1);
 				break;
-				// Only exists due to the nature of the byte code
+			// Only exists due to the nature of the byte code
 			case noop:
 			case isFallingEdge:
 			case isRisingEdge:
 			case loadInternal:
 			case writeInternal:
 				break;
-				// This is probably a block ram memory access
+			// This is probably a block ram memory access
 			case pushAddIndex:
 				current = current.add(ROUTING_COSTS, targetWidth, 1);
 				break;
-				// Single bit ops
+			// Single bit ops
 			case logiAnd:
 			case logiNeg:
 			case logiOr:

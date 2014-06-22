@@ -70,9 +70,10 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 				super();
 				this.shadowAccessIdx = shadowAccessIdx == -1 ? accessIdx : shadowAccessIdx;
 				this.accessIdx = accessIdx == -1 ? shadowAccessIdx : accessIdx;
-				if (this.accessIdx == this.shadowAccessIdx) {
-					System.out.println(shadowAccessIdx + " -> " + accessIdx + " = " + this.shadowAccessIdx + " -> " + this.accessIdx);
-				}
+				// if (this.accessIdx == this.shadowAccessIdx) {
+				// System.out.println(shadowAccessIdx + " -> " + accessIdx +
+				// " = " + this.shadowAccessIdx + " -> " + this.accessIdx);
+				// }
 			}
 		}
 
@@ -231,7 +232,7 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 		public String toString() {
 			final StringBuilder builder = new StringBuilder();
 			builder.append("LongAccess [shift=").append(shift).append(", mask=").append(Long.toHexString(mask)).append(", writeMask=").append(Long.toHexString(writeMask))
-			.append(", name=").append(ii).append(", accessIndex=").append(getAccessIndex()).append(", prev=").append(prev).append("]");
+					.append(", name=").append(ii).append(", accessIndex=").append(getAccessIndex()).append(", prev=").append(prev).append("]");
 			return builder.toString();
 		}
 
