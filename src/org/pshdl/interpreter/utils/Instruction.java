@@ -61,6 +61,8 @@ public enum Instruction {
 	minus(2, 1, "An arithmetic - operation", "targetSizeWithType"), //
 	mul(2, 1, "An arithmetic * operation", "targetSizeWithType"), //
 	plus(2, 1, "An arithmetic + operation", "targetSizeWithType"), //
+	mod(2, 1, "An arithmetic % operation", "targetSizeWithType"), //
+	pow(2, 1, "An arithmetic ** operation", "targetSizeWithType"), //
 	// Equality operations
 	eq(2, 1, "An equality == operation, result is boolean (0/1)"), //
 	greater(2, 1, "An equality > operation, result is boolean (0/1)"), //

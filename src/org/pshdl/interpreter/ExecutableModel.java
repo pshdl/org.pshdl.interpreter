@@ -106,11 +106,11 @@ public class ExecutableModel implements Serializable {
 		final Map<String, Node<String>> nodeNames = new HashMap<>();
 		final Map<String, Frame> frameNames = new HashMap<>();
 		for (final Frame f : frames) {
-			final String string = getFrame(f.uniqueID);
-			final Node<String> node = new Node<>(string);
+			final String frameName = getFrame(f.uniqueID);
+			final Node<String> node = new Node<>(frameName);
 			nodes.add(node);
-			nodeNames.put(string, node);
-			frameNames.put(string, f);
+			nodeNames.put(frameName, node);
+			frameNames.put(frameName, f);
 		}
 		for (int i = 0; i < internals.length; i++) {
 			final String string = getInternal(i);
@@ -119,6 +119,9 @@ public class ExecutableModel implements Serializable {
 			nodeNames.put(string, node);
 		}
 		for (final Frame f : frames) {
+			if (f.process != null) {
+				continue;
+			}
 			final Node<String> node = nodeNames.get(getFrame(f.uniqueID));
 			final Node<String> outNode = nodeNames.get(getInternal(f.outputId));
 			outNode.reverseAddEdge(node);

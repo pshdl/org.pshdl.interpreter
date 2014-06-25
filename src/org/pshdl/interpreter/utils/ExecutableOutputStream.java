@@ -194,6 +194,9 @@ public class ExecutableOutputStream extends DataOutputStream {
 		if (f.scheduleStage != -1) {
 			obj.writeInt(FrameTypes.scheduleStage, f.scheduleStage);
 		}
+		if (f.process != null) {
+			obj.writeString(FrameTypes.process, f.process);
+		}
 		writeByteArray(ModelTypes.frame, baos.toByteArray());
 		obj.close();
 	}
