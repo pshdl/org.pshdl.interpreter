@@ -114,6 +114,11 @@ public class InternalInformation implements Serializable {
 	public final boolean fixedArray;
 
 	/**
+	 *
+	 */
+	public final boolean isFillArray;
+
+	/**
 	 * A reference to the variable
 	 */
 	public final VariableInformation info;
@@ -132,6 +137,7 @@ public class InternalInformation implements Serializable {
 			}
 		}
 		this.fixedArray = isFixed;
+		this.isFillArray = arrayIdx.length != info.dimensions.length;
 		this.info = info;
 		final StringBuilder sb = new StringBuilder();
 		sb.append(info.name);
@@ -195,6 +201,7 @@ public class InternalInformation implements Serializable {
 			}
 		}
 		this.fixedArray = isFixed;
+		this.isFillArray = arrayIdx.length != info.dimensions.length;
 	}
 
 	/**

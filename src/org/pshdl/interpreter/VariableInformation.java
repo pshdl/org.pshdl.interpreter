@@ -41,7 +41,7 @@ public class VariableInformation implements Serializable {
 	}
 
 	public static enum Type {
-		UINT, INT, BIT
+		UINT, INT, BIT, BOOL
 	}
 
 	public final Direction dir;

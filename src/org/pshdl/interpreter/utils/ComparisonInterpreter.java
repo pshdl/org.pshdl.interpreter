@@ -52,35 +52,35 @@ public class ComparisonInterpreter implements IHDLInterpreter {
 		}
 
 		@Override
-		public void reportOutputLongDiff(long aVal, long bVal, String name, int... idx) {
+		public void reportOutputLongDiff(long deltaCycle, long aVal, long bVal, String name, int... idx) {
 			String sIdx = "";
-			if (idx != null) {
+			if ((idx != null) && (idx.length != 0)) {
 				sIdx = Arrays.toString(idx);
 			}
-			out.printf("%s%s aVal=%X bVal=%X%n", name, sIdx, aVal, bVal);
+			out.printf("deltaCycle:%5d %s%s aVal=%X bVal=%X%n", deltaCycle, name, sIdx, aVal, bVal);
 		}
 
 		@Override
-		public void reportOutputBigDiff(BigInteger aVal, BigInteger bVal, String name, int... idx) {
+		public void reportOutputBigDiff(long deltaCycle, BigInteger aVal, BigInteger bVal, String name, int... idx) {
 			String sIdx = "";
-			if (idx != null) {
+			if ((idx != null) && (idx.length != 0)) {
 				sIdx = Arrays.toString(idx);
 			}
-			out.printf("%s%s aVal=%X bVal=%X%n", name, sIdx, aVal, bVal);
+			out.printf("deltaCycle:%5d %s%s aVal=%X bVal=%X%n", deltaCycle, name, sIdx, aVal, bVal);
 		}
 
 		@Override
 		public void reportDeltaCycleDiff(int deltaCycleA, int deltaCycleB) {
-			out.printf("Delta Cycle diff, a: %d b: %d", deltaCycleA, deltaCycleB);
+			out.printf("Delta Cycle diff, a: %d b: %d%n", deltaCycleA, deltaCycleB);
 		}
 
 	}
 
 	public static interface DiffReport {
 
-		void reportOutputLongDiff(long aVal, long bVal, String name, int... idx);
+		void reportOutputLongDiff(long deltaCycle, long aVal, long bVal, String name, int... idx);
 
-		void reportOutputBigDiff(BigInteger aVal, BigInteger bVal, String name, int... idx);
+		void reportOutputBigDiff(long deltaCycle, BigInteger aVal, BigInteger bVal, String name, int... idx);
 
 		void reportDeltaCycleDiff(int deltaCycleA, int deltaCycleB);
 
@@ -93,11 +93,13 @@ public class ComparisonInterpreter implements IHDLInterpreter {
 	private final Map<String, Integer> varIdx = new HashMap<>();
 	private final DiffReport report;
 	private final ExecutableModel em;
+	private final boolean terminate;
 
-	public ComparisonInterpreter(IHDLInterpreter a, IHDLInterpreter b, ExecutableModel em, DiffReport report) {
+	public ComparisonInterpreter(IHDLInterpreter a, IHDLInterpreter b, ExecutableModel em, DiffReport report, boolean terminate) {
 		this.a = a;
 		this.b = b;
 		this.em = em;
+		this.terminate = terminate;
 		if (report != null) {
 			this.report = report;
 		} else {
@@ -108,8 +110,8 @@ public class ComparisonInterpreter implements IHDLInterpreter {
 			final VariableInformation v = variables[i];
 			varIdx.put(v.name, i);
 			if (!"#null".equals(v.name)) {
-				varListA.add(a.getIndex(v.name));
-				varListB.add(b.getIndex(v.name));
+				varListA.add(getIndexOf(a, v));
+				varListB.add(getIndexOf(b, v));
 			} else {
 				varListA.add(-1);
 				varListB.add(-1);
@@ -117,8 +119,19 @@ public class ComparisonInterpreter implements IHDLInterpreter {
 		}
 	}
 
+	protected int getIndexOf(IHDLInterpreter a, final VariableInformation v) {
+		try {
+			return a.getIndex(v.name);
+		} catch (final Exception e) {
+			if (v.name.startsWith(em.moduleName))
+				return a.getIndex(v.name.substring(em.moduleName.length() + 1));
+			return a.getIndex(em.moduleName + "." + v.name);
+		}
+	}
+
 	public void checkAllVarsLong() {
 		final VariableInformation[] variables = em.variables;
+		boolean hasDiff = false;
 		for (int i = 0; i < variables.length; i++) {
 			final VariableInformation v = variables[i];
 			if (!"#null".equals(v.name)) {
@@ -126,7 +139,8 @@ public class ComparisonInterpreter implements IHDLInterpreter {
 					final long aVal = a.getOutputLong(varListA.get(i));
 					final long bVal = b.getOutputLong(varListB.get(i));
 					if (aVal != bVal) {
-						report.reportOutputLongDiff(aVal, bVal, v.name);
+						hasDiff = true;
+						report.reportOutputLongDiff(getDeltaCycle(), aVal, bVal, v.name);
 					}
 				} else {
 					final int[] arrIdx = new int[v.dimensions.length];
@@ -135,12 +149,15 @@ public class ComparisonInterpreter implements IHDLInterpreter {
 						final long aVal = a.getOutputLong(varListA.get(i), arrIdx);
 						final long bVal = b.getOutputLong(varListB.get(i), arrIdx);
 						if (aVal != bVal) {
-							report.reportOutputLongDiff(aVal, bVal, v.name, arrIdx);
+							hasDiff = true;
+							report.reportOutputLongDiff(getDeltaCycle(), aVal, bVal, v.name, arrIdx);
 						}
 					}
 				}
 			}
 		}
+		if (hasDiff && terminate)
+			throw new RuntimeException("A mismatch has been found");
 	}
 
 	@Override
@@ -182,7 +199,7 @@ public class ComparisonInterpreter implements IHDLInterpreter {
 		final long aVal = a.getOutputLong(name, arrayIdx);
 		final long bVal = b.getOutputLong(name, arrayIdx);
 		if (aVal != bVal) {
-			report.reportOutputLongDiff(aVal, bVal, name);
+			report.reportOutputLongDiff(getDeltaCycle(), aVal, bVal, name);
 		}
 		return aVal;
 	}
@@ -192,7 +209,7 @@ public class ComparisonInterpreter implements IHDLInterpreter {
 		final long aVal = a.getOutputLong(varListA.get(idx), arrayIdx);
 		final long bVal = b.getOutputLong(varListB.get(idx), arrayIdx);
 		if (aVal != bVal) {
-			report.reportOutputLongDiff(aVal, bVal, em.variables[idx].name);
+			report.reportOutputLongDiff(getDeltaCycle(), aVal, bVal, em.variables[idx].name);
 		}
 		return aVal;
 	}
@@ -202,7 +219,7 @@ public class ComparisonInterpreter implements IHDLInterpreter {
 		final BigInteger aVal = a.getOutputBig(name, arrayIdx);
 		final BigInteger bVal = b.getOutputBig(name, arrayIdx);
 		if (!aVal.equals(bVal)) {
-			report.reportOutputBigDiff(aVal, bVal, name);
+			report.reportOutputBigDiff(getDeltaCycle(), aVal, bVal, name);
 		}
 		return aVal;
 	}
@@ -212,7 +229,7 @@ public class ComparisonInterpreter implements IHDLInterpreter {
 		final BigInteger aVal = a.getOutputBig(varListA.get(idx), arrayIdx);
 		final BigInteger bVal = b.getOutputBig(varListB.get(idx), arrayIdx);
 		if (!aVal.equals(bVal)) {
-			report.reportOutputBigDiff(aVal, bVal, em.variables[idx].name);
+			report.reportOutputBigDiff(getDeltaCycle(), aVal, bVal, em.variables[idx].name);
 		}
 		return aVal;
 	}

@@ -116,7 +116,7 @@ public class SimpleEstimator {
 
 	}
 
-	public Map<String, ResourceCosts> estimateFrame(ExecutableModel model, ResourceCostSelector costSelector) {
+	public Map<String, ResourceCosts> estimateFrameCosts(ExecutableModel model, ResourceCostSelector costSelector) {
 		final Map<String, ResourceCosts> res = new HashMap<>();
 		final Map<Integer, List<ResourceCosts>> knownCosts = new HashMap<>();
 		final Map<Integer, ResourceCosts> knownTotalCosts = new HashMap<>();
@@ -194,6 +194,8 @@ public class SimpleEstimator {
 				// current = current.add(ROUTING_COSTS, 1, 1);
 				break;
 			case div:
+			case mod:
+			case pow:
 				current = current.add(LUT_COSTS, targetWidth * targetWidth * 10, targetWidth * 10);
 				break;
 			case mul:
