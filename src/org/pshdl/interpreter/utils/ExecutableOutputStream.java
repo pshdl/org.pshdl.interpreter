@@ -86,10 +86,10 @@ public class ExecutableOutputStream extends DataOutputStream {
 	public void writeVariable(VariableInformation vi, String baseName) throws IOException {
 		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		final ExecutableOutputStream obj = new ExecutableOutputStream(baos);
-		String name = vi.name;
-		if ((baseName != null) && vi.name.startsWith(baseName)) {
-			name = vi.name.substring(baseName.length() + 1, vi.name.length());
-		}
+		final String name = vi.name;
+		// if ((baseName != null) && vi.name.startsWith(baseName)) {
+		// name = vi.name.substring(baseName.length() + 1, vi.name.length());
+		// }
 		// System.out.println("ExecutableOutputStream.writeVariable()" + name);
 		obj.writeString(VariableTypes.name, name);
 		obj.writeInt(VariableTypes.width, vi.width);

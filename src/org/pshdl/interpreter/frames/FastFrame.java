@@ -38,46 +38,6 @@ import org.pshdl.interpreter.Frame.FastInstruction;
 
 public class FastFrame {
 
-	protected static final int noop = 0;
-	protected static final int bitAccessSingle = 1;
-	protected static final int bitAccessSingleRange = 2;
-	protected static final int cast_int = 3;
-	protected static final int cast_uint = 4;
-	protected static final int loadConstant = 5;
-	protected static final int loadInternal = 6;
-	protected static final int concat = 7;
-	protected static final int const0 = 8;
-	protected static final int const1 = 9;
-	protected static final int const2 = 10;
-	protected static final int constAll1 = 11;
-	protected static final int isFallingEdge = 12;
-	protected static final int isRisingEdge = 13;
-	protected static final int posPredicate = 14;
-	protected static final int negPredicate = 15;
-	protected static final int and = 16;
-	protected static final int or = 17;
-	protected static final int xor = 18;
-	protected static final int div = 19;
-	protected static final int minus = 20;
-	protected static final int mul = 21;
-	protected static final int plus = 22;
-	protected static final int eq = 23;
-	protected static final int greater = 24;
-	protected static final int greater_eq = 25;
-	protected static final int less = 26;
-	protected static final int less_eq = 27;
-	protected static final int not_eq = 28;
-	protected static final int logiOr = 29;
-	protected static final int logiAnd = 30;
-	protected static final int logiNeg = 31;
-	protected static final int arith_neg = 32;
-	protected static final int bit_neg = 33;
-	protected static final int sll = 34;
-	protected static final int sra = 35;
-	protected static final int srl = 36;
-	protected static final int pushAddIndex = 37;
-	protected static final int writeInternal = 38;
-
 	private final long stack[];
 	private final long constants[];
 	public List<RegUpdater> regUpdates = new ArrayList<>();
@@ -116,7 +76,7 @@ public class FastFrame {
 			if (fi.popB) {
 				b = stack[stackPos--];
 			}
-			switch (fi.inst.ordinal()) {
+			switch (fi.inst) {
 			case noop:
 				break;
 			case and:

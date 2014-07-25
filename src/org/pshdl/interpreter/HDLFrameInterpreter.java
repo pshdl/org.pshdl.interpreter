@@ -43,6 +43,38 @@ import org.pshdl.interpreter.frames.IDebugListener;
 import org.pshdl.interpreter.frames.LongFrame;
 
 public final class HDLFrameInterpreter implements IHDLInterpreter {
+
+	public final class NullAcccess extends EncapsulatedAccess {
+
+		public NullAcccess(InternalInformation name) {
+			super(HDLFrameInterpreter.this, name, -1, false);
+		}
+
+		private long last;
+		private BigInteger lastBi;
+
+		@Override
+		public long getDataLong() {
+			return last;
+		}
+
+		@Override
+		public void setDataLong(long data, int deltaCycle, int epsCycle) {
+			last = data;
+		}
+
+		@Override
+		public BigInteger getDataBig() {
+			return lastBi;
+		}
+
+		@Override
+		public void setDataBig(BigInteger data, int deltaCycle, int epsCycle) {
+			lastBi = data;
+		}
+
+	}
+
 	/**
 	 * Marker that an accessIndex is of kind BigInteger. The accessIndex is
 	 * binary ored with this
@@ -138,14 +170,17 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 		for (int i = 0; i < model.variables.length; i++) {
 			final VariableInformation vi = model.variables[i];
 			final Integer accessIndex = accessIdxMap.get(vi.name);
+			final InternalInformation ii = new InternalInformation(vi.name, vi);
 			if (accessIndex != null) {
 				if (vi.width > 64) {
-					full[i] = BigAccesses.getInternal(new InternalInformation(vi.name, vi), accessIndex & BIG_MASK, false, this);
+					full[i] = BigAccesses.getInternal(ii, accessIndex & BIG_MASK, false, this);
 				} else {
-					full[i] = LongAccesses.getInternal(new InternalInformation(vi.name, vi), accessIndex, false, this);
+					full[i] = LongAccesses.getInternal(ii, accessIndex, false, this);
 				}
-				varIdxMap.put(vi.name, i);
+			} else {
+				full[i] = new NullAcccess(ii);
 			}
+			varIdxMap.put(vi.name, i);
 		}
 	}
 
@@ -178,7 +213,13 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 		}
 		for (final EncapsulatedAccess ea : internals) {
 			if (ea.ii.isShadowReg) {
-				ea.targetAccessIndex = accessIdxMap.get(ea.ii.baseName(false, false));
+				final String baseName = ea.ii.baseName(false, false);
+				final Integer idx = accessIdxMap.get(baseName);
+				if (idx != null) {
+					ea.targetAccessIndex = idx;
+				} else {
+					ea.targetAccessIndex = ea.getAccessIndex();
+				}
 			}
 		}
 		return currentIdx;
@@ -186,7 +227,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see org.pshdl.interpreter.IHDLInterpreter#setInput(java.lang.String,
 	 * java.math.BigInteger, int)
 	 */
@@ -197,7 +238,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see org.pshdl.interpreter.IHDLInterpreter#setInput(int,
 	 * java.math.BigInteger, int)
 	 */
@@ -212,7 +253,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see org.pshdl.interpreter.IHDLInterpreter#setInput(java.lang.String,
 	 * long, int)
 	 */
@@ -223,7 +264,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see org.pshdl.interpreter.IHDLInterpreter#setInput(int, long, int)
 	 */
 	@Override
@@ -237,7 +278,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see org.pshdl.interpreter.IHDLInterpreter#getIndex(java.lang.String)
 	 */
 	@Override
@@ -250,7 +291,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see
 	 * org.pshdl.interpreter.IHDLInterpreter#getOutputLong(java.lang.String,
 	 * int)
@@ -262,7 +303,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see org.pshdl.interpreter.IHDLInterpreter#getOutputLong(int, int)
 	 */
 	@Override
@@ -276,7 +317,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see org.pshdl.interpreter.IHDLInterpreter#getOutputBig(java.lang.String,
 	 * int)
 	 */
@@ -287,7 +328,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see org.pshdl.interpreter.IHDLInterpreter#getOutputBig(int, int)
 	 */
 	@Override
@@ -310,7 +351,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see org.pshdl.interpreter.IHDLInterpreter#run()
 	 */
 	@Override
