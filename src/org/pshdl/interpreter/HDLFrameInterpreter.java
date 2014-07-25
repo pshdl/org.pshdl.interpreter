@@ -144,8 +144,8 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 		this.internals_prev = new EncapsulatedAccess[model.internals.length];
 		this.full = new EncapsulatedAccess[model.variables.length];
 		this.listener = listener;
-		final int storageSize = createInternals(model);
-		createVarIndex(model);
+		final int storageSize = createVarIndex(model);
+		createInternals(model);
 		this.storage = new long[storageSize];
 		this.storage_prev = new long[storageSize];
 		this.big_storage = new BigInteger[storageSize];
@@ -166,43 +166,45 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 		}
 	}
 
-	private void createVarIndex(ExecutableModel model) {
+	private int createVarIndex(ExecutableModel model) {
+		int currentIdx = 0;
 		for (int i = 0; i < model.variables.length; i++) {
 			final VariableInformation vi = model.variables[i];
-			final Integer accessIndex = accessIdxMap.get(vi.name);
-			final InternalInformation ii = new InternalInformation(vi.name, vi);
-			if (accessIndex != null) {
-				if (vi.width > 64) {
-					full[i] = BigAccesses.getInternal(ii, accessIndex & BIG_MASK, false, this);
-				} else {
-					full[i] = LongAccesses.getInternal(ii, accessIndex, false, this);
-				}
-			} else {
-				full[i] = new NullAcccess(ii);
-			}
 			varIdxMap.put(vi.name, i);
+			int accessIndex = currentIdx;
+			int size = 1;
+			for (final int d : vi.dimensions) {
+				size *= d;
+			}
+			currentIdx += size;
+			final InternalInformation ii = new InternalInformation(vi.name, vi);
+			if (vi.width > 64) {
+				accessIdxMap.put(vi.name, accessIndex | BIG_MARKER);
+				full[i] = BigAccesses.getInternal(ii, accessIndex & BIG_MASK, false, this);
+			} else {
+				accessIdxMap.put(vi.name, accessIndex);
+				full[i] = LongAccesses.getInternal(ii, accessIndex, false, this);
+			}
+			if (vi.isRegister) {
+				accessIndex = currentIdx;
+				if (vi.width > 64) {
+					accessIdxMap.put(vi.name + InternalInformation.REG_POSTFIX, accessIndex | BIG_MARKER);
+				} else {
+					accessIdxMap.put(vi.name + InternalInformation.REG_POSTFIX, accessIndex);
+				}
+				currentIdx += size;
+			}
 		}
+		return currentIdx;
 	}
 
-	private int createInternals(ExecutableModel model) {
-		int currentIdx = 0;
+	private void createInternals(ExecutableModel model) {
 		for (int i = 0; i < model.internals.length; i++) {
 			final InternalInformation ii = model.internals[i];
 			final String baseName = ii.baseName(false, true);
-			Integer accessIndex = accessIdxMap.get(baseName);
-			if (accessIndex == null) {
-				if ((ii.info.width > 64)) {
-					accessIndex = currentIdx | BIG_MARKER;
-				} else {
-					accessIndex = currentIdx;
-				}
-				int size = 1;
-				for (final int d : ii.info.dimensions) {
-					size *= d;
-				}
-				currentIdx += size;
-				accessIdxMap.put(baseName, accessIndex);
-			}
+			final Integer accessIndex = accessIdxMap.get(baseName);
+			if (accessIndex == null)
+				throw new IllegalArgumentException("No accessIndex for:" + baseName);
 			if (((accessIndex & BIG_MARKER) == BIG_MARKER)) {
 				internals[i] = BigAccesses.getInternal(ii, accessIndex & BIG_MASK, false, this);
 				internals_prev[i] = BigAccesses.getInternal(ii, accessIndex & BIG_MASK, true, this);
@@ -222,7 +224,6 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 				}
 			}
 		}
-		return currentIdx;
 	}
 
 	/*

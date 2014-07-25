@@ -40,26 +40,6 @@ import org.pshdl.interpreter.frames.FastFrame;
 
 public class FastSimpleInterpreter implements IHDLInterpreter {
 
-	public final class NullAcccess extends LongAccess {
-
-		public NullAcccess(InternalInformation name, int accessIndex, boolean prev) {
-			super(name, accessIndex, prev);
-		}
-
-		private long last;
-
-		@Override
-		public long getDataLong() {
-			return last;
-		}
-
-		@Override
-		public void setDataLong(long data, int deltaCycle, int epsCycle) {
-			last = data;
-		}
-
-	}
-
 	public class LongAccess {
 
 		public class RegUpdater {
@@ -70,10 +50,6 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 				super();
 				this.shadowAccessIdx = shadowAccessIdx == -1 ? accessIdx : shadowAccessIdx;
 				this.accessIdx = accessIdx == -1 ? shadowAccessIdx : accessIdx;
-				// if (this.accessIdx == this.shadowAccessIdx) {
-				// System.out.println(shadowAccessIdx + " -> " + accessIdx +
-				// " = " + this.shadowAccessIdx + " -> " + this.accessIdx);
-				// }
 			}
 		}
 
@@ -271,8 +247,8 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 		}
 		this.internals = new LongAccess[model.internals.length];
 		this.internals_prev = new LongAccess[model.internals.length];
-		final int storageSize = createInternals(model);
-		createVarIndex(model);
+		final int storageSize = createVarIndex(model);
+		createInternals(model);
 		this.storage = new long[storageSize];
 		this.storage_prev = new long[storageSize];
 		deltaUpdates = new long[storageSize];
@@ -281,38 +257,36 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 		}
 	}
 
-	private void createVarIndex(ExecutableModel model) {
+	private int createVarIndex(ExecutableModel model) {
+		int currentIdx = 0;
 		for (int i = 0; i < model.variables.length; i++) {
 			final VariableInformation vi = model.variables[i];
-			final Integer accessIndex = accessIdxMap.get(vi.name);
-			if (accessIndex == null) {
-				full[i] = new NullAcccess(new InternalInformation(vi.name, vi), -1, false);
-			} else {
-				full[i] = new LongAccess(new InternalInformation(vi.name, vi), accessIndex, false);
-			}
 			varIdxMap.put(vi.name, i);
-			// }
+			int accessIndex = currentIdx;
+			int size = 1;
+			for (final int d : vi.dimensions) {
+				size *= d;
+			}
+			currentIdx += size;
+			accessIdxMap.put(vi.name, accessIndex);
+			full[i] = new LongAccess(new InternalInformation(vi.name, vi), accessIndex, false);
+			if (vi.isRegister) {
+				accessIndex = currentIdx;
+				accessIdxMap.put(vi.name + InternalInformation.REG_POSTFIX, accessIndex);
+				currentIdx += size;
+			}
 		}
+		return currentIdx;
 	}
 
-	private int createInternals(ExecutableModel model) {
-		int currentIdx = 0;
+	private void createInternals(ExecutableModel model) {
 		for (int i = 0; i < model.internals.length; i++) {
 			final InternalInformation ii = model.internals[i];
 			// System.out.println("HDLFrameInterpreter.createInternals()" + ii);
 			final String baseName = ii.baseName(false, true);
-			Integer accessIndex = accessIdxMap.get(baseName);
-			if (accessIndex == null) {
-				accessIndex = currentIdx;
-				int size = 1;
-				for (final int d : ii.info.dimensions) {
-					size *= d;
-				}
-				currentIdx += size;
-				// System.out.println("HDLFrameInterpreter.createInternals()Allocating:"
-				// + size + " for " + baseName);
-				accessIdxMap.put(baseName, accessIndex);
-			}
+			final Integer accessIndex = accessIdxMap.get(baseName);
+			if (accessIndex == null)
+				throw new IllegalArgumentException("No idx for:" + baseName);
 			internals[i] = new LongAccess(ii, accessIndex, false);
 			internals_prev[i] = new LongAccess(ii, accessIndex, true);
 		}
@@ -327,7 +301,6 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 				}
 			}
 		}
-		return currentIdx;
 	}
 
 	@Override
