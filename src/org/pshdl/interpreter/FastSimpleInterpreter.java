@@ -26,7 +26,6 @@
  ******************************************************************************/
 package org.pshdl.interpreter;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Formatter;
 import java.util.HashMap;
@@ -131,7 +130,6 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 		 *
 		 * @param deltaCycle
 		 * @param epsCycle
-		 *            TODO
 		 * @return <code>true</code> if it was calculated in this delta cycle,
 		 *         <code>false</code> otherwise
 		 */
@@ -224,7 +222,7 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 	private final Map<String, Integer> accessIdxMap = new TreeMap<>();
 	private final Map<String, Integer> varIdxMap = new TreeMap<>();
 	private int deltaCycle;
-	private final boolean disabledRegOutputlogic;
+	private boolean disabledRegOutputlogic;
 
 	public FastSimpleInterpreter(ExecutableModel model, boolean disableEdge, boolean disabledRegOutputlogic) {
 		this.disabledRegOutputlogic = disabledRegOutputlogic;
@@ -366,26 +364,6 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 	}
 
 	@Override
-	public void setInput(String name, BigInteger value, int... arrayIdx) {
-		setInput(name, value.longValue(), arrayIdx);
-	}
-
-	@Override
-	public void setInput(int idx, BigInteger value, int... arrayIdx) {
-		setInput(idx, value.longValue(), arrayIdx);
-	}
-
-	@Override
-	public BigInteger getOutputBig(String name, int... arrayIdx) {
-		return BigInteger.valueOf(getOutputLong(name, arrayIdx));
-	}
-
-	@Override
-	public BigInteger getOutputBig(int idx, int... arrayIdx) {
-		return BigInteger.valueOf(getOutputLong(idx, arrayIdx));
-	}
-
-	@Override
 	public String getName(int idx) {
 		for (final Entry<String, Integer> e : varIdxMap.entrySet()) {
 			if (e.getValue() == idx)
@@ -395,7 +373,7 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 	}
 
 	@Override
-	public int getDeltaCycle() {
+	public long getDeltaCycle() {
 		return deltaCycle;
 	}
 
@@ -407,6 +385,30 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 				f.format("\t%20s: 0x%04x%n", la.ii.fullName, la.getDataLong());
 			}
 			return f.toString();
+		}
+	}
+
+	@Override
+	public void initConstants() {
+
+	}
+
+	@Override
+	public void close() throws Exception {
+	}
+
+	@Override
+	public void setFeature(Feature feature, Object value) {
+		switch (feature) {
+		case disableOutputRegs:
+			disabledRegOutputlogic = (boolean) value;
+			break;
+		case disableEdges:
+			for (final FastFrame fastFrame : frames) {
+				fastFrame.disableEdge = (boolean) value;
+			}
+			break;
+
 		}
 	}
 }

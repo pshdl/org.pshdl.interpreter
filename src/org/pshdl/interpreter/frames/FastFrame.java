@@ -47,7 +47,7 @@ public class FastFrame {
 	private final LongAccess[] internals;
 	private final LongAccess[] internals_prev;
 	public final LongAccess outputAccess;
-	private final boolean disableEdge;
+	public boolean disableEdge;
 
 	public FastFrame(FastSimpleInterpreter fir, Frame f, boolean disableEdge) {
 		this.stack = new long[f.maxStackDepth];
@@ -108,11 +108,8 @@ public class FastFrame {
 				// value is 0xA (-6 int<4>)
 				// cast to int<3> result should be 0xE (-2)
 				// Resize sign correctly to correct size
-				final int targetSize = fi.arg1;
-				// Throw away unnecessary bits (only needed when
-				// targetsize>currentSize)
-				final long temp = a << (64 - targetSize);
-				stack[++stackPos] = (temp >> (64 - targetSize));
+				final int shift = 64 - Math.min(fi.arg1, fi.arg2);
+				stack[++stackPos] = ((a << shift) >> shift);
 				break;
 			case cast_uint:
 				// There is nothing special about uints, so we just mask
@@ -290,11 +287,11 @@ public class FastFrame {
 		return true;
 	}
 
-	private long fixOp(long l, int arg1) {
-		final int val = arg1 >> 1;
-		if ((arg1 & 1) == 1)
-			return ((l << val) >> val);
-		return l & ((1l << val) - 1);
+	private long fixOp(long value, int witdhWithType) {
+		final int width = witdhWithType >> 1;
+		if ((witdhWithType & 1) == 1)
+			return ((value << width) >> width);
+		return value & ((1l << width) - 1);
 	}
 
 	public LongAccess getInternal(int off, int arrayPos) {

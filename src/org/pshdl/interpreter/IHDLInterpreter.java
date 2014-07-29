@@ -26,13 +26,13 @@
  ******************************************************************************/
 package org.pshdl.interpreter;
 
-import java.math.BigInteger;
+public interface IHDLInterpreter extends AutoCloseable {
 
-public interface IHDLInterpreter {
+	public static enum Feature {
+		disableEdges, disableOutputRegs
+	}
 
-	public abstract void setInput(String name, BigInteger value, int... arrayIdx);
-
-	public abstract void setInput(int idx, BigInteger value, int... arrayIdx);
+	public abstract void setFeature(Feature feature, Object value);
 
 	public abstract void setInput(String name, long value, int... arrayIdx);
 
@@ -46,12 +46,10 @@ public interface IHDLInterpreter {
 
 	public abstract long getOutputLong(int idx, int... arrayIdx);
 
-	public abstract BigInteger getOutputBig(String name, int... arrayIdx);
-
-	public abstract BigInteger getOutputBig(int idx, int... arrayIdx);
-
 	public abstract void run();
 
-	public abstract int getDeltaCycle();
+	public abstract void initConstants();
+
+	public abstract long getDeltaCycle();
 
 }

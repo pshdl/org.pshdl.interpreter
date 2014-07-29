@@ -42,7 +42,7 @@ import org.pshdl.interpreter.frames.ExecutableFrame;
 import org.pshdl.interpreter.frames.IDebugListener;
 import org.pshdl.interpreter.frames.LongFrame;
 
-public final class HDLFrameInterpreter implements IHDLInterpreter {
+public final class HDLFrameInterpreter implements IHDLBigInterpreter {
 
 	public final class NullAcccess extends EncapsulatedAccess {
 
@@ -228,7 +228,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see org.pshdl.interpreter.IHDLInterpreter#setInput(java.lang.String,
 	 * java.math.BigInteger, int)
 	 */
@@ -239,7 +239,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see org.pshdl.interpreter.IHDLInterpreter#setInput(int,
 	 * java.math.BigInteger, int)
 	 */
@@ -254,7 +254,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see org.pshdl.interpreter.IHDLInterpreter#setInput(java.lang.String,
 	 * long, int)
 	 */
@@ -265,7 +265,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see org.pshdl.interpreter.IHDLInterpreter#setInput(int, long, int)
 	 */
 	@Override
@@ -279,7 +279,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see org.pshdl.interpreter.IHDLInterpreter#getIndex(java.lang.String)
 	 */
 	@Override
@@ -292,7 +292,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see
 	 * org.pshdl.interpreter.IHDLInterpreter#getOutputLong(java.lang.String,
 	 * int)
@@ -304,7 +304,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see org.pshdl.interpreter.IHDLInterpreter#getOutputLong(int, int)
 	 */
 	@Override
@@ -318,7 +318,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see org.pshdl.interpreter.IHDLInterpreter#getOutputBig(java.lang.String,
 	 * int)
 	 */
@@ -329,7 +329,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see org.pshdl.interpreter.IHDLInterpreter#getOutputBig(int, int)
 	 */
 	@Override
@@ -352,7 +352,7 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see org.pshdl.interpreter.IHDLInterpreter#run()
 	 */
 	@Override
@@ -408,11 +408,31 @@ public final class HDLFrameInterpreter implements IHDLInterpreter {
 	}
 
 	@Override
-	public int getDeltaCycle() {
+	public long getDeltaCycle() {
 		return deltaCycle;
 	}
 
 	public void addRegUpdate(RegUpdater regUpdater) {
 		updatedRegs.add(regUpdater);
+	}
+
+	@Override
+	public void initConstants() {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void close() throws Exception {
+	}
+
+	@Override
+	public void setFeature(Feature feature, Object value) {
+		switch (feature) {
+		case disableEdges:
+		case disableOutputRegs:
+			if ((boolean) value)
+				throw new IllegalArgumentException("Feature not supported");
+		}
 	}
 }

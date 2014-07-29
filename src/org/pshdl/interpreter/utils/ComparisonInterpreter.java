@@ -35,10 +35,11 @@ import java.util.List;
 import java.util.Map;
 
 import org.pshdl.interpreter.ExecutableModel;
+import org.pshdl.interpreter.IHDLBigInterpreter;
 import org.pshdl.interpreter.IHDLInterpreter;
 import org.pshdl.interpreter.VariableInformation;
 
-public class ComparisonInterpreter implements IHDLInterpreter {
+public class ComparisonInterpreter implements IHDLBigInterpreter {
 
 	public static class ConsoleReporter implements DiffReport {
 		private final PrintStream out;
@@ -70,7 +71,7 @@ public class ComparisonInterpreter implements IHDLInterpreter {
 		}
 
 		@Override
-		public void reportDeltaCycleDiff(int deltaCycleA, int deltaCycleB) {
+		public void reportDeltaCycleDiff(long deltaCycleA, long deltaCycleB) {
 			out.printf("Delta Cycle diff, a: %d b: %d%n", deltaCycleA, deltaCycleB);
 		}
 
@@ -82,12 +83,14 @@ public class ComparisonInterpreter implements IHDLInterpreter {
 
 		void reportOutputBigDiff(long deltaCycle, BigInteger aVal, BigInteger bVal, String name, int... idx);
 
-		void reportDeltaCycleDiff(int deltaCycleA, int deltaCycleB);
+		void reportDeltaCycleDiff(long deltaCycleA, long deltaCycleB);
 
 	}
 
 	private final IHDLInterpreter b;
+	private final IHDLBigInterpreter bBig;
 	private final IHDLInterpreter a;
+	private final IHDLBigInterpreter aBig;
 	private final List<Integer> varListA = new ArrayList<>();
 	private final List<Integer> varListB = new ArrayList<>();
 	private final Map<String, Integer> varIdx = new HashMap<>();
@@ -97,7 +100,9 @@ public class ComparisonInterpreter implements IHDLInterpreter {
 
 	public ComparisonInterpreter(IHDLInterpreter a, IHDLInterpreter b, ExecutableModel em, DiffReport report, boolean terminate) {
 		this.a = a;
+		this.aBig = BigInterpreterAdapter.adapt(a);
 		this.b = b;
+		this.bBig = BigInterpreterAdapter.adapt(b);
 		this.em = em;
 		this.terminate = terminate;
 		if (report != null) {
@@ -162,14 +167,14 @@ public class ComparisonInterpreter implements IHDLInterpreter {
 
 	@Override
 	public void setInput(String name, BigInteger value, int... arrayIdx) {
-		a.setInput(name, value, arrayIdx);
-		b.setInput(name, value, arrayIdx);
+		aBig.setInput(name, value, arrayIdx);
+		bBig.setInput(name, value, arrayIdx);
 	}
 
 	@Override
 	public void setInput(int idx, BigInteger value, int... arrayIdx) {
-		a.setInput(varListA.get(idx), value, arrayIdx);
-		b.setInput(varListB.get(idx), value, arrayIdx);
+		aBig.setInput(varListA.get(idx), value, arrayIdx);
+		bBig.setInput(varListB.get(idx), value, arrayIdx);
 	}
 
 	@Override
@@ -216,8 +221,8 @@ public class ComparisonInterpreter implements IHDLInterpreter {
 
 	@Override
 	public BigInteger getOutputBig(String name, int... arrayIdx) {
-		final BigInteger aVal = a.getOutputBig(name, arrayIdx);
-		final BigInteger bVal = b.getOutputBig(name, arrayIdx);
+		final BigInteger aVal = aBig.getOutputBig(name, arrayIdx);
+		final BigInteger bVal = bBig.getOutputBig(name, arrayIdx);
 		if (!aVal.equals(bVal)) {
 			report.reportOutputBigDiff(getDeltaCycle(), aVal, bVal, name);
 		}
@@ -226,8 +231,8 @@ public class ComparisonInterpreter implements IHDLInterpreter {
 
 	@Override
 	public BigInteger getOutputBig(int idx, int... arrayIdx) {
-		final BigInteger aVal = a.getOutputBig(varListA.get(idx), arrayIdx);
-		final BigInteger bVal = b.getOutputBig(varListB.get(idx), arrayIdx);
+		final BigInteger aVal = aBig.getOutputBig(varListA.get(idx), arrayIdx);
+		final BigInteger bVal = bBig.getOutputBig(varListB.get(idx), arrayIdx);
 		if (!aVal.equals(bVal)) {
 			report.reportOutputBigDiff(getDeltaCycle(), aVal, bVal, em.variables[idx].name);
 		}
@@ -241,13 +246,31 @@ public class ComparisonInterpreter implements IHDLInterpreter {
 	}
 
 	@Override
-	public int getDeltaCycle() {
-		final int deltaCycleA = a.getDeltaCycle();
-		final int deltaCycleB = b.getDeltaCycle();
+	public long getDeltaCycle() {
+		final long deltaCycleA = a.getDeltaCycle();
+		final long deltaCycleB = b.getDeltaCycle();
 		if (deltaCycleA != deltaCycleB) {
 			report.reportDeltaCycleDiff(deltaCycleA, deltaCycleB);
 		}
 		return deltaCycleA;
+	}
+
+	@Override
+	public void initConstants() {
+		a.initConstants();
+		b.initConstants();
+	}
+
+	@Override
+	public void close() throws Exception {
+		a.close();
+		b.close();
+	}
+
+	@Override
+	public void setFeature(Feature feature, Object value) {
+		a.setFeature(feature, value);
+		b.setFeature(feature, value);
 	}
 
 }
