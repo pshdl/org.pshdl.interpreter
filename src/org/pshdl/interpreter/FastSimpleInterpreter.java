@@ -39,6 +39,25 @@ import org.pshdl.interpreter.frames.FastFrame;
 
 public class FastSimpleInterpreter implements IHDLInterpreter {
 
+	public static class FastSimpleFactory implements IHDLInterpreterFactory {
+
+		private final ExecutableModel model;
+		private final boolean disableEdge, disabledRegOutputlogic;
+
+		public FastSimpleFactory(ExecutableModel model, boolean disableEdge, boolean disabledRegOutputlogic) {
+			super();
+			this.model = model;
+			this.disableEdge = disableEdge;
+			this.disabledRegOutputlogic = disabledRegOutputlogic;
+		}
+
+		@Override
+		public IHDLInterpreter newInstance() {
+			return new FastSimpleInterpreter(model, disableEdge, disabledRegOutputlogic);
+		}
+
+	}
+
 	public class LongAccess {
 
 		public class RegUpdater {

@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.TimeUnit;
 
 public class NativeRunner implements IHDLInterpreter {
 
@@ -20,9 +21,11 @@ public class NativeRunner implements IHDLInterpreter {
 	private final PrintStream outPrint;
 	private final BlockingDeque<String> responses = new LinkedBlockingDeque<>();
 	public final StringWriter commentOutput = new StringWriter();
+	private final Process process;
 
-	public NativeRunner(final InputStream is, OutputStream os, ExecutableModel model) {
+	public NativeRunner(final InputStream is, OutputStream os, ExecutableModel model, Process process) {
 		this.model = model;
+		this.process = process;
 		outPrint = new PrintStream(os);
 		final VariableInformation[] variables = model.variables;
 		for (int i = 0; i < variables.length; i++) {
@@ -119,6 +122,11 @@ public class NativeRunner implements IHDLInterpreter {
 	}
 
 	private String[] send(String command, String data) {
+		try {
+			final int exitValue = process.exitValue();
+			throw new RuntimeException("The process died with return code:" + exitValue);
+		} catch (final Exception e) {
+		}
 		if (data != null) {
 			outPrint.println(command + " " + data);
 		} else {
@@ -126,7 +134,7 @@ public class NativeRunner implements IHDLInterpreter {
 		}
 		outPrint.flush();
 		try {
-			final String response = responses.take();
+			final String response = responses.pollFirst(30, TimeUnit.SECONDS);
 			final String[] split = response.split(" ");
 			final String[] res = new String[split.length - 1];
 			if (split[0].equals(">" + command)) {
@@ -157,8 +165,13 @@ public class NativeRunner implements IHDLInterpreter {
 		send("ic");
 	}
 
+	private boolean closed = false;
+
 	@Override
 	public void close() throws Exception {
+		if (closed)
+			throw new IllegalStateException("Runner already closed");
+		closed = true;
 		send("xn");
 	}
 

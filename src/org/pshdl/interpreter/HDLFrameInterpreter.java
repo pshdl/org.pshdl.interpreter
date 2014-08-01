@@ -43,34 +43,20 @@ import org.pshdl.interpreter.frames.IDebugListener;
 import org.pshdl.interpreter.frames.LongFrame;
 
 public final class HDLFrameInterpreter implements IHDLBigInterpreter {
+	public static class HDLFrameInterpreterFactory implements IHDLInterpreterFactory {
 
-	public final class NullAcccess extends EncapsulatedAccess {
+		private final ExecutableModel model;
+		private final IDebugListener listener;
 
-		public NullAcccess(InternalInformation name) {
-			super(HDLFrameInterpreter.this, name, -1, false);
-		}
-
-		private long last;
-		private BigInteger lastBi;
-
-		@Override
-		public long getDataLong() {
-			return last;
+		public HDLFrameInterpreterFactory(ExecutableModel model, IDebugListener listener) {
+			super();
+			this.model = model;
+			this.listener = listener;
 		}
 
 		@Override
-		public void setDataLong(long data, int deltaCycle, int epsCycle) {
-			last = data;
-		}
-
-		@Override
-		public BigInteger getDataBig() {
-			return lastBi;
-		}
-
-		@Override
-		public void setDataBig(BigInteger data, int deltaCycle, int epsCycle) {
-			lastBi = data;
+		public IHDLInterpreter newInstance() {
+			return new HDLFrameInterpreter(model, listener);
 		}
 
 	}
