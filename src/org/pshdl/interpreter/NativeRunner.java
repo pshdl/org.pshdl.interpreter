@@ -7,7 +7,9 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingDeque;
@@ -26,7 +28,11 @@ public class NativeRunner implements IHDLInterpreter {
 	public NativeRunner(final InputStream is, OutputStream os, ExecutableModel model, Process process) {
 		this.model = model;
 		this.process = process;
-		outPrint = new PrintStream(os);
+		try {
+			outPrint = new PrintStream(os, true, "UTF-8");
+		} catch (final UnsupportedEncodingException e1) {
+			throw new RuntimeException(e1);
+		}
 		final VariableInformation[] variables = model.variables;
 		for (int i = 0; i < variables.length; i++) {
 			final VariableInformation varI = variables[i];
@@ -36,7 +42,7 @@ public class NativeRunner implements IHDLInterpreter {
 
 			@Override
 			public void run() {
-				final BufferedReader inRead = new BufferedReader(new InputStreamReader(is));
+				final BufferedReader inRead = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
 				String line = null;
 				try {
 					while ((line = inRead.readLine()) != null) {
