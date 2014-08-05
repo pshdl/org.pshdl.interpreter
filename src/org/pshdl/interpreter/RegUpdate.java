@@ -3,12 +3,19 @@ package org.pshdl.interpreter;
 public class RegUpdate {
 	public final int internalID;
 	public final int offset;
-	public int fillValue;
+	public long fillValue;
 
 	public RegUpdate(int internalID, int offset) {
 		super();
 		this.internalID = internalID;
 		this.offset = offset;
+	}
+
+	public RegUpdate(int internalID, int offset, long fillValue) {
+		super();
+		this.internalID = internalID;
+		this.offset = offset;
+		this.fillValue = fillValue;
 	}
 
 	@Override

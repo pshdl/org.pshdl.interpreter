@@ -177,6 +177,12 @@ public class FastFrame {
 			case mul:
 				stack[++stackPos] = fixOp(b * a, fi.arg1);
 				break;
+			case mod:
+				stack[++stackPos] = fixOp(b % a, fi.arg1);
+				break;
+			case pow:
+				stack[++stackPos] = fixOp(pow(b, a), fi.arg1);
+				break;
 			case not_eq:
 				stack[++stackPos] = b != a ? 1 : 0;
 				break;
@@ -285,6 +291,20 @@ public class FastFrame {
 			regUpdates.add(outputAccess.getRegUpdater());
 		}
 		return true;
+	}
+
+	private long pow(long a, long n) {
+		long x = 1;
+		long nValue = n;
+		while (nValue > 0) {
+			if ((nValue % 2) == 0) {
+				x = x * x;
+			} else {
+				x = a * x * x;
+			}
+			nValue /= 2;
+		}
+		return x;
 	}
 
 	private long fixOp(long value, int witdhWithType) {

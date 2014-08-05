@@ -191,6 +191,12 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				stack[++stackPos] = b.multiply(a);
 				break;
 			}
+			case mod:
+				stack[++stackPos] = b.mod(a);
+				break;
+			case pow:
+				stack[++stackPos] = b.pow(a.intValue());
+				break;
 			case not_eq: {
 				stack[++stackPos] = !b.equals(a) ? ONE : ZERO;
 				break;

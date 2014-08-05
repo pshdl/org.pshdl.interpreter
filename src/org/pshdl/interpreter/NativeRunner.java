@@ -24,8 +24,9 @@ public class NativeRunner implements IHDLInterpreter {
 	private final BlockingDeque<String> responses = new LinkedBlockingDeque<>();
 	public final StringWriter commentOutput = new StringWriter();
 	private final Process process;
+	private final int timeOutInSeconds;
 
-	public NativeRunner(final InputStream is, OutputStream os, ExecutableModel model, Process process) {
+	public NativeRunner(final InputStream is, OutputStream os, ExecutableModel model, Process process, int timeOutInSeconds) {
 		this.model = model;
 		this.process = process;
 		try {
@@ -38,6 +39,7 @@ public class NativeRunner implements IHDLInterpreter {
 			final VariableInformation varI = variables[i];
 			varIdx.put(varI.name, i);
 		}
+		this.timeOutInSeconds = timeOutInSeconds;
 		new Thread(new Runnable() {
 
 			@Override
@@ -140,7 +142,9 @@ public class NativeRunner implements IHDLInterpreter {
 		}
 		outPrint.flush();
 		try {
-			final String response = responses.pollFirst(30, TimeUnit.SECONDS);
+			final String response = responses.pollFirst(timeOutInSeconds, TimeUnit.SECONDS);
+			if (response == null)
+				throw new IllegalArgumentException("TimeOut during communication");
 			final String[] split = response.split(" ");
 			final String[] res = new String[split.length - 1];
 			if (split[0].equals(">" + command)) {
