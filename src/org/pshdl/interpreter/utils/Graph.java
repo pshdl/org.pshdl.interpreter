@@ -117,7 +117,7 @@ public class Graph<T> {
 		return new Node<>(object);
 	}
 
-	public ArrayList<Node<T>> sortNodes(List<Node<T>> allNodes) throws CycleException {
+	public <X extends Enum<X>> ArrayList<Node<T>> sortNodes(List<Node<T>> allNodes) throws CycleException {
 		// L <- Empty list that will contain the sorted elements
 		final ArrayList<Node<T>> L = new ArrayList<>();
 
@@ -166,7 +166,7 @@ public class Graph<T> {
 			if (!n.inEdges.isEmpty()) {
 				cycle = true;
 				for (final Edge<T> e : n.inEdges) {
-					final Cycle<T, ?> findCycle = findCycle(e.from, new LinkedHashSet<Node<T>>(), n, startTime);
+					final Cycle<T, X> findCycle = findCycle(e.from, new LinkedHashSet<Node<T>>(), n, startTime);
 					if (findCycle != null)
 						throw new CycleException(findCycle);
 				}
