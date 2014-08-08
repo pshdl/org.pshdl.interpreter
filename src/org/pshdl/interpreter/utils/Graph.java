@@ -209,7 +209,7 @@ public class Graph<T> {
 
 	}
 
-	public Cycle<T, ?> findCycle(Node<T> n, LinkedHashSet<Node<T>> visitedNodes, Node<T> target, long startTime) throws CycleException {
+	public <X extends Enum<X>> Cycle<T, X> findCycle(Node<T> n, LinkedHashSet<Node<T>> visitedNodes, Node<T> target, long startTime) throws CycleException {
 		if (visitedNodes.contains(n) || ((System.currentTimeMillis() - startTime) > 500))
 			return null;
 		final LinkedHashSet<Node<T>> newVisited = new LinkedHashSet<>(visitedNodes);
@@ -218,15 +218,15 @@ public class Graph<T> {
 			System.out.println(e);
 			if (e.to == target)
 				return createCycleFromVisited(target, newVisited);
-			final Cycle<T, ?> findCycle = findCycle(e.from, newVisited, target, startTime);
+			final Cycle<T, X> findCycle = findCycle(e.from, newVisited, target, startTime);
 			if (findCycle != null)
 				return findCycle;
 		}
 		return null;
 	}
 
-	public Cycle<T, ?> createCycleFromVisited(Node<T> target, final LinkedHashSet<Node<T>> newVisited) {
-		Cycle<T, ?> lastCycle = new Cycle<>(null, target);
+	public <X extends Enum<X>> Cycle<T, X> createCycleFromVisited(Node<T> target, final LinkedHashSet<Node<T>> newVisited) {
+		Cycle<T, X> lastCycle = new Cycle<>(null, target);
 		for (final Node<T> t : newVisited) {
 			lastCycle = new Cycle<>(lastCycle, t);
 		}
