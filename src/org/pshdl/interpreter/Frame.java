@@ -144,8 +144,8 @@ public class Frame implements Serializable {
 		this.instructions = instructions;
 		this.internalDependencies = internalDependencies;
 		this.outputId = outputId;
-		this.predNegDepRes = predNegDepRes;
-		this.predPosDepRes = predPosDepRes;
+		this.predNegDepRes = predNegDepRes != null ? predNegDepRes : new int[0];
+		this.predPosDepRes = predPosDepRes != null ? predPosDepRes : new int[0];
 		this.edgeNegDepRes = edgeNegDepRes;
 		this.edgePosDepRes = edgePosDepRes;
 		this.maxDataWidth = maxDataWidth;

@@ -154,7 +154,7 @@ public class NativeRunner implements IHDLInterpreter {
 				}
 				return res;
 			}
-			throw new IllegalArgumentException("Did not expect the following response:" + response);
+			throw new IllegalArgumentException("Did not expect the following response:" + response + responses);
 		} catch (final InterruptedException e) {
 			throw new RuntimeException(e);
 		}

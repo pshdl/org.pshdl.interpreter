@@ -26,14 +26,12 @@
  ******************************************************************************/
 package org.pshdl.interpreter.utils;
 
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 
 import org.pshdl.interpreter.ExecutableModel;
-import org.pshdl.interpreter.Frame;
 
 public class Graph<T> {
 
@@ -108,6 +106,11 @@ public class Graph<T> {
 				return false;
 			return true;
 		}
+
+		@Override
+		public String toString() {
+			return from + " -> " + to;
+		}
 	}
 
 	public Node<T> createNode(T object) {
@@ -158,16 +161,15 @@ public class Graph<T> {
 		} while (!S.isEmpty());
 		// Check to see if all edges are removed
 		boolean cycle = false;
+		final long startTime = System.currentTimeMillis();
 		for (final Node<T> n : allNodes) {
 			if (!n.inEdges.isEmpty()) {
 				cycle = true;
-				// for (Edge<T> e : n.inEdges) {
-				// Cycle findCycle = findCycle(e.from, new LinkedHashSet<T>(),
-				// n);
-				// if (findCycle != null)
-				// throw new CycleException(findCycle);
-				// }
-				break;
+				for (final Edge<T> e : n.inEdges) {
+					final Cycle<T, ?> findCycle = findCycle(e.from, new LinkedHashSet<Node<T>>(), n, startTime);
+					if (findCycle != null)
+						throw new CycleException(findCycle);
+				}
 			}
 		}
 		if (cycle)
@@ -182,104 +184,52 @@ public class Graph<T> {
 		 */
 		private static final long serialVersionUID = -6522657621203932715L;
 
-		public final Cycle cycle;
+		public final Cycle<?, ?> cycle;
 
 		public ExecutableModel model;
 
-		public CycleException(Cycle cycle) {
+		public CycleException(Cycle<?, ?> cycle) {
 			super("Cycle present, topological sort not possible");
 			this.cycle = cycle;
 		}
 
-		public void explain(PrintStream out) {
-			if (model == null)
-				throw new IllegalArgumentException("You need to set the model first");
-			out.printf("In order to compute %s (Frame %d) the following other variables need to be computed:%n", model.internals[cycle.frame.outputId], cycle.frame.uniqueID);
-			explain(out, cycle);
-		}
-
-		public void explain(PrintStream out, Cycle current) {
-			if ((current == null) || (current.type == null))
-				return;
-			if (current.prior != null) {
-				explain(out, current.prior);
-			} else {
-				if (model == null)
-					throw new IllegalArgumentException("You need to set the model first");
-				if (current.prior != null) {
-					out.printf("\t%s (Frame %d) depency type %s prior frame: %s%n", model.internals[current.frame.outputId], current.frame.uniqueID, current.type,
-							current.prior.frame.uniqueID);
-				}
-			}
-		}
-
 	}
 
-	public static class Cycle {
-		public static enum DependencyType {
-			unknown, internal, negEdge, posEdge, posPred, negPred, order
-		};
+	public static class Cycle<T, X extends Enum<X>> {
 
-		public final Cycle prior;
-		public final Frame frame;
-		public final DependencyType type;
+		public final Cycle<T, X> prior;
+		public final Node<T> node;
+		public X dependency;
 
-		public Cycle(Cycle prior, Frame frame, DependencyType type) {
+		public Cycle(Cycle<T, X> prior, Node<T> node) {
 			super();
 			this.prior = prior;
-			this.frame = frame;
-			this.type = type;
+			this.node = node;
 		}
 
 	}
 
-	// public Cycle findCycle(Node<T> n, LinkedHashSet<T> visitedNodes, Node<T>
-	// target) throws CycleException {
-	// if (visitedNodes.contains(n.object))
-	// return null;
-	// LinkedHashSet<T> newVisited = new LinkedHashSet<T>(visitedNodes);
-	// newVisited.add(n.object);
-	// for (Edge<T> e : n.inEdges) {
-	// // System.out.println(e.from + " -> " + e.to);
-	// if (e.to == target) {
-	// Frame lastFrame = target.object;
-	// Cycle lastCycle = new Cycle(null, lastFrame, null);
-	// for (Iterator<T> iterator = newVisited.iterator(); iterator.hasNext();) {
-	// T t = iterator.next();
-	// DependencyType type = DependencyType.unknown;
-	// if (lastFrame.edgeNegDepRes == t.outputId) {
-	// type = DependencyType.negEdge;
-	// }
-	// if (lastFrame.edgePosDepRes == t.outputId) {
-	// type = DependencyType.posEdge;
-	// }
-	// for (int pnd : lastFrame.predNegDepRes) {
-	// if (pnd == t.outputId) {
-	// type = DependencyType.negPred;
-	// }
-	// }
-	// for (int pnd : lastFrame.predPosDepRes) {
-	// if (pnd == t.outputId) {
-	// type = DependencyType.posPred;
-	// }
-	// }
-	// if (lastFrame.executionDep == t.uniqueID)
-	// type = DependencyType.order;
-	// if (type == DependencyType.unknown) {
-	// for (int t2 : lastFrame.internalDependencies) {
-	// if (t2 == t.outputId)
-	// type = DependencyType.internal;
-	// }
-	// }
-	// lastCycle = new Cycle(lastCycle, t, type);
-	// lastFrame = t;
-	// }
-	// return lastCycle;
-	// }
-	// Cycle findCycle = findCycle(e.from, newVisited, target);
-	// if (findCycle != null)
-	// return findCycle;
-	// }
-	// return null;
-	// }
+	public Cycle<T, ?> findCycle(Node<T> n, LinkedHashSet<Node<T>> visitedNodes, Node<T> target, long startTime) throws CycleException {
+		if (visitedNodes.contains(n) || ((System.currentTimeMillis() - startTime) > 500))
+			return null;
+		final LinkedHashSet<Node<T>> newVisited = new LinkedHashSet<>(visitedNodes);
+		newVisited.add(n);
+		for (final Edge<T> e : n.inEdges) {
+			System.out.println(e);
+			if (e.to == target)
+				return createCycleFromVisited(target, newVisited);
+			final Cycle<T, ?> findCycle = findCycle(e.from, newVisited, target, startTime);
+			if (findCycle != null)
+				return findCycle;
+		}
+		return null;
+	}
+
+	public Cycle<T, ?> createCycleFromVisited(Node<T> target, final LinkedHashSet<Node<T>> newVisited) {
+		Cycle<T, ?> lastCycle = new Cycle<>(null, target);
+		for (final Node<T> t : newVisited) {
+			lastCycle = new Cycle<>(lastCycle, t);
+		}
+		return lastCycle;
+	}
 }
