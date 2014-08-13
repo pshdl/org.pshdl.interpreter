@@ -35,6 +35,7 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import org.pshdl.interpreter.FastSimpleInterpreter.LongAccess.RegUpdater;
+import org.pshdl.interpreter.VariableInformation.Type;
 import org.pshdl.interpreter.frames.FastFrame;
 
 public class FastSimpleInterpreter implements IHDLInterpreter {
@@ -87,9 +88,15 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 		public int targetAccessIndex = -1;
 
 		public final long writeMask;
+		private int signShift;
 
 		public LongAccess(InternalInformation name, int accessIndex, boolean prev) {
 			super();
+			if ((name.actualWidth != name.info.width) || (name.info.type != Type.INT)) {
+				signShift = 0;
+			} else {
+				signShift = 64 - name.actualWidth;
+			}
 			this.accessIndex = accessIndex;
 			this.prev = prev;
 			this.ii = name;
@@ -135,9 +142,14 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 		}
 
 		public long getDataLong() {
-			if (prev)
-				return (storage_prev[getAccessIndex()] >> shift) & mask;
-			return (storage[getAccessIndex()] >> shift) & mask;
+			final int accessIndex = getAccessIndex();
+			final long rawVal;
+			if (prev) {
+				rawVal = storage_prev[accessIndex];
+			} else {
+				rawVal = storage[accessIndex];
+			}
+			return (((rawVal >> shift) & mask) << signShift) >> signShift;
 		}
 
 		public RegUpdater getRegUpdater() {

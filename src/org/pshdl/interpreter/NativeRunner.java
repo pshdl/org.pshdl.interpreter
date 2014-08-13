@@ -25,6 +25,7 @@ public class NativeRunner implements IHDLInterpreter {
 	public final StringWriter commentOutput = new StringWriter();
 	private final Process process;
 	private final int timeOutInSeconds;
+	public final StringBuilder testInput = new StringBuilder();
 
 	public NativeRunner(final InputStream is, OutputStream os, ExecutableModel model, Process process, int timeOutInSeconds) {
 		this.model = model;
@@ -137,8 +138,10 @@ public class NativeRunner implements IHDLInterpreter {
 		}
 		if (data != null) {
 			outPrint.println(command + " " + data);
+			testInput.append(command + " " + data + "\n");
 		} else {
 			outPrint.println(command);
+			testInput.append(command + "\n");
 		}
 		outPrint.flush();
 		try {
@@ -154,6 +157,7 @@ public class NativeRunner implements IHDLInterpreter {
 				}
 				return res;
 			}
+			System.out.println(testInput);
 			throw new IllegalArgumentException("Did not expect the following response:" + response + responses);
 		} catch (final InterruptedException e) {
 			throw new RuntimeException(e);

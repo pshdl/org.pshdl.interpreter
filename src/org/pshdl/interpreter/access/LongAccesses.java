@@ -30,6 +30,7 @@ import java.math.BigInteger;
 
 import org.pshdl.interpreter.HDLFrameInterpreter;
 import org.pshdl.interpreter.InternalInformation;
+import org.pshdl.interpreter.VariableInformation.Type;
 
 public class LongAccesses {
 
@@ -38,6 +39,7 @@ public class LongAccesses {
 		 *
 		 */
 		private final HDLFrameInterpreter intr;
+		public final int signShift;
 		public final int shift;
 		public final long mask;
 		public final long writeMask;
@@ -45,6 +47,11 @@ public class LongAccesses {
 		public LongAccess(HDLFrameInterpreter hdlFrameInterpreter, InternalInformation name, int accessIndex, boolean prev) {
 			super(hdlFrameInterpreter, name, accessIndex, prev);
 			this.intr = hdlFrameInterpreter;
+			if ((name.actualWidth != name.info.width) || (name.info.type != Type.INT)) {
+				signShift = 0;
+			} else {
+				signShift = 64 - name.actualWidth;
+			}
 			if ((name.bitStart == -1) && (name.bitEnd == -1)) {
 				final int width = name.info.width;
 				if (width > 64)
@@ -107,18 +114,19 @@ public class LongAccesses {
 
 		@Override
 		public BigInteger getDataBig() {
-			if (prev)
-				return BigInteger.valueOf((intr.storage_prev[getAccessIndex()] >> shift) & mask);
-			return BigInteger.valueOf((intr.storage[getAccessIndex()] >> shift) & mask);
+			return BigInteger.valueOf(getDataLong());
 		}
 
 		@Override
 		public long getDataLong() {
 			final int accessIndex = getAccessIndex();
-			if (prev)
-				return (intr.storage_prev[accessIndex] >> shift) & mask;
-			final long rawVal = intr.storage[accessIndex];
-			return (rawVal >> shift) & mask;
+			final long rawVal;
+			if (prev) {
+				rawVal = intr.storage_prev[accessIndex];
+			} else {
+				rawVal = intr.storage[accessIndex];
+			}
+			return (((rawVal >> shift) & mask) << signShift) >> signShift;
 		}
 
 		@Override
