@@ -27,7 +27,7 @@
 package org.pshdl.interpreter;
 
 import java.math.BigInteger;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -334,7 +334,7 @@ public final class HDLFrameInterpreter implements IHDLBigInterpreter {
 	 * SignedCastTest.main() cast (int<16>) -255 to (int<32>) : FFFFFF01
 	 * SignedCastTest.main() cast (uint<16>) 65535 to (int<32>) : 0000FFFF
 	 */
-	final Set<RegUpdater> updatedRegs = new HashSet<>();
+	final private Set<RegUpdater> updatedRegs = new LinkedHashSet<>();
 
 	/*
 	 * (non-Javadoc)

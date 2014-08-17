@@ -28,7 +28,7 @@ package org.pshdl.interpreter.costs;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -117,9 +117,9 @@ public class SimpleEstimator {
 	}
 
 	public Map<String, ResourceCosts> estimateFrameCosts(ExecutableModel model, ResourceCostSelector costSelector) {
-		final Map<String, ResourceCosts> res = new HashMap<>();
-		final Map<Integer, List<ResourceCosts>> knownCosts = new HashMap<>();
-		final Map<Integer, ResourceCosts> knownTotalCosts = new HashMap<>();
+		final Map<String, ResourceCosts> res = new LinkedHashMap<>();
+		final Map<Integer, List<ResourceCosts>> knownCosts = new LinkedHashMap<>();
+		final Map<Integer, ResourceCosts> knownTotalCosts = new LinkedHashMap<>();
 		for (final Frame f : model.frames) {
 			ResourceCosts frameCosts = estimateFrame(f, model, knownCosts, costSelector);
 			final List<ResourceCosts> totalIncoming = new ArrayList<>();

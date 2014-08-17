@@ -28,8 +28,9 @@ package org.pshdl.interpreter;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -103,8 +104,8 @@ public class ExecutableModel implements Serializable {
 	public ExecutableModel sortTopological() throws CycleException {
 		final Graph<String> graph = new Graph<>();
 		final ArrayList<Node<String>> nodes = new ArrayList<>();
-		final Map<String, Node<String>> nodeNames = new HashMap<>();
-		final Map<String, Frame> frameNames = new HashMap<>();
+		final Map<String, Node<String>> nodeNames = new LinkedHashMap<>();
+		final Map<String, Frame> frameNames = new LinkedHashMap<>();
 		for (final Frame f : frames) {
 			final String frameName = getFrame(f.uniqueID);
 			final Node<String> node = new Node<>(frameName);
@@ -236,10 +237,10 @@ public class ExecutableModel implements Serializable {
 	}
 
 	public String toRegisterDot() {
-		final Map<String, Set<String>> connections = new HashMap<>();
-		final Map<String, VariableInformation> varNames = new HashMap<>();
+		final Map<String, Set<String>> connections = new LinkedHashMap<>();
+		final Map<String, VariableInformation> varNames = new LinkedHashMap<>();
 		for (final VariableInformation var : variables) {
-			final HashSet<String> connSet = new HashSet<>();
+			final HashSet<String> connSet = new LinkedHashSet<>();
 			connections.put(var.name, connSet);
 			varNames.put(var.name, var);
 		}
@@ -266,10 +267,10 @@ public class ExecutableModel implements Serializable {
 				set.add(output);
 			}
 		}
-		final Map<String, Set<String>> regConnections = new HashMap<>();
+		final Map<String, Set<String>> regConnections = new LinkedHashMap<>();
 		for (final VariableInformation var : variables) {
 			if (var.isRegister) {
-				final HashSet<String> connSet = new HashSet<>();
+				final HashSet<String> connSet = new LinkedHashSet<>();
 				regConnections.put(var.name, connSet);
 				follow(true, var.name, connections, connSet, varNames);
 			}
@@ -281,22 +282,28 @@ public class ExecutableModel implements Serializable {
 		sb.append("digraph ExecutableModelRegister {\n");
 		for (final String regName : regConnections.keySet()) {
 			final VariableInformation key = varNames.get(regName);
-			final int keyID = System.identityHashCode(key);
+			final long keyID = hash(key);
 			sb.append("\tnode [shape=\"box\" label=\"" + key.name.substring(skipLen + 1) + "\"] " + keyID + ";\n");
 		}
 		for (final Entry<String, Set<String>> e : regConnections.entrySet()) {
 			final Set<String> value = e.getValue();
 			final VariableInformation key = varNames.get(e.getKey());
-			final int keyID = System.identityHashCode(key);
+			final long keyID = hash(key);
 			for (final String val : value) {
 				final VariableInformation remoteVar = varNames.get(val);
 				if (remoteVar.isRegister) {
-					sb.append('\t').append(keyID).append(" -> ").append(System.identityHashCode(remoteVar)).append(";\n");
+					sb.append('\t').append(keyID).append(" -> ").append(hash(remoteVar)).append(";\n");
 				}
 			}
 		}
 		sb.append('}');
 		return sb.toString();
+	}
+
+	protected long hash(final VariableInformation key) {
+		final long sysID = System.identityHashCode(key) & 0xFFFFFFFFl;
+		final long objID = key.hashCode() & 0xFFFFFFFFl;
+		return (sysID << 32) | objID;
 	}
 
 	private void follow(boolean first, String varName, Map<String, Set<String>> connections, HashSet<String> connSet, Map<String, VariableInformation> varNames) {

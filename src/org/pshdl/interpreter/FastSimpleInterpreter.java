@@ -28,7 +28,7 @@ package org.pshdl.interpreter;
 
 import java.util.ArrayList;
 import java.util.Formatter;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -260,7 +260,7 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 		final Frame[] frames = model.frames;
 		this.frames = new FastFrame[frames.length];
 		this.full = new LongAccess[model.variables.length];
-		final Map<String, Integer> index = new HashMap<>();
+		final Map<String, Integer> index = new LinkedHashMap<>();
 		int currentIdx = 0;
 		for (final VariableInformation var : model.variables) {
 			index.put(var.name, currentIdx);

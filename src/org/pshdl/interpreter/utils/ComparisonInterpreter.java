@@ -30,7 +30,7 @@ import java.io.PrintStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -93,7 +93,7 @@ public class ComparisonInterpreter implements IHDLBigInterpreter {
 	private final IHDLBigInterpreter aBig;
 	private final List<Integer> varListA = new ArrayList<>();
 	private final List<Integer> varListB = new ArrayList<>();
-	private final Map<String, Integer> varIdx = new HashMap<>();
+	private final Map<String, Integer> varIdx = new LinkedHashMap<>();
 	private final DiffReport report;
 	private final ExecutableModel em;
 	private final boolean terminate;

@@ -322,17 +322,16 @@ public final class LongFrame extends ExecutableFrame {
 	}
 
 	private long pow(long a, long n) {
-		long x = 1;
-		long nValue = n;
-		while (nValue > 0) {
-			if ((nValue % 2) == 0) {
-				x = x * x;
-			} else {
-				x = a * x * x;
+		long result = 1;
+		long p = a;
+		while (n > 0) {
+			if ((n % 2) != 0) {
+				result = result * p;
 			}
-			nValue /= 2;
+			p = p * p;
+			n = n / 2;
 		}
-		return x;
+		return result;
 	}
 
 	private long fixOp(long l, int arg1) {

@@ -31,7 +31,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.pshdl.interpreter.ExecutableModel;
@@ -68,7 +68,7 @@ public class ExecutableOutputStream extends DataOutputStream {
 		if ((model.annotations != null) && (model.annotations.length != 0)) {
 			writeStringArray(ModelTypes.annotations, model.annotations);
 		}
-		final Map<String, Integer> varIdx = new HashMap<>();
+		final Map<String, Integer> varIdx = new LinkedHashMap<>();
 		final VariableInformation[] variables = model.variables;
 		for (int i = 0; i < variables.length; i++) {
 			final VariableInformation vi = variables[i];

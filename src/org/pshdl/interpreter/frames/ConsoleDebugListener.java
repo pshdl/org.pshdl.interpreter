@@ -29,7 +29,7 @@ package org.pshdl.interpreter.frames;
 import java.io.PrintStream;
 import java.math.BigInteger;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import org.pshdl.interpreter.ExecutableModel;
@@ -41,10 +41,10 @@ import org.pshdl.interpreter.InternalInformation;
 public class ConsoleDebugListener implements IDebugListener {
 	private final PrintStream out;
 	private final ExecutableModel em;
-	private final Set<Integer> frames = new HashSet<>();
-	private final Set<String> internals = new HashSet<>();
-	private final Set<Integer> framesOps = new HashSet<>();
-	private final Set<Integer> deltas = new HashSet<>();
+	private final Set<Integer> frames = new LinkedHashSet<>();
+	private final Set<String> internals = new LinkedHashSet<>();
+	private final Set<Integer> framesOps = new LinkedHashSet<>();
+	private final Set<Integer> deltas = new LinkedHashSet<>();
 	public boolean dumpAllFrames = true;
 	private boolean enable = true;
 	public boolean enableDefault = true;
