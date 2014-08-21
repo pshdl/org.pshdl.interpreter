@@ -123,6 +123,8 @@ public class InternalInformation implements Serializable {
 	 */
 	public final VariableInformation info;
 
+	public int aliasID = -1;
+
 	public InternalInformation(boolean isShadowReg, boolean isPred, int bitStart, int bitEnd, int[] arrayIdx, VariableInformation info) {
 		super();
 		this.isShadowReg = isShadowReg;

@@ -215,7 +215,6 @@ public class Graph<T> {
 		final LinkedHashSet<Node<T>> newVisited = new LinkedHashSet<>(visitedNodes);
 		newVisited.add(n);
 		for (final Edge<T> e : n.inEdges) {
-			System.out.println(e);
 			if (e.to == target)
 				return createCycleFromVisited(target, newVisited);
 			final Cycle<T, X> findCycle = findCycle(e.from, newVisited, target, startTime);

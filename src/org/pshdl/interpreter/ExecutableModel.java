@@ -31,12 +31,12 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
 import org.pshdl.interpreter.utils.Graph;
+import org.pshdl.interpreter.utils.Graph.Cycle;
 import org.pshdl.interpreter.utils.Graph.CycleException;
 import org.pshdl.interpreter.utils.Graph.Node;
 
@@ -45,7 +45,7 @@ public class ExecutableModel implements Serializable {
 	public final int maxExecutionWidth;
 	public final int maxStackDepth;
 	public final String moduleName;
-	public final Frame[] frames;
+	public Frame[] frames;
 	public final InternalInformation[] internals;
 	public final VariableInformation[] variables;
 	public final String source;
@@ -64,18 +64,46 @@ public class ExecutableModel implements Serializable {
 		}
 		this.maxDataWidth = maxWidth;
 		this.maxExecutionWidth = maxExecWidth;
-		final List<Integer> regOuts = new ArrayList<>();
+		for (final VariableInformation variableInformation : variables) {
+			variableInformation.writeCount = 0;
+		}
 		for (final Frame frame : frames) {
-			if (frame.isReg()) {
-				regOuts.add(frame.outputId);
-			}
 			maxStack = Math.max(maxStack, frame.maxStackDepth);
+			final VariableInformation varInfo = internals[frame.outputId].info;
+			varInfo.writeCount++;
+		}
+		final LinkedHashMap<Integer, Integer> tempAliasMap = new LinkedHashMap<>();
+		for (final Frame frame : frames) {
+			final InternalInformation outputId = internals[frame.outputId];
+			if ((outputId.info.writeCount == 1) && frame.isRename()) {
+				tempAliasMap.put(frame.outputId, frame.internalDependencies[0]);
+			}
+		}
+		for (final Entry<Integer, Integer> x : tempAliasMap.entrySet()) {
+			Integer currentAlias = x.getValue();
+			final Integer deepAlias = getDeepAlias(tempAliasMap, currentAlias);
+			if (deepAlias != currentAlias) {
+				currentAlias = deepAlias;
+			}
+			final InternalInformation internal = internals[x.getKey()];
+			final InternalInformation aliasInternal = internals[currentAlias];
+			internal.info.aliasVar = aliasInternal.info;
+			internal.aliasID = currentAlias;
 		}
 		this.maxStackDepth = maxStack;
 		this.variables = variables;
 		this.moduleName = moduleName;
 		this.source = source;
 		this.annotations = annotations;
+	}
+
+	protected Integer getDeepAlias(LinkedHashMap<Integer, Integer> tempAliasMap, int outputId) {
+		final Integer alias = tempAliasMap.get(outputId);
+		if (alias == null)
+			return outputId;
+		if (alias == outputId)
+			return outputId;
+		return getDeepAlias(tempAliasMap, alias);
 	}
 
 	@Override
@@ -101,7 +129,7 @@ public class ExecutableModel implements Serializable {
 	 * @throws CycleException
 	 *             if a combinatorial loop has been detected
 	 */
-	public ExecutableModel sortTopological() throws CycleException {
+	public ExecutableModel sortTopological(boolean useAlias) throws CycleException {
 		final Graph<String> graph = new Graph<>();
 		final ArrayList<Node<String>> nodes = new ArrayList<>();
 		final Map<String, Node<String>> nodeNames = new LinkedHashMap<>();
@@ -114,7 +142,7 @@ public class ExecutableModel implements Serializable {
 			frameNames.put(frameName, f);
 		}
 		for (int i = 0; i < internals.length; i++) {
-			final String string = getInternal(i);
+			final String string = getInternal(i, useAlias);
 			final Node<String> node = new Node<>(string);
 			nodes.add(node);
 			nodeNames.put(string, node);
@@ -124,10 +152,10 @@ public class ExecutableModel implements Serializable {
 				continue;
 			}
 			final Node<String> node = nodeNames.get(getFrame(f.uniqueID));
-			final Node<String> outNode = nodeNames.get(getInternal(f.outputId));
+			final Node<String> outNode = nodeNames.get(getInternal(f.outputId, useAlias));
 			outNode.reverseAddEdge(node);
 			for (final int i : f.internalDependencies) {
-				final Node<String> ni = nodeNames.get(getInternal(i));
+				final Node<String> ni = nodeNames.get(getInternal(i, useAlias));
 				node.reverseAddEdge(ni);
 			}
 			if (f.executionDep != -1) {
@@ -137,6 +165,9 @@ public class ExecutableModel implements Serializable {
 		}
 		final ArrayList<Node<String>> sortNodes = graph.sortNodes(nodes);
 		int pos = 0;
+		// if (useAlias) {
+		// frames = new Frame[frameNames.size()];
+		// }
 		for (final Node<String> node : sortNodes) {
 			final String obj = node.object;
 			final Frame f = frameNames.get(obj);
@@ -149,11 +180,77 @@ public class ExecutableModel implements Serializable {
 	}
 
 	private String getFrame(int uniqueID) {
-		return "Frame" + uniqueID;
+		return "F" + uniqueID;
 	}
 
-	private String getInternal(int i) {
-		return "Internal" + i;
+	private String getInternal(int i, boolean useAlias) {
+		int id = i;
+		final InternalInformation ii = internals[i];
+		if ((ii.aliasID != -1) && useAlias) {
+			id = ii.aliasID;
+		}
+		return "I" + i;
+	}
+
+	public String humanReadableExplaination(Cycle<String, ?> ce) {
+		if (ce == null)
+			return "";
+		final String nodeName = ce.node.object;
+		final int id = Integer.parseInt(nodeName.substring(1));
+		switch (nodeName.charAt(0)) {
+		case 'F':
+			final Frame frame = findFrame(id);
+			if (ce.prior != null) {
+				final String priorNode = ce.prior.node.object;
+				final int priorId = Integer.parseInt(priorNode.substring(1));
+				final String priorExplaination = humanReadableExplaination(ce.prior) + "\nExecution of frame " + frame.uniqueID;
+				if (priorNode.charAt(0) == 'I') {
+					final InternalInformation ii = internals[priorId];
+					if (frame.edgeNegDepRes == priorId)
+						return priorExplaination + " is waiting for a negative edge on: " + ii.fullName;
+					if (frame.edgePosDepRes == priorId)
+						return priorExplaination + " is waiting for a negative edge on: " + ii.fullName;
+					for (final int intDep : frame.internalDependencies) {
+						if (intDep == priorId)
+							return priorExplaination + " is waiting for the computation of: " + ii.fullName;
+					}
+					if (priorId == frame.outputId)
+						return priorExplaination + " produces " + ii.fullName;
+					for (final int predDep : frame.predPosDepRes) {
+						if (predDep == priorId)
+							return priorExplaination + " requires that this predicate (if/ternary/switch-case) is true: " + ii.fullName;
+					}
+					for (final int predDep : frame.predNegDepRes) {
+						if (predDep == priorId)
+							return priorExplaination + " requires that this predicate (if/ternary/switch-case) is false: " + ii.fullName;
+					}
+				}
+				if (priorNode.charAt(0) == 'F') {
+					final Frame priorFrame = findFrame(priorId);
+					return priorExplaination + " requires the prior computation of: " + internals[priorFrame.outputId].fullName;
+				}
+				return priorExplaination;
+			}
+			return "Execution of frame " + frame.uniqueID + " produces " + internals[frame.outputId].fullName;
+		case 'I':
+			if (ce.prior != null) {
+				final String priorNode = ce.prior.node.object;
+				final String priorExplaination = humanReadableExplaination(ce.prior);
+				if (priorNode.charAt(0) == 'F')
+					return priorExplaination + "\nThe variable " + internals[id].fullName + " is used as connection between frames";
+			}
+			return "The variable " + internals[id].fullName + " is used";
+		default:
+			throw new IllegalArgumentException("Can not reparse ID:" + nodeName);
+		}
+	}
+
+	public Frame findFrame(final int id) {
+		for (final Frame f : frames) {
+			if (f.uniqueID == id)
+				return f;
+		}
+		return null;
 	}
 
 	public String toDotFile() {

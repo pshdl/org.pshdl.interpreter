@@ -108,7 +108,7 @@ public class ExecutableInputStream extends DataInputStream {
 				}
 				break;
 			case frame:
-				frameList.add(ex.readFrame(verbose));
+				frameList.add(ex.readFrame());
 				break;
 			case variable:
 				vars.add(ex.readVariable());
@@ -196,6 +196,15 @@ public class ExecutableInputStream extends DataInputStream {
 				if ((flags & IOUtil.UINT_FLAG) == IOUtil.UINT_FLAG) {
 					type = Type.UINT;
 				}
+				if ((flags & IOUtil.BOOL_FLAG) == IOUtil.BOOL_FLAG) {
+					type = Type.BOOL;
+				}
+				if ((flags & IOUtil.STRING_FLAG) == IOUtil.STRING_FLAG) {
+					type = Type.STRING;
+				}
+				if ((flags & IOUtil.ENUM_FLAG) == IOUtil.ENUM_FLAG) {
+					type = Type.ENUM;
+				}
 				if ((flags & IOUtil.CLOCK_FLAG) == IOUtil.CLOCK_FLAG) {
 					isClock = true;
 				}
@@ -253,10 +262,11 @@ public class ExecutableInputStream extends DataInputStream {
 		return ii;
 	}
 
-	public Frame readFrame(boolean verbose) throws IOException {
+	public Frame readFrame() throws IOException {
 		TLV tlv = null;
 		boolean constant = false;
 		BigInteger consts[] = new BigInteger[0];
+		String constStrings[] = new String[0];
 		int edgeNegDep = -1, edgePosDep = -1;
 		int[] predNegDep = null;
 		int[] predPosDep = null;
@@ -278,6 +288,9 @@ public class ExecutableInputStream extends DataInputStream {
 					final String string = strings[i];
 					consts[i] = new BigInteger(string, 16);
 				}
+				break;
+			case constantStrings:
+				constStrings = ex.readStringArray();
 				break;
 			case edgeNegDep:
 				edgeNegDep = ex.readVarInt();
@@ -330,8 +343,8 @@ public class ExecutableInputStream extends DataInputStream {
 			}
 			ex.close();
 		}
-		final Frame frame = new Frame(instructions, intDeps, predPosDep, predNegDep, edgePosDep, edgeNegDep, outputID, maxDataWidth, maxStackDepth, consts, uniqueID, constant,
-				scheduleStage, process);
+		final Frame frame = new Frame(instructions, intDeps, predPosDep, predNegDep, edgePosDep, edgeNegDep, outputID, maxDataWidth, maxStackDepth, consts, constStrings, uniqueID,
+				constant, scheduleStage, process);
 		frame.executionDep = executionDep;
 		return frame;
 	}

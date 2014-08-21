@@ -55,7 +55,7 @@ public class ExecutableOutputStream extends DataOutputStream {
 		// System.out.println("ExecutableOutputStream.writeExecutableModel()" +
 		// model);
 		write("PSEX".getBytes(StandardCharsets.UTF_8));
-		writeByteArray(ModelTypes.version, new byte[] { 0, 2, 0 });
+		writeByteArray(ModelTypes.version, new byte[] { 0, 3, 0 });
 		writeString(ModelTypes.src, model.source);
 		if (model.moduleName != null) {
 			writeString(ModelTypes.moduleName, model.moduleName);
@@ -73,7 +73,7 @@ public class ExecutableOutputStream extends DataOutputStream {
 		for (int i = 0; i < variables.length; i++) {
 			final VariableInformation vi = variables[i];
 			varIdx.put(vi.name, i);
-			writeVariable(vi, model.moduleName);
+			writeVariable(vi);
 		}
 		for (final InternalInformation ii : model.internals) {
 			writeInternal(ii, varIdx.get(ii.info.name));
@@ -83,14 +83,10 @@ public class ExecutableOutputStream extends DataOutputStream {
 		}
 	}
 
-	public void writeVariable(VariableInformation vi, String baseName) throws IOException {
+	public void writeVariable(VariableInformation vi) throws IOException {
 		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		final ExecutableOutputStream obj = new ExecutableOutputStream(baos);
 		final String name = vi.name;
-		// if ((baseName != null) && vi.name.startsWith(baseName)) {
-		// name = vi.name.substring(baseName.length() + 1, vi.name.length());
-		// }
-		// System.out.println("ExecutableOutputStream.writeVariable()" + name);
 		obj.writeString(VariableTypes.name, name);
 		obj.writeInt(VariableTypes.width, vi.width);
 		int flags = 0;

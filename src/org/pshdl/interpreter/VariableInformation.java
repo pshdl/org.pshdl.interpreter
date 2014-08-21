@@ -41,7 +41,7 @@ public class VariableInformation implements Serializable {
 	}
 
 	public static enum Type {
-		UINT, INT, BIT, BOOL
+		UINT, INT, BIT, BOOL, STRING, ENUM
 	}
 
 	public final Direction dir;
@@ -54,7 +54,8 @@ public class VariableInformation implements Serializable {
 	public final boolean isReset;
 	public final String[] annotations;
 
-	public int readCount = 0, writeCount = 0;
+	public int writeCount = 0;
+	public VariableInformation aliasVar = null;
 
 	public VariableInformation(Direction dir, String name, int width, Type type, boolean isRegister, boolean isClock, boolean isReset, String[] annotations, int... dimensions) {
 		super();
@@ -96,8 +97,12 @@ public class VariableInformation implements Serializable {
 		return true;
 	}
 
+	public Integer hashCode;
+
 	@Override
 	public int hashCode() {
+		if (hashCode != null)
+			return hashCode;
 		final int prime = 31;
 		int result = 1;
 		result = (prime * result) + Arrays.hashCode(dimensions);
@@ -106,6 +111,7 @@ public class VariableInformation implements Serializable {
 		result = (prime * result) + ((name == null) ? 0 : name.hashCode());
 		result = (prime * result) + ((type == null) ? 0 : type.hashCode());
 		result = (prime * result) + width;
+		hashCode = result;
 		return result;
 	}
 

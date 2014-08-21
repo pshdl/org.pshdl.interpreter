@@ -53,7 +53,7 @@ public class NativeRunner implements IHDLInterpreter {
 	private final int timeOutInSeconds;
 	public final StringBuilder testInput = new StringBuilder();
 
-	public NativeRunner(final InputStream is, OutputStream os, ExecutableModel model, Process process, int timeOutInSeconds) {
+	public NativeRunner(final InputStream is, OutputStream os, ExecutableModel model, Process process, int timeOutInSeconds, String name) {
 		this.model = model;
 		this.process = process;
 		try {
@@ -88,7 +88,7 @@ public class NativeRunner implements IHDLInterpreter {
 					throw new RuntimeException(e);
 				}
 			}
-		}, "NativeRunner InputReader").start();
+		}, "NativeRunner InputReader:" + name).start();
 	}
 
 	@Override

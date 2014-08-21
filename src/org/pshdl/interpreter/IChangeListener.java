@@ -54,6 +54,7 @@ public interface IChangeListener {
 					out.printf("%3d old:%8d new: %8d", i, oldValue[i], newValue[i]);
 				}
 			}
+			out.println();
 		}
 
 		@Override

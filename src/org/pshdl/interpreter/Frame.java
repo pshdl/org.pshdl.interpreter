@@ -128,6 +128,7 @@ public class Frame implements Serializable {
 	 */
 	public int executionDep = -1;
 	public final BigInteger[] constants;
+	public final String[] constantStrings;
 	public final int outputId;
 	public int maxDataWidth;
 	public final int maxStackDepth;
@@ -138,9 +139,10 @@ public class Frame implements Serializable {
 	private static final long serialVersionUID = -1690021519637432408L;
 
 	public Frame(FastInstruction[] instructions, int[] internalDependencies, int[] predPosDepRes, int[] predNegDepRes, int edgePosDepRes, int edgeNegDepRes, int outputId,
-			int maxDataWidth, int maxStackDepth, BigInteger[] constants, int uniqueID, boolean constant, int scheduleStage, String process) {
+			int maxDataWidth, int maxStackDepth, BigInteger[] constants, String[] constantStrings, int uniqueID, boolean constant, int scheduleStage, String process) {
 		super();
 		this.constants = constants;
+		this.constantStrings = constantStrings;
 		this.instructions = instructions;
 		this.internalDependencies = internalDependencies;
 		this.outputId = outputId;
@@ -213,6 +215,17 @@ public class Frame implements Serializable {
 				builder.append(", ");
 			}
 		}
+		if (constantStrings != null) {
+			if (formatted) {
+				builder.append('\t');
+			}
+			builder.append("constantStrings=").append(Arrays.toString(constantStrings));
+			if (formatted) {
+				builder.append("\n");
+			} else {
+				builder.append(", ");
+			}
+		}
 		if (formatted) {
 			builder.append('\t');
 		}
@@ -245,8 +258,31 @@ public class Frame implements Serializable {
 		return builder.toString();
 	}
 
-	public boolean isReg() {
-		return (edgeNegDepRes != -1) || (edgePosDepRes != -1);
+	public boolean isRename() {
+		if ((edgeNegDepRes != -1) || (edgePosDepRes != -1))
+			return false;
+		if ((predNegDepRes != null) && (predNegDepRes.length != 0))
+			return false;
+		if ((predPosDepRes != null) && (predPosDepRes.length != 0))
+			return false;
+		if (process != null)
+			return false;
+		if (instructions[0].inst != Instruction.loadInternal)
+			return false;
+		if (instructions.length == 1)
+			return true;
+		switch (instructions[1].inst) {
+		case cast_int:
+		case cast_uint:
+			if (instructions[1].arg1 != instructions[1].arg2)
+				return false;
+			break;
+		default:
+			return false;
+		}
+		if (instructions.length == 2)
+			return true;
+		return false;
 	}
 
 	@Override
@@ -255,6 +291,7 @@ public class Frame implements Serializable {
 		int result = 1;
 		result = (prime * result) + (constant ? 1231 : 1237);
 		result = (prime * result) + Arrays.hashCode(constants);
+		result = (prime * result) + Arrays.hashCode(constantStrings);
 		result = (prime * result) + edgeNegDepRes;
 		result = (prime * result) + edgePosDepRes;
 		result = (prime * result) + Arrays.hashCode(instructions);
@@ -277,6 +314,8 @@ public class Frame implements Serializable {
 		if (constant != other.constant)
 			return false;
 		if (!Arrays.equals(constants, other.constants))
+			return false;
+		if (!Arrays.equals(constantStrings, other.constantStrings))
 			return false;
 		if (edgeNegDepRes != other.edgeNegDepRes)
 			return false;

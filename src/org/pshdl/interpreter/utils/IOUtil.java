@@ -45,8 +45,12 @@ public class IOUtil {
 	public static final int IO_FLAG = IN_FLAG | OUT_FLAG;
 	public static final int INT_FLAG = 0x10;
 	public static final int UINT_FLAG = 0x20;
-	public static final int CLOCK_FLAG = 0x40;
-	public static final int RESET_FLAG = 0x80;
+	public static final int BOOL_FLAG = 0x40;
+	public static final int STRING_FLAG = 0x80;
+	public static final int ENUM_FLAG = 0x100;
+
+	public static final int CLOCK_FLAG = 0x200;
+	public static final int RESET_FLAG = 0x400;
 
 	// Frame flags
 	public static final int CONST_FLAG = 0x01;
@@ -72,7 +76,7 @@ public class IOUtil {
 	}
 
 	public static enum FrameTypes implements IDType<FrameTypes> {
-		uniqueID, outputID, internalDep, edgePosDep, edgeNegDep, predPosDep, predNegDep, executionDep, constants, instructions, maxDataWidth, maxStackDepth, flags, scheduleStage, process;
+		uniqueID, outputID, internalDep, edgePosDep, edgeNegDep, predPosDep, predNegDep, executionDep, constants, constantStrings, instructions, maxDataWidth, maxStackDepth, flags, scheduleStage, process, enumInfo;
 
 		@Override
 		public int getID() {
