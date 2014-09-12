@@ -205,7 +205,6 @@ public class ExecutableModel implements Serializable {
 			newList.add(new Frame(frame.instructions, frame.internalDependencies, frame.predPosDepRes, frame.predNegDepRes, frame.edgePosDepRes, frame.edgeNegDepRes, newOutputs,
 					frame.maxDataWidth, frame.maxStackDepth, frame.constants, frame.constantStrings, id++, frame.constant, frame.scheduleStage, frame.process));
 		}
-		System.out.println("Reduced from: " + frames.length + " to " + newList.size());
 		frames = newList.toArray(new Frame[newList.size()]);
 		return this;
 	}
