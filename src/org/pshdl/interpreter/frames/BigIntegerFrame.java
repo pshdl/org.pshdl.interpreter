@@ -334,12 +334,14 @@ public final class BigIntegerFrame extends ExecutableFrame {
 					listener.emptyStack(uniqueID, f, this);
 				}
 		}
-		if (arrayPos != -1) {
-			outputAccess.setOffset(writeIndex);
-		}
-		outputAccess.setDataBig(stack[0], deltaCycle, epsCycle);
-		if (listener != null) {
-			listener.writingResult(uniqueID, outputAccess.ii, stack[0], this);
+		for (final EncapsulatedAccess encapsulatedAccess : outputAccess) {
+			if (arrayPos != -1) {
+				encapsulatedAccess.setOffset(writeIndex);
+			}
+			encapsulatedAccess.setDataBig(stack[0], deltaCycle, epsCycle);
+			if (listener != null) {
+				listener.writingResult(uniqueID, encapsulatedAccess.ii, stack[0], this);
+			}
 		}
 
 		return;

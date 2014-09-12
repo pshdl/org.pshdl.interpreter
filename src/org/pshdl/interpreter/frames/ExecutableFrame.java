@@ -39,10 +39,10 @@ public abstract class ExecutableFrame {
 	protected int currentPos = 0;
 	protected final EncapsulatedAccess internals[], internals_prev[];
 
-	protected final int outputID;
+	protected final int[] outputID;
 
 	public final int uniqueID;
-	public final EncapsulatedAccess outputAccess;
+	public final EncapsulatedAccess outputAccess[];
 	protected final int[] writeIndex = new int[10];
 
 	protected HDLFrameInterpreter fir;
@@ -51,10 +51,13 @@ public abstract class ExecutableFrame {
 		this.fir = fir;
 		this.internals = internals;
 		this.internals_prev = internals_prev;
-		this.outputID = f.outputId;
+		this.outputID = f.outputIds;
 		this.uniqueID = f.uniqueID;
 		this.instructions = f.instructions;
-		this.outputAccess = internals[outputID];
+		this.outputAccess = new EncapsulatedAccess[f.outputIds.length];
+		for (int i = 0; i < outputID.length; i++) {
+			this.outputAccess[i] = internals[outputID[i]];
+		}
 	}
 
 	public abstract void execute(int deltaCycle, int epsCycle);

@@ -40,7 +40,7 @@ import org.pshdl.interpreter.frames.FastFrame;
 
 public class FastSimpleInterpreter implements IHDLInterpreter {
 
-	public static class FastSimpleFactory implements IHDLInterpreterFactory {
+	public static class FastSimpleFactory implements IHDLInterpreterFactory<FastSimpleInterpreter> {
 
 		private final ExecutableModel model;
 		private final boolean disableEdge, disabledRegOutputlogic;
@@ -53,7 +53,7 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 		}
 
 		@Override
-		public IHDLInterpreter newInstance() {
+		public FastSimpleInterpreter newInstance() {
 			return new FastSimpleInterpreter(model, disableEdge, disabledRegOutputlogic);
 		}
 

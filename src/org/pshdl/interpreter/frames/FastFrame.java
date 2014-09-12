@@ -46,7 +46,7 @@ public class FastFrame {
 	private final FastInstruction[] instructions;
 	private final LongAccess[] internals;
 	private final LongAccess[] internals_prev;
-	public final LongAccess outputAccess;
+	public final LongAccess[] outputAccess;
 	public boolean disableEdge;
 
 	public FastFrame(FastSimpleInterpreter fir, Frame f, boolean disableEdge) {
@@ -59,7 +59,10 @@ public class FastFrame {
 		}
 		this.internals = fir.internals;
 		this.internals_prev = fir.internals_prev;
-		this.outputAccess = internals[f.outputId];
+		this.outputAccess = new LongAccess[f.outputIds.length];
+		for (int i = 0; i < f.outputIds.length; i++) {
+			outputAccess[i] = internals[f.outputIds[i]];
+		}
 		this.disableEdge = disableEdge;
 	}
 
@@ -283,12 +286,14 @@ public class FastFrame {
 			}
 
 		}
-		if (arrayPos != -1) {
-			outputAccess.setOffset(writeIndex);
-		}
-		outputAccess.setDataLong(stack[0], deltaCycle, epsCycle);
-		if (outputAccess.ii.isShadowReg) {
-			regUpdates.add(outputAccess.getRegUpdater());
+		for (final LongAccess longAccess : outputAccess) {
+			if (arrayPos != -1) {
+				longAccess.setOffset(writeIndex);
+			}
+			longAccess.setDataLong(stack[0], deltaCycle, epsCycle);
+			if (longAccess.ii.isShadowReg) {
+				regUpdates.add(longAccess.getRegUpdater());
+			}
 		}
 		return true;
 	}

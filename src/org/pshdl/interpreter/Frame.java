@@ -129,7 +129,7 @@ public class Frame implements Serializable {
 	public int executionDep = -1;
 	public final BigInteger[] constants;
 	public final String[] constantStrings;
-	public final int outputId;
+	public final int[] outputIds;
 	public int maxDataWidth;
 	public final int maxStackDepth;
 	public final int uniqueID;
@@ -138,16 +138,16 @@ public class Frame implements Serializable {
 	public final String process;
 	private static final long serialVersionUID = -1690021519637432408L;
 
-	public Frame(FastInstruction[] instructions, int[] internalDependencies, int[] predPosDepRes, int[] predNegDepRes, int edgePosDepRes, int edgeNegDepRes, int outputId,
+	public Frame(FastInstruction[] instructions, int[] internalDependencies, int[] predPosDepRes, int[] predNegDepRes, int edgePosDepRes, int edgeNegDepRes, int[] outputIds,
 			int maxDataWidth, int maxStackDepth, BigInteger[] constants, String[] constantStrings, int uniqueID, boolean constant, int scheduleStage, String process) {
 		super();
 		this.constants = constants;
 		this.constantStrings = constantStrings;
 		this.instructions = instructions;
-		this.internalDependencies = internalDependencies;
-		this.outputId = outputId;
-		this.predNegDepRes = predNegDepRes != null ? predNegDepRes : new int[0];
-		this.predPosDepRes = predPosDepRes != null ? predPosDepRes : new int[0];
+		this.internalDependencies = selfOrEmpty(internalDependencies);
+		this.outputIds = selfOrEmpty(outputIds);
+		this.predNegDepRes = selfOrEmpty(predNegDepRes);
+		this.predPosDepRes = selfOrEmpty(predPosDepRes);
 		this.edgeNegDepRes = edgeNegDepRes;
 		this.edgePosDepRes = edgePosDepRes;
 		this.maxDataWidth = maxDataWidth;
@@ -156,6 +156,55 @@ public class Frame implements Serializable {
 		this.uniqueID = uniqueID;
 		this.scheduleStage = scheduleStage;
 		this.process = process;
+	}
+
+	protected int[] selfOrEmpty(int[] predPosDepRes) {
+		return predPosDepRes != null ? predPosDepRes : new int[0];
+	}
+
+	public Frame aliasedFrame(ExecutableModel em) {
+		final FastInstruction newInst[] = new FastInstruction[instructions.length];
+		for (int i = 0; i < instructions.length; i++) {
+			final FastInstruction instruction = instructions[i];
+			switch (instruction.inst) {
+			case loadInternal:
+			case writeInternal:
+			case posPredicate:
+			case negPredicate:
+			case isFallingEdge:
+			case isRisingEdge:
+				final int aliasedId = alias(instruction.arg1, em);
+				newInst[i] = new FastInstruction(instruction.inst, aliasedId, instruction.arg2);
+				break;
+			default:
+				newInst[i] = instruction;
+			}
+		}
+		return new Frame(newInst, alias(internalDependencies, em), alias(predPosDepRes, em), alias(predNegDepRes, em), alias(edgePosDepRes, em), alias(edgeNegDepRes, em),
+				new int[0], maxDataWidth, maxStackDepth, constants, constantStrings, -1, constant, scheduleStage, process);
+	}
+
+	private int[] alias(int[] internals, ExecutableModel em) {
+		final int res[] = new int[internals.length];
+		for (int i = 0; i < internals.length; i++) {
+			final int internalId = internals[i];
+			final int finalId = alias(internalId, em);
+			res[i] = finalId;
+		}
+		return res;
+	}
+
+	protected int alias(final int internalId, ExecutableModel em) {
+		if (internalId == -1)
+			return internalId;
+		final InternalInformation ii = em.internals[internalId];
+		int finalId;
+		if (ii.aliasID != -1) {
+			finalId = ii.aliasID;
+		} else {
+			finalId = internalId;
+		}
+		return finalId;
 	}
 
 	@Override
@@ -229,9 +278,18 @@ public class Frame implements Serializable {
 		if (formatted) {
 			builder.append('\t');
 		}
-		String outputName = Integer.toString(outputId);
+		String outputName = Arrays.toString(outputIds);
 		if (em != null) {
-			outputName = em.internals[outputId].toString();
+			final StringBuilder sb = new StringBuilder();
+			boolean first = true;
+			for (final int id : outputIds) {
+				if (!first) {
+					sb.append(",");
+				}
+				first = false;
+				sb.append(em.internals[id].toString());
+			}
+			outputName = sb.toString();
 		}
 		builder.append("outputId=").append(outputName);
 		if (formatted) {
@@ -258,7 +316,7 @@ public class Frame implements Serializable {
 		return builder.toString();
 	}
 
-	public boolean isRename() {
+	public boolean isRename(ExecutableModel model) {
 		if ((edgeNegDepRes != -1) || (edgePosDepRes != -1))
 			return false;
 		if ((predNegDepRes != null) && (predNegDepRes.length != 0))
@@ -268,6 +326,8 @@ public class Frame implements Serializable {
 		if (process != null)
 			return false;
 		if (instructions[0].inst != Instruction.loadInternal)
+			return false;
+		if ((outputIds.length != 1) || (model.internals[outputIds[0]].info.writeCount != 1))
 			return false;
 		if (instructions.length == 1)
 			return true;
@@ -296,7 +356,7 @@ public class Frame implements Serializable {
 		result = (prime * result) + edgePosDepRes;
 		result = (prime * result) + Arrays.hashCode(instructions);
 		result = (prime * result) + Arrays.hashCode(internalDependencies);
-		result = (prime * result) + outputId;
+		result = (prime * result) + Arrays.hashCode(outputIds);
 		result = (prime * result) + Arrays.hashCode(predNegDepRes);
 		result = (prime * result) + Arrays.hashCode(predPosDepRes);
 		return result;
@@ -325,7 +385,7 @@ public class Frame implements Serializable {
 			return false;
 		if (!Arrays.equals(internalDependencies, other.internalDependencies))
 			return false;
-		if (outputId != other.outputId)
+		if (!Arrays.equals(outputIds, other.outputIds))
 			return false;
 		if (!Arrays.equals(predNegDepRes, other.predNegDepRes))
 			return false;

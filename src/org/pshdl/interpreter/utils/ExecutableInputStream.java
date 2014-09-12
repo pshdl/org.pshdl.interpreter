@@ -272,7 +272,8 @@ public class ExecutableInputStream extends DataInputStream {
 		int[] predPosDep = null;
 		int executionDep = -1;
 		int maxDataWidth = -1, maxStackDepth = -1;
-		int outputID = -1, uniqueID = -1;
+		int[] outputID = new int[0];
+		int uniqueID = -1;
 		int scheduleStage = -1;
 		FastInstruction[] instructions = new FastInstruction[0];
 		int[] intDeps = new int[0];
@@ -314,7 +315,7 @@ public class ExecutableInputStream extends DataInputStream {
 				maxStackDepth = ex.readVarInt();
 				break;
 			case outputID:
-				outputID = ex.readVarInt();
+				outputID = ex.readIntArray();
 				break;
 			case predNegDep:
 				predNegDep = ex.readIntArray();

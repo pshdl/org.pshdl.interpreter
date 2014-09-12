@@ -55,7 +55,7 @@ public class VariableInformation implements Serializable {
 	public final String[] annotations;
 
 	public int writeCount = 0;
-	public VariableInformation aliasVar = null;
+	public InternalInformation aliasVar = null;
 
 	public VariableInformation(Direction dir, String name, int width, Type type, boolean isRegister, boolean isClock, boolean isReset, String[] annotations, int... dimensions) {
 		super();
@@ -119,5 +119,11 @@ public class VariableInformation implements Serializable {
 	public String toString() {
 		return "VariableInformation [dir=" + dir + ", name=" + name + ", width=" + width + ", isRegister=" + isRegister + ", type=" + type + ", dimensions="
 				+ Arrays.toString(dimensions) + "]";
+	}
+
+	public InternalInformation asInternal() {
+		final int[] arrayIdx = new int[dimensions.length];
+		Arrays.fill(arrayIdx, -1);
+		return new InternalInformation(false, type == Type.BOOL, -1, -1, arrayIdx, this);
 	}
 }

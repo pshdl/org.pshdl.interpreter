@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -69,25 +70,28 @@ public class ExecutableModel implements Serializable {
 		}
 		for (final Frame frame : frames) {
 			maxStack = Math.max(maxStack, frame.maxStackDepth);
-			final VariableInformation varInfo = internals[frame.outputId].info;
-			varInfo.writeCount++;
+			for (final int outputId : frame.outputIds) {
+				final VariableInformation varInfo = internals[outputId].info;
+				varInfo.writeCount++;
+			}
 		}
 		final LinkedHashMap<Integer, Integer> tempAliasMap = new LinkedHashMap<>();
 		for (final Frame frame : frames) {
-			final InternalInformation outputId = internals[frame.outputId];
-			if ((outputId.info.writeCount == 1) && frame.isRename()) {
-				tempAliasMap.put(frame.outputId, frame.internalDependencies[0]);
+			if (frame.isRename(this)) {
+				for (final int outputId : frame.outputIds) {
+					tempAliasMap.put(outputId, frame.internalDependencies[0]);
+				}
 			}
 		}
 		for (final Entry<Integer, Integer> x : tempAliasMap.entrySet()) {
 			Integer currentAlias = x.getValue();
 			final Integer deepAlias = getDeepAlias(tempAliasMap, currentAlias);
-			if (deepAlias != currentAlias) {
+			if (!currentAlias.equals(deepAlias)) {
 				currentAlias = deepAlias;
 			}
 			final InternalInformation internal = internals[x.getKey()];
 			final InternalInformation aliasInternal = internals[currentAlias];
-			internal.info.aliasVar = aliasInternal.info;
+			internal.info.aliasVar = aliasInternal;
 			internal.aliasID = currentAlias;
 		}
 		this.maxStackDepth = maxStack;
@@ -129,7 +133,7 @@ public class ExecutableModel implements Serializable {
 	 * @throws CycleException
 	 *             if a combinatorial loop has been detected
 	 */
-	public ExecutableModel sortTopological(boolean useAlias) throws CycleException {
+	public ExecutableModel sortTopological() throws CycleException {
 		final Graph<String> graph = new Graph<>();
 		final ArrayList<Node<String>> nodes = new ArrayList<>();
 		final Map<String, Node<String>> nodeNames = new LinkedHashMap<>();
@@ -142,7 +146,7 @@ public class ExecutableModel implements Serializable {
 			frameNames.put(frameName, f);
 		}
 		for (int i = 0; i < internals.length; i++) {
-			final String string = getInternal(i, useAlias);
+			final String string = getInternal(i);
 			final Node<String> node = new Node<>(string);
 			nodes.add(node);
 			nodeNames.put(string, node);
@@ -152,10 +156,12 @@ public class ExecutableModel implements Serializable {
 				continue;
 			}
 			final Node<String> node = nodeNames.get(getFrame(f.uniqueID));
-			final Node<String> outNode = nodeNames.get(getInternal(f.outputId, useAlias));
-			outNode.reverseAddEdge(node);
+			for (final int outputId : f.outputIds) {
+				final Node<String> outNode = nodeNames.get(getInternal(outputId));
+				outNode.reverseAddEdge(node);
+			}
 			for (final int i : f.internalDependencies) {
-				final Node<String> ni = nodeNames.get(getInternal(i, useAlias));
+				final Node<String> ni = nodeNames.get(getInternal(i));
 				node.reverseAddEdge(ni);
 			}
 			if (f.executionDep != -1) {
@@ -165,17 +171,42 @@ public class ExecutableModel implements Serializable {
 		}
 		final ArrayList<Node<String>> sortNodes = graph.sortNodes(nodes);
 		int pos = 0;
-		// if (useAlias) {
-		// frames = new Frame[frameNames.size()];
-		// }
+		final Map<Frame, List<Integer>> existingFrames = new LinkedHashMap<>();
 		for (final Node<String> node : sortNodes) {
 			final String obj = node.object;
 			final Frame f = frameNames.get(obj);
 			if (f != null) {
 				f.scheduleStage = node.stage;
+				final Frame outputFrame = f.aliasedFrame(this);
+				final List<Integer> existingIds = existingFrames.get(outputFrame);
+				if (existingIds != null) {
+					for (final Integer oi : f.outputIds) {
+						existingIds.add(oi);
+					}
+				} else {
+					final ArrayList<Integer> list = new ArrayList<>();
+					for (final Integer oi : f.outputIds) {
+						list.add(oi);
+					}
+					existingFrames.put(outputFrame, list);
+				}
 				frames[pos++] = f;
 			}
 		}
+		int id = 0;
+		final List<Frame> newList = new ArrayList<>();
+		for (final Entry<Frame, List<Integer>> entry : existingFrames.entrySet()) {
+			final Frame frame = entry.getKey();
+			final List<Integer> outputs = entry.getValue();
+			final int newOutputs[] = new int[outputs.size()];
+			for (int i = 0; i < newOutputs.length; i++) {
+				newOutputs[i] = outputs.get(i);
+			}
+			newList.add(new Frame(frame.instructions, frame.internalDependencies, frame.predPosDepRes, frame.predNegDepRes, frame.edgePosDepRes, frame.edgeNegDepRes, newOutputs,
+					frame.maxDataWidth, frame.maxStackDepth, frame.constants, frame.constantStrings, id++, frame.constant, frame.scheduleStage, frame.process));
+		}
+		System.out.println("Reduced from: " + frames.length + " to " + newList.size());
+		frames = newList.toArray(new Frame[newList.size()]);
 		return this;
 	}
 
@@ -183,13 +214,8 @@ public class ExecutableModel implements Serializable {
 		return "F" + uniqueID;
 	}
 
-	private String getInternal(int i, boolean useAlias) {
-		int id = i;
-		final InternalInformation ii = internals[i];
-		if ((ii.aliasID != -1) && useAlias) {
-			id = ii.aliasID;
-		}
-		return "I" + i;
+	private String getInternal(int id) {
+		return "I" + id;
 	}
 
 	public String humanReadableExplaination(Cycle<String, ?> ce) {
@@ -214,8 +240,10 @@ public class ExecutableModel implements Serializable {
 						if (intDep == priorId)
 							return priorExplaination + " is waiting for the computation of: " + ii.fullName;
 					}
-					if (priorId == frame.outputId)
-						return priorExplaination + " produces " + ii.fullName;
+					for (final int outputId : frame.outputIds) {
+						if (priorId == outputId)
+							return priorExplaination + " produces " + ii.fullName;
+					}
 					for (final int predDep : frame.predPosDepRes) {
 						if (predDep == priorId)
 							return priorExplaination + " requires that this predicate (if/ternary/switch-case) is true: " + ii.fullName;
@@ -227,11 +255,11 @@ public class ExecutableModel implements Serializable {
 				}
 				if (priorNode.charAt(0) == 'F') {
 					final Frame priorFrame = findFrame(priorId);
-					return priorExplaination + " requires the prior computation of: " + internals[priorFrame.outputId].fullName;
+					return priorExplaination + " requires the prior computation of: " + outputNames(priorFrame);
 				}
 				return priorExplaination;
 			}
-			return "Execution of frame " + frame.uniqueID + " produces " + internals[frame.outputId].fullName;
+			return "Execution of frame " + frame.uniqueID + " produces " + outputNames(frame);
 		case 'I':
 			if (ce.prior != null) {
 				final String priorNode = ce.prior.node.object;
@@ -243,6 +271,19 @@ public class ExecutableModel implements Serializable {
 		default:
 			throw new IllegalArgumentException("Can not reparse ID:" + nodeName);
 		}
+	}
+
+	protected String outputNames(final Frame frame) {
+		final StringBuilder sb = new StringBuilder();
+		boolean first = true;
+		for (final int outputId : frame.outputIds) {
+			if (!first) {
+				sb.append(", ");
+			}
+			first = false;
+			sb.append(internals[outputId].fullName);
+		}
+		return sb.toString();
 	}
 
 	public Frame findFrame(final int id) {
@@ -323,11 +364,13 @@ public class ExecutableModel implements Serializable {
 				sb.append(" [style=dashed, color=blue]");
 				sb.append(";\n");
 			}
-			sb.append(frameId).append(" -> ");
-			sb.append("int");
-			sb.append(frame.outputId);
-			sb.append(" [color=black]");
-			sb.append(";\n");
+			for (final int outputId : frame.outputIds) {
+				sb.append(frameId).append(" -> ");
+				sb.append("int");
+				sb.append(outputId);
+				sb.append(" [color=black]");
+				sb.append(";\n");
+			}
 		}
 		sb.append("}");
 		return sb.toString();
@@ -342,26 +385,28 @@ public class ExecutableModel implements Serializable {
 			varNames.put(var.name, var);
 		}
 		for (final Frame f : frames) {
-			final String output = getVarName(f.outputId);
-			for (final int intDep : f.internalDependencies) {
-				final Set<String> set = connections.get(getVarName(intDep));
-				set.add(output);
-			}
-			for (final int intDep : f.predNegDepRes) {
-				final Set<String> set = connections.get(getVarName(intDep));
-				set.add(output);
-			}
-			for (final int intDep : f.predPosDepRes) {
-				final Set<String> set = connections.get(getVarName(intDep));
-				set.add(output);
-			}
-			if (f.edgeNegDepRes != -1) {
-				final Set<String> set = connections.get(getVarName(f.edgeNegDepRes));
-				set.add(output);
-			}
-			if (f.edgePosDepRes != -1) {
-				final Set<String> set = connections.get(getVarName(f.edgePosDepRes));
-				set.add(output);
+			for (final int outputId : f.outputIds) {
+				final String output = getVarName(outputId);
+				for (final int intDep : f.internalDependencies) {
+					final Set<String> set = connections.get(getVarName(intDep));
+					set.add(output);
+				}
+				for (final int intDep : f.predNegDepRes) {
+					final Set<String> set = connections.get(getVarName(intDep));
+					set.add(output);
+				}
+				for (final int intDep : f.predPosDepRes) {
+					final Set<String> set = connections.get(getVarName(intDep));
+					set.add(output);
+				}
+				if (f.edgeNegDepRes != -1) {
+					final Set<String> set = connections.get(getVarName(f.edgeNegDepRes));
+					set.add(output);
+				}
+				if (f.edgePosDepRes != -1) {
+					final Set<String> set = connections.get(getVarName(f.edgePosDepRes));
+					set.add(output);
+				}
 			}
 		}
 		final Map<String, Set<String>> regConnections = new LinkedHashMap<>();

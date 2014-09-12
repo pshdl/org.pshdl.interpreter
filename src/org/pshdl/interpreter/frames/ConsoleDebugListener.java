@@ -122,10 +122,12 @@ public class ConsoleDebugListener implements IDebugListener {
 	 *            if true also the instructions will be shown
 	 */
 	public void addFramesThatWriteInternal(String internalRegex, boolean ops) {
-		internalRegex = internalRegex.replaceAll("\\$", "\\\\\\$");
+		final String regex = internalRegex.replaceAll("\\$", "\\\\\\$");
 		for (final Frame f : em.frames) {
-			if (em.internals[f.outputId].fullName.matches(internalRegex)) {
-				addFrames(ops, f.uniqueID);
+			for (final int outputId : f.outputIds) {
+				if (em.internals[outputId].fullName.matches(regex)) {
+					addFrames(ops, f.uniqueID);
+				}
 			}
 		}
 	}

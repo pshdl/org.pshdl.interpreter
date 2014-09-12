@@ -109,7 +109,16 @@ public class ExecutableOutputStream extends DataOutputStream {
 		case UINT:
 			flags |= IOUtil.UINT_FLAG;
 			break;
-		default:
+		case BIT:
+			break;
+		case BOOL:
+			flags |= IOUtil.BOOL_FLAG;
+			break;
+		case ENUM:
+			flags |= IOUtil.ENUM_FLAG;
+			break;
+		case STRING:
+			flags |= IOUtil.STRING_FLAG;
 			break;
 		}
 		if (vi.isRegister) {
@@ -154,7 +163,7 @@ public class ExecutableOutputStream extends DataOutputStream {
 		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		final ExecutableOutputStream obj = new ExecutableOutputStream(baos);
 		obj.writeInt(FrameTypes.uniqueID, f.uniqueID);
-		obj.writeInt(FrameTypes.outputID, f.outputId);
+		obj.writeIntArray(FrameTypes.outputID, f.outputIds);
 		obj.writeIntArray(FrameTypes.internalDep, f.internalDependencies);
 		// Only write if they are set
 		if (f.edgeNegDepRes != -1) {
@@ -177,6 +186,9 @@ public class ExecutableOutputStream extends DataOutputStream {
 			consts[i] = f.constants[i].toString(16); // Represent as hex String
 		}
 		obj.writeStringArray(FrameTypes.constants, consts);
+		if ((f.constantStrings != null) && (f.constantStrings.length != 0)) {
+			obj.writeStringArray(FrameTypes.constantStrings, f.constantStrings);
+		}
 		obj.writeByteArray(FrameTypes.instructions, getInstructions(f.instructions));
 		obj.writeInt(FrameTypes.maxDataWidth, f.maxDataWidth);
 		obj.writeInt(FrameTypes.maxStackDepth, f.maxStackDepth);

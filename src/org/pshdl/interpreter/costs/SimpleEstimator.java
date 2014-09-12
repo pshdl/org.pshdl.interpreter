@@ -131,14 +131,16 @@ public class SimpleEstimator {
 				frameCosts = frameCosts.add(incoming, 1, 1);
 			}
 			knownTotalCosts.put(f.uniqueID, frameCosts);
-			final InternalInformation internal = model.internals[f.outputId];
-			ResourceCosts varCosts = res.get(internal.info.name);
-			if (varCosts == null) {
-				varCosts = frameCosts;
-			} else {
-				varCosts = costSelector.selectCosts(Arrays.asList(frameCosts, varCosts));
+			for (final int outputId : f.outputIds) {
+				final InternalInformation internal = model.internals[outputId];
+				ResourceCosts varCosts = res.get(internal.info.name);
+				if (varCosts == null) {
+					varCosts = frameCosts;
+				} else {
+					varCosts = costSelector.selectCosts(Arrays.asList(frameCosts, varCosts));
+				}
+				res.put(internal.info.name, varCosts);
 			}
-			res.put(internal.info.name, varCosts);
 		}
 		return res;
 	}
@@ -204,7 +206,9 @@ public class SimpleEstimator {
 			// These would be realized as multiplexers
 			case posPredicate:
 			case negPredicate:
-				current = current.add(LUT_COSTS, model.internals[f.outputId].actualWidth, 1);
+				if (f.outputIds.length > 0) {
+					current = current.add(LUT_COSTS, model.internals[f.outputIds[0]].actualWidth, 1);
+				}
 				break;
 			// Only exists due to the nature of the byte code
 			case noop:
@@ -225,12 +229,14 @@ public class SimpleEstimator {
 				break;
 			}
 		}
-		List<ResourceCosts> list = knownCosts.get(f.outputId);
-		if (list == null) {
-			list = new ArrayList<>();
+		for (final int outputId : f.outputIds) {
+			List<ResourceCosts> list = knownCosts.get(outputId);
+			if (list == null) {
+				list = new ArrayList<>();
+			}
+			list.add(current);
+			knownCosts.put(outputId, list);
 		}
-		list.add(current);
-		knownCosts.put(f.outputId, list);
 		return current;
 	}
 }

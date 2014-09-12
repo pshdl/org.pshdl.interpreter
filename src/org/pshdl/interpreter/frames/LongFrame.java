@@ -311,12 +311,14 @@ public final class LongFrame extends ExecutableFrame {
 					listener.emptyStack(uniqueID, fi, this);
 				}
 		}
-		if (arrayPos != -1) {
-			outputAccess.setOffset(writeIndex);
-		}
-		outputAccess.setDataLong(stack[0], deltaCycle, epsCycle);
-		if (listener != null) {
-			listener.writingResult(uniqueID, outputAccess.ii, BigInteger.valueOf(stack[0]), this);
+		for (final EncapsulatedAccess encapsulatedAccess : outputAccess) {
+			if (arrayPos != -1) {
+				encapsulatedAccess.setOffset(writeIndex);
+			}
+			encapsulatedAccess.setDataLong(stack[0], deltaCycle, epsCycle);
+			if (listener != null) {
+				listener.writingResult(uniqueID, encapsulatedAccess.ii, BigInteger.valueOf(stack[0]), this);
+			}
 		}
 		return;
 	}
