@@ -138,7 +138,11 @@ public class FastFrame {
 				break;
 			case constAll1:
 				final int width = fi.arg1;
-				stack[++stackPos] = (1 << width) - 1;
+				if (width == 64) {
+					stack[++stackPos] = 0xFFFFFFFFFFFFFFFFl;
+				} else {
+					stack[++stackPos] = (1l << width) - 1;
+				}
 				break;
 			case div:
 				stack[++stackPos] = fixOp(b / a, fi.arg1);
