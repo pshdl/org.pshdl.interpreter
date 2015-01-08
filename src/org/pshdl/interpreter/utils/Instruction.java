@@ -85,8 +85,8 @@ public enum Instruction {
 	sra(2, 1, "A shift >> operation", "targetSizeWithType"), //
 	srl(2, 1, "A shift >>> operation", "targetSizeWithType"), //
 	// Memory
-	pushAddIndex(1, 0, "Pushes an additional index into the write stack for that memory"), //
-	writeInternal(1, 0, "Writes a value to an internal (and every array position)", "internal"), //
+	pushAddIndex(1, 0, "Pushes an additional index into the write stack for that memory", "internalIdx", "bitIdx"), //
+	writeInternal(1, 0, "Writes a value to an internal (and every array position)", "internalIdx"), //
 	;
 	public final int argCount;
 	public final String description;

@@ -136,9 +136,11 @@ public abstract class EncapsulatedAccess {
 		offset = 0;
 		if (off.length == 0)
 			return;
-		for (int i = 0; i < dims.length; i++) {
-			final int o = off[i];
-			offset += o * dims[i];
+		final int lastIndex = dims.length - 1;
+		int rowSize = 1;
+		for (int i = lastIndex; i >= 0; i--) {
+			offset += rowSize * off[i];
+			rowSize *= dims[i];
 		}
 	}
 
