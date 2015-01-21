@@ -74,7 +74,7 @@ public class InternalInformation implements Serializable {
 
 	/**
 	 * The full name is the base name, but also includes bit accesses and
-	 * {@link FluidFrame#REG_POSTFIX}
+	 * {@link InternalInformation#REG_POSTFIX}
 	 */
 	public final String fullName;
 
