@@ -219,7 +219,8 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 		 *
 		 * @param deltaCycle
 		 * @param epsCycle
-		 * @return
+		 * @return <code>true</code> when updating this register is not
+		 *         recommended.
 		 */
 		public boolean skip(int deltaCycle, int epsCycle) {
 			final long local = deltaUpdates[getAccessIndex()];

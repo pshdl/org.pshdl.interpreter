@@ -116,7 +116,7 @@ public abstract class EncapsulatedAccess {
 	 *
 	 * @param deltaCycle
 	 * @param epsCycle
-	 * @return
+	 * @return <code>true</code> when updating this register is not recommended.
 	 */
 	public boolean skip(int deltaCycle, int epsCycle) {
 		final long local = intr.deltaUpdates[getAccessIndex()];

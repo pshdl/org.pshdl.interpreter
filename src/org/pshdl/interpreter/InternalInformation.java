@@ -266,7 +266,7 @@ public class InternalInformation implements Serializable {
 	 * without it.
 	 *
 	 * @param string
-	 * @return
+	 * @return a string without the {@value #REG_POSTFIX}
 	 */
 	public static String stripReg(String string) {
 		if (string.endsWith(REG_POSTFIX))
