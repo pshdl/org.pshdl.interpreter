@@ -67,10 +67,12 @@ public class InternalInformation implements Serializable {
 	 */
 	public static final Pattern aiFormatName = Pattern.compile("(.*?)" // baseName
 			+ "((?:\\[.*?\\])*)" // arrays
-			+ "(?:\\{(?:(\\d+)" // first Digit if range
+			+ "(?:\\{(?:(-?\\d+)" // first Digit if range
 			+ "(?:\\:(\\d+))?)\\})?" // second Digit if range
 			+ "(\\" + REG_POSTFIX + ")?");
 	public static final Pattern array = Pattern.compile("\\[(.*?)\\]");
+
+	public static int undefinedBit = -2;
 
 	/**
 	 * The full name is the base name, but also includes bit accesses and
@@ -90,8 +92,9 @@ public class InternalInformation implements Serializable {
 
 	/**
 	 * bitStart indicates the largest bit index of that access, while bitEnd
-	 * indicates the lowest bit index. Both values can be -1 to indicate that no
-	 * bit access is given. For single bit accesses both values are the same
+	 * indicates the lowest bit index. Both values can be -2
+	 * {@link InternalInformation#undefinedBit} to indicate that no bit access is
+	 * given. For single bit accesses both values are the same
 	 */
 	public final int bitStart, bitEnd;
 
@@ -148,7 +151,7 @@ public class InternalInformation implements Serializable {
 				sb.append('[').append(idx).append(']');
 			}
 		}
-		if ((bitStart != -1) && (bitEnd != -1)) {
+		if ((bitStart != undefinedBit) && (bitEnd != undefinedBit)) {
 			this.actualWidth = (bitStart - bitEnd) + 1;
 			sb.append('{');
 			if (bitEnd == bitStart) {
@@ -176,8 +179,8 @@ public class InternalInformation implements Serializable {
 		final List<Integer> arrIdx = new LinkedList<>();
 		if (matcher.matches()) {
 			if (matcher.group(3) == null) {
-				this.bitStart = -1;
-				this.bitEnd = -1;
+				this.bitStart = undefinedBit;
+				this.bitEnd = undefinedBit;
 				this.actualWidth = info.width;
 			} else if (matcher.group(4) != null) {
 				this.bitStart = Integer.parseInt(matcher.group(3));

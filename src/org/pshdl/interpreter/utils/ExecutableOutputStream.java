@@ -145,10 +145,10 @@ public class ExecutableOutputStream extends DataOutputStream {
 		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		final ExecutableOutputStream obj = new ExecutableOutputStream(baos);
 		obj.writeInt(InternalTypes.varIdx, varIdx);
-		if (ii.bitStart != -1) {
+		if (ii.bitStart != InternalInformation.undefinedBit) {
 			obj.writeInt(InternalTypes.bitStart, ii.bitStart);
 		}
-		if (ii.bitEnd != -1) {
+		if (ii.bitEnd != InternalInformation.undefinedBit) {
 			obj.writeInt(InternalTypes.bitEnd, ii.bitEnd);
 		}
 		if (ii.arrayIdx.length > 0) {

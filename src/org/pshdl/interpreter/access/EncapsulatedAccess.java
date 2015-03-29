@@ -38,6 +38,7 @@ public abstract class EncapsulatedAccess {
 	public int targetAccessIndex = -1;
 	public final boolean prev;
 	public int offset;
+	public int bitOffset;
 	private final int[] dims;
 
 	public class RegUpdater {
@@ -209,6 +210,10 @@ public abstract class EncapsulatedAccess {
 			this.offset = i;
 			setDataLong(a, deltaCycle, epsCycle);
 		}
+	}
+
+	public void setBitOffset(int bitOffset) {
+		this.bitOffset = bitOffset;
 	}
 
 }

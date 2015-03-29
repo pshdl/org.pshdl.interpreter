@@ -230,7 +230,7 @@ public class ExecutableInputStream extends DataInputStream {
 
 	public InternalInformation readInternal(List<VariableInformation> varInfos) throws IOException {
 		TLV tlv = null;
-		int bitStart = -1, bitEnd = -1;
+		int bitStart = InternalInformation.undefinedBit, bitEnd = InternalInformation.undefinedBit;
 		int flags = 0;
 		int[] arrayIdx = new int[0];
 		int varIdx = -1;

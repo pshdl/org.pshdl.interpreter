@@ -43,6 +43,7 @@ public class FastFrame {
 	public List<RegUpdater> regUpdates = new ArrayList<>();
 	private int arrayPos = -1;
 	private final int[] writeIndex = new int[8];
+	private final int[] bitIndex = new int[8];
 	private final FastInstruction[] instructions;
 	private final LongAccess[] internals;
 	private final LongAccess[] internals_prev;
@@ -69,6 +70,7 @@ public class FastFrame {
 	public boolean execute(int deltaCycle, int epsCycle) {
 		int stackPos = -1;
 		arrayPos = -1;
+		int bitPos = -1;
 		long a = 0;
 		long b = 0;
 		regUpdates.clear();
@@ -92,7 +94,11 @@ public class FastFrame {
 				stack[++stackPos] = fixOp(~a, fi.arg1);
 				break;
 			case bitAccessSingle:
-				final int bit = fi.arg1;
+				int bit = fi.arg1;
+				if (bit == -1) {
+					bit = bitIndex[bitPos];
+					bitPos = -1;
+				}
 				long t = a >> bit;
 				t &= 1;
 				stack[++stackPos] = t;
@@ -276,7 +282,11 @@ public class FastFrame {
 				break;
 			}
 			case pushAddIndex:
-				writeIndex[++arrayPos] = (int) a;
+				if (fi.arg2 == 0) {
+					writeIndex[++arrayPos] = (int) a;
+				} else {
+					bitIndex[++bitPos] = (int) a;
+				}
 				break;
 			case writeInternal:
 				final int off = fi.arg1;

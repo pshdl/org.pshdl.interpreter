@@ -55,6 +55,7 @@ public final class LongFrame extends ExecutableFrame {
 	public void execute(int deltaCycle, int epsCycle) {
 		int stackPos = -1;
 		int arrayPos = -1;
+		int bitPos = -1;
 		currentPos = 0;
 		long a = 0;
 		long b = 0;
@@ -81,7 +82,11 @@ public final class LongFrame extends ExecutableFrame {
 				stack[++stackPos] = fixOp(~a, fi.arg1);
 				break;
 			case bitAccessSingle:
-				final int bit = fi.arg1;
+				int bit = fi.arg1;
+				if (bit == -1) {
+					bit = bitIndex[bitPos];
+					bitPos = -1;
+				}
 				long t = a >> bit;
 				t &= 1;
 				stack[++stackPos] = t;
@@ -290,7 +295,11 @@ public final class LongFrame extends ExecutableFrame {
 				break;
 			}
 			case pushAddIndex:
-				writeIndex[++arrayPos] = (int) a;
+				if (fi.arg2 == 0) {
+					writeIndex[++arrayPos] = (int) a;
+				} else {
+					bitIndex[++bitPos] = (int) a;
+				}
 				break;
 			case writeInternal:
 				final int off = fi.arg1;
@@ -318,6 +327,9 @@ public final class LongFrame extends ExecutableFrame {
 		for (final EncapsulatedAccess encapsulatedAccess : outputAccess) {
 			if (arrayPos != -1) {
 				encapsulatedAccess.setOffset(writeIndex);
+			}
+			if (bitPos != -1) {
+				encapsulatedAccess.setBitOffset(bitIndex[bitPos]);
 			}
 			encapsulatedAccess.setDataLong(stack[0], deltaCycle, epsCycle);
 			if (listener != null) {

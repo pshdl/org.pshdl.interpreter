@@ -52,7 +52,7 @@ public class LongAccesses {
 			} else {
 				signShift = 64 - name.actualWidth;
 			}
-			if ((name.bitStart == -1) && (name.bitEnd == -1)) {
+			if ((name.bitStart == InternalInformation.undefinedBit) && (name.bitEnd == InternalInformation.undefinedBit)) {
 				final int width = name.info.width;
 				if (width > 64)
 					throw new IllegalArgumentException("Unsupported bitWidth:" + width);

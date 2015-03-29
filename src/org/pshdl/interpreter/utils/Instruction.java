@@ -31,7 +31,7 @@ import java.util.Formatter;
 public enum Instruction {
 	noop(0, 0, "Does nothing"), //
 	// Bit Accesses
-	bitAccessSingle(1, 1, "Access a single bit", "bit"), //
+	bitAccessSingle(1, 1, "Access a single bit", "bit", "internalIdx"), //
 	bitAccessSingleRange(1, 1, "Access a bit range", "from", "to"), //
 	// Casts
 	cast_int(1, 1, "Re-interprets the operand as int and resizes it", "targetSize", "currentSize"), //

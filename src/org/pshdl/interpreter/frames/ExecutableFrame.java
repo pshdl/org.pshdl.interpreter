@@ -44,6 +44,7 @@ public abstract class ExecutableFrame {
 	public final int uniqueID;
 	public final EncapsulatedAccess outputAccess[];
 	protected final int[] writeIndex = new int[10];
+	protected final int[] bitIndex = new int[10];
 
 	protected HDLFrameInterpreter fir;
 

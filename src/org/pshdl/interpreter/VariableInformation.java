@@ -124,6 +124,6 @@ public class VariableInformation implements Serializable {
 	public InternalInformation asInternal() {
 		final int[] arrayIdx = new int[dimensions.length];
 		Arrays.fill(arrayIdx, -1);
-		return new InternalInformation(false, type == Type.BOOL, -1, -1, arrayIdx, this);
+		return new InternalInformation(false, type == Type.BOOL, InternalInformation.undefinedBit, InternalInformation.undefinedBit, arrayIdx, this);
 	}
 }
