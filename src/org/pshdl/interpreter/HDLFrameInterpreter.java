@@ -56,7 +56,7 @@ public final class HDLFrameInterpreter implements IHDLBigInterpreter {
 
 		@Override
 		public HDLFrameInterpreter newInstance() {
-			return new HDLFrameInterpreter(model, listener);
+			return new HDLFrameInterpreter(model, listener, false);
 		}
 
 	}
@@ -125,6 +125,10 @@ public final class HDLFrameInterpreter implements IHDLBigInterpreter {
 	private final IDebugListener listener;
 
 	public HDLFrameInterpreter(ExecutableModel model, IDebugListener listener) {
+		this(model, listener, false);
+	}
+
+	public HDLFrameInterpreter(ExecutableModel model, IDebugListener listener, boolean forceBigInteger) {
 		this.model = model;
 		this.internals = new EncapsulatedAccess[model.internals.length];
 		this.internals_prev = new EncapsulatedAccess[model.internals.length];
@@ -144,7 +148,7 @@ public final class HDLFrameInterpreter implements IHDLBigInterpreter {
 		final Frame[] frames = model.frames;
 		this.frames = new ExecutableFrame[frames.length];
 		for (int i = 0; i < frames.length; i++) {
-			if (frames[i].maxDataWidth > 64) {
+			if (forceBigInteger || (frames[i].maxDataWidth > 64)) {
 				this.frames[i] = new BigIntegerFrame(listener, this, frames[i], internals, internals_prev);
 			} else {
 				this.frames[i] = new LongFrame(listener, this, frames[i], internals, internals_prev);
@@ -214,7 +218,7 @@ public final class HDLFrameInterpreter implements IHDLBigInterpreter {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see org.pshdl.interpreter.IHDLInterpreter#setInput(java.lang.String,
 	 * java.math.BigInteger, int)
 	 */
@@ -225,7 +229,7 @@ public final class HDLFrameInterpreter implements IHDLBigInterpreter {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see org.pshdl.interpreter.IHDLInterpreter#setInput(int,
 	 * java.math.BigInteger, int)
 	 */
@@ -240,7 +244,7 @@ public final class HDLFrameInterpreter implements IHDLBigInterpreter {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see org.pshdl.interpreter.IHDLInterpreter#setInput(java.lang.String,
 	 * long, int)
 	 */
@@ -251,7 +255,7 @@ public final class HDLFrameInterpreter implements IHDLBigInterpreter {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see org.pshdl.interpreter.IHDLInterpreter#setInput(int, long, int)
 	 */
 	@Override
@@ -265,7 +269,7 @@ public final class HDLFrameInterpreter implements IHDLBigInterpreter {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see org.pshdl.interpreter.IHDLInterpreter#getIndex(java.lang.String)
 	 */
 	@Override
@@ -278,7 +282,7 @@ public final class HDLFrameInterpreter implements IHDLBigInterpreter {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see
 	 * org.pshdl.interpreter.IHDLInterpreter#getOutputLong(java.lang.String,
 	 * int)
@@ -290,7 +294,7 @@ public final class HDLFrameInterpreter implements IHDLBigInterpreter {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see org.pshdl.interpreter.IHDLInterpreter#getOutputLong(int, int)
 	 */
 	@Override
@@ -304,7 +308,7 @@ public final class HDLFrameInterpreter implements IHDLBigInterpreter {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see org.pshdl.interpreter.IHDLInterpreter#getOutputBig(java.lang.String,
 	 * int)
 	 */
@@ -315,7 +319,7 @@ public final class HDLFrameInterpreter implements IHDLBigInterpreter {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see org.pshdl.interpreter.IHDLInterpreter#getOutputBig(int, int)
 	 */
 	@Override
@@ -338,7 +342,7 @@ public final class HDLFrameInterpreter implements IHDLBigInterpreter {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see org.pshdl.interpreter.IHDLInterpreter#run()
 	 */
 	@Override

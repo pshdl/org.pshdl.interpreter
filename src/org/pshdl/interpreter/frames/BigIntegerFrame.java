@@ -53,6 +53,7 @@ public final class BigIntegerFrame extends ExecutableFrame {
 		int stackPos = -1;
 		currentPos = 0;
 		int arrayPos = -1;
+		int bitPos = -1;
 		BigInteger b = BigInteger.ZERO, a = BigInteger.ZERO;
 		if (listener != null) {
 			listener.startFrame(uniqueID, deltaCycle, epsCycle, this);
@@ -80,7 +81,11 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				break;
 			}
 			case bitAccessSingle: {
-				final int bit = f.arg1;
+				int bit = f.arg1;
+				if (bit == -1) {
+					bit = bitIndex[bitPos];
+					bitPos = -1;
+				}
 				stack[++stackPos] = a.shiftRight(bit).and(BigInteger.ONE);
 				break;
 			}
@@ -97,12 +102,15 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				final int currWidth = f.arg2;
 				if (targetWidth >= currWidth) {
 					// Do nothing
+					stack[++stackPos] = a;
 				} else {
-					final BigInteger mask = BigInteger.ONE.shiftLeft(targetWidth).subtract(BigInteger.ONE);
-					System.out.println("BigIntegerFrame.execute() cast int<" + currWidth + "> to int<" + targetWidth + "> masking with:" + mask.toString(16));
+					final BigInteger mask = BigInteger.ONE.shiftLeft(targetWidth - 1).subtract(BigInteger.ONE);
+					// System.out.println("BigIntegerFrame.execute() cast int<"
+					// + currWidth + "> to int<" + targetWidth +
+					// "> masking with:" + mask.toString(16));
 					BigInteger t = a;
 					t = t.and(mask);
-					if (t.testBit(targetWidth - 1)) { // MSB is set
+					if (a.testBit(targetWidth - 1)) { // MSB is set
 						if (t.signum() > 0) {
 							t = t.negate();
 						}
@@ -299,7 +307,7 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				// updated that means prior predicates failed
 				if (!access.isFresh(deltaCycle, epsCycle)) {
 					if (listener != null) {
-						listener.skippingPredicateNotFresh(uniqueID, access.ii, true, this);
+						listener.skippingPredicateNotFresh(uniqueID, access.ii, false, this);
 					}
 					return;
 				}
@@ -312,7 +320,11 @@ public final class BigIntegerFrame extends ExecutableFrame {
 				break;
 			}
 			case pushAddIndex:
-				writeIndex[++arrayPos] = a.intValue();
+				if (f.arg2 == 0) {
+					writeIndex[++arrayPos] = a.intValue();
+				} else {
+					bitIndex[++bitPos] = a.intValue();
+				}
 				break;
 			case writeInternal:
 				final int off = f.arg1;
@@ -337,6 +349,9 @@ public final class BigIntegerFrame extends ExecutableFrame {
 		for (final EncapsulatedAccess encapsulatedAccess : outputAccess) {
 			if (arrayPos != -1) {
 				encapsulatedAccess.setOffset(writeIndex);
+			}
+			if (bitPos != -1) {
+				encapsulatedAccess.setBitOffset(bitIndex[bitPos]);
 			}
 			encapsulatedAccess.setDataBig(stack[0], deltaCycle, epsCycle);
 			if (listener != null) {

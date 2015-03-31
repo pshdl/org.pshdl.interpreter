@@ -79,17 +79,23 @@ public class BigAccesses {
 			return builder.toString();
 		}
 
+		@Override
+		public void setBitOffset(int bitOffset) {
+		}
+
 	}
 
 	private static final class SingleBigAccess extends EncapsulatedAccess {
 
 		private final HDLFrameInterpreter hdlFrameInterpreter;
-		private final int bit;
+		private int bit;
+		private final boolean isDynamicBit;
 
 		public SingleBigAccess(HDLFrameInterpreter hdlFrameInterpreter, InternalInformation name, int accessIndex, boolean prev) {
 			super(hdlFrameInterpreter, name, accessIndex, prev);
 			this.hdlFrameInterpreter = hdlFrameInterpreter;
-			this.bit = name.bitEnd == -1 ? 0 : name.bitEnd;
+			this.bit = name.bitEnd == InternalInformation.undefinedBit ? 0 : name.bitEnd;
+			isDynamicBit = name.bitEnd == -1;
 		}
 
 		@Override
@@ -136,19 +142,27 @@ public class BigAccesses {
 			return builder.toString();
 		}
 
+		@Override
+		public void setBitOffset(int bitOffset) {
+			if (isDynamicBit) {
+				this.bit = bitOffset;
+			}
+		}
 	}
 
 	private static final class RangeBigAccess extends EncapsulatedAccess {
 		private final HDLFrameInterpreter hdlFrameInterpreter;
 		private final BigInteger writeMask;
 		private final BigInteger mask;
-		private final int shift;
+		private int shift;
+		private final boolean isDynamicBit;
 
 		public RangeBigAccess(HDLFrameInterpreter hdlFrameInterpreter, InternalInformation name, int accessIndex, boolean prev) {
 			super(hdlFrameInterpreter, name, accessIndex, prev);
 			this.hdlFrameInterpreter = hdlFrameInterpreter;
 			this.mask = BigInteger.ONE.shiftLeft(name.actualWidth).subtract(BigInteger.ONE);
 			this.shift = name.bitEnd;
+			this.isDynamicBit = name.bitEnd == -1;
 			this.writeMask = BigInteger.ZERO.setBit(name.actualWidth);
 		}
 
@@ -188,6 +202,13 @@ public class BigAccesses {
 		@Override
 		public String toString() {
 			return "RangeBigAccess [writeMask=" + writeMask + ", mask=" + mask + ", shift=" + shift + "]";
+		}
+
+		@Override
+		public void setBitOffset(int bitOffset) {
+			if (isDynamicBit) {
+				this.shift = bitOffset;
+			}
 		}
 
 	}

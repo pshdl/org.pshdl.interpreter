@@ -40,9 +40,10 @@ public class LongAccesses {
 		 */
 		private final HDLFrameInterpreter intr;
 		public final int signShift;
-		public final int shift;
+		public int shift;
 		public final long mask;
-		public final long writeMask;
+		public long writeMask;
+		private final boolean isDynamicBit;
 
 		public LongAccess(HDLFrameInterpreter hdlFrameInterpreter, InternalInformation name, int accessIndex, boolean prev) {
 			super(hdlFrameInterpreter, name, accessIndex, prev);
@@ -52,6 +53,7 @@ public class LongAccesses {
 			} else {
 				signShift = 64 - name.actualWidth;
 			}
+			isDynamicBit = name.bitEnd == -1;
 			if ((name.bitStart == InternalInformation.undefinedBit) && (name.bitEnd == InternalInformation.undefinedBit)) {
 				final int width = name.info.width;
 				if (width > 64)
@@ -135,6 +137,14 @@ public class LongAccesses {
 			builder.append("LongAccess [shift=").append(shift).append(", mask=").append(Long.toHexString(mask)).append(", writeMask=").append(Long.toHexString(writeMask))
 					.append(", name=").append(ii).append(", accessIndex=").append(getAccessIndex()).append(", prev=").append(prev).append("]");
 			return builder.toString();
+		}
+
+		@Override
+		public void setBitOffset(int bitOffset) {
+			if (isDynamicBit) {
+				this.shift = bitOffset;
+				this.writeMask = ~(mask << shift);
+			}
 		}
 
 	}

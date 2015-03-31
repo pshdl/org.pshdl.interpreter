@@ -80,14 +80,12 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 
 		public final boolean prev;
 
-		/**
-		 *
-		 */
-		public final int shift;
+		public int shift;
+		private final boolean isDynamicBit;
 
 		public int targetAccessIndex = -1;
 
-		public final long writeMask;
+		public long writeMask;
 		private int signShift;
 
 		public LongAccess(InternalInformation name, int accessIndex, boolean prev) {
@@ -100,6 +98,7 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 			this.accessIndex = accessIndex;
 			this.prev = prev;
 			this.ii = name;
+			this.isDynamicBit = name.bitEnd == -1;
 			this.dims = name.info.dimensions.clone();
 			if (dims.length > 0) {
 				this.dims[dims.length - 1] = 1;
@@ -242,6 +241,13 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 			builder.append("LongAccess [shift=").append(shift).append(", mask=").append(Long.toHexString(mask)).append(", writeMask=").append(Long.toHexString(writeMask))
 					.append(", name=").append(ii).append(", accessIndex=").append(getAccessIndex()).append(", prev=").append(prev).append("]");
 			return builder.toString();
+		}
+
+		public void setBitOffset(int bitOffset) {
+			if (isDynamicBit) {
+				this.shift = bitOffset;
+				this.writeMask = ~(mask << shift);
+			}
 		}
 
 	}

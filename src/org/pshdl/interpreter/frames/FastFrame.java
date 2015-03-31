@@ -38,15 +38,12 @@ import org.pshdl.interpreter.Frame.FastInstruction;
 
 public class FastFrame {
 
-	private final long stack[];
-	private final long constants[];
+	private final long stack[], constants[];
 	public List<RegUpdater> regUpdates = new ArrayList<>();
-	private int arrayPos = -1;
-	private final int[] writeIndex = new int[8];
-	private final int[] bitIndex = new int[8];
+	private int arrayPos = -1, bitPos = -1;
+	private final int[] writeIndex = new int[8], bitIndex = new int[8];
 	private final FastInstruction[] instructions;
-	private final LongAccess[] internals;
-	private final LongAccess[] internals_prev;
+	private final LongAccess[] internals, internals_prev;
 	public final LongAccess[] outputAccess;
 	public boolean disableEdge;
 
@@ -70,7 +67,7 @@ public class FastFrame {
 	public boolean execute(int deltaCycle, int epsCycle) {
 		int stackPos = -1;
 		arrayPos = -1;
-		int bitPos = -1;
+		bitPos = -1;
 		long a = 0;
 		long b = 0;
 		regUpdates.clear();
@@ -304,6 +301,9 @@ public class FastFrame {
 			if (arrayPos != -1) {
 				longAccess.setOffset(writeIndex);
 			}
+			if (bitPos != -1) {
+				longAccess.setBitOffset(bitIndex[bitPos]);
+			}
 			longAccess.setDataLong(stack[0], deltaCycle, epsCycle);
 			if (longAccess.ii.isShadowReg) {
 				regUpdates.add(longAccess.getRegUpdater());
@@ -337,6 +337,9 @@ public class FastFrame {
 		final LongAccess ea = internals[off];
 		if (arrayPos != -1) {
 			ea.setOffset(writeIndex);
+		}
+		if (bitPos != -1) {
+			ea.setBitOffset(bitIndex[bitPos]);
 		}
 		return ea;
 	}
