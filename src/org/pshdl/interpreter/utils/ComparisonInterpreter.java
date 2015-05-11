@@ -273,4 +273,8 @@ public class ComparisonInterpreter implements IHDLBigInterpreter {
 		b.setFeature(feature, value);
 	}
 
+	@Override
+	public VariableInformation[] getVariableInformation() {
+		return em.variables;
+	}
 }

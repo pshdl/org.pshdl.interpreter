@@ -235,4 +235,9 @@ public class NativeRunner implements IHDLInterpreter {
 		}
 	}
 
+	@Override
+	public VariableInformation[] getVariableInformation() {
+		return model.variables;
+	}
+
 }

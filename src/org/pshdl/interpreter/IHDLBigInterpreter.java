@@ -118,6 +118,11 @@ public interface IHDLBigInterpreter extends IHDLInterpreter {
 		public void setInput(int idx, BigInteger value, int... arrayIdx) {
 			setInput(idx, value.longValue(), arrayIdx);
 		}
+
+		@Override
+		public VariableInformation[] getVariableInformation() {
+			return interpeter.getVariableInformation();
+		}
 	}
 
 	public abstract BigInteger getOutputBig(String name, int... arrayIdx);

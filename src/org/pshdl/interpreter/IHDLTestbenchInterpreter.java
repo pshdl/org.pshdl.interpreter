@@ -28,8 +28,20 @@ package org.pshdl.interpreter;
 
 public interface IHDLTestbenchInterpreter extends IHDLInterpreter {
 	public static interface ITestbenchStepListener {
+		public void testbenchStart();
+
+		public void testbenchEnd();
+
 		public boolean nextStep(long currentTime, long currentStep);
 	}
 
-	public void runTestbench(long maxTime, long maxSteps, ITestbenchStepListener listener);
+	/**
+	 *
+	 * @param maxTime
+	 * @param maxSteps
+	 * @param listener
+	 * @param main
+	 *            will be called to update the model
+	 */
+	public void runTestbench(long maxTime, long maxSteps, ITestbenchStepListener listener, Runnable main);
 }

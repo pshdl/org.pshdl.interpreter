@@ -263,6 +263,7 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 	private final Map<String, Integer> varIdxMap = new TreeMap<>();
 	private int deltaCycle;
 	private boolean disabledRegOutputlogic;
+	private final VariableInformation varInfo[];
 
 	public FastSimpleInterpreter(ExecutableModel model, boolean disableEdge, boolean disabledRegOutputlogic) {
 		this.disabledRegOutputlogic = disabledRegOutputlogic;
@@ -293,6 +294,7 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 		for (int i = 0; i < frames.length; i++) {
 			this.frames[i] = new FastFrame(this, frames[i], disableEdge);
 		}
+		this.varInfo = model.variables;
 	}
 
 	private int createVarIndex(ExecutableModel model) {
@@ -450,5 +452,10 @@ public class FastSimpleInterpreter implements IHDLInterpreter {
 			break;
 
 		}
+	}
+
+	@Override
+	public VariableInformation[] getVariableInformation() {
+		return varInfo;
 	}
 }

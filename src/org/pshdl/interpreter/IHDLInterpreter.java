@@ -26,7 +26,7 @@
  ******************************************************************************/
 package org.pshdl.interpreter;
 
-public interface IHDLInterpreter extends AutoCloseable {
+public interface IHDLInterpreter extends AutoCloseable, Runnable {
 
 	public static enum Feature {
 		disableEdges, disableOutputRegs
@@ -46,10 +46,13 @@ public interface IHDLInterpreter extends AutoCloseable {
 
 	public abstract long getOutputLong(int idx, int... arrayIdx);
 
+	@Override
 	public abstract void run();
 
 	public abstract void initConstants();
 
 	public abstract long getDeltaCycle();
+
+	public VariableInformation[] getVariableInformation();
 
 }
