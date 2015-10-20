@@ -26,20 +26,57 @@
  ******************************************************************************/
 package org.pshdl.interpreter;
 
+import org.pshdl.interpreter.JavaPSHDLLib.TimeUnit;
+
 public interface IHDLTestbenchInterpreter extends IHDLInterpreter {
 	public static interface ITestbenchStepListener {
+		/**
+		 * When called, the test-bench execution starts
+		 */
 		public void testbenchStart();
 
+		/**
+		 * When called, the test-bench is done
+		 */
 		public void testbenchEnd();
 
+		/**
+		 *
+		 * @param currentTime
+		 *            the current time in
+		 *            {@link IHDLTestbenchInterpreter#getTimeBase()} units
+		 * @param currentStep
+		 *            the current delta cycle
+		 * @return <code>true</code> if the execution should continue,
+		 *         <code>false</code> if it should stop
+		 */
 		public boolean nextStep(long currentTime, long currentStep);
 	}
 
 	/**
+	 * Returns the current simulation time in {@link #getTimeBase()} units
+	 *
+	 * @return the current simulation time in {@link #getTimeBase()} units
+	 */
+	public long getTime();
+
+	/**
+	 * The time-base for the simulation.
+	 * {@link IHDLTestbenchInterpreter#getTime()} will be in that unit
+	 *
+	 * @return time-base for the simulation
+	 */
+	public TimeUnit getTimeBase();
+
+	/**
 	 *
 	 * @param maxTime
+	 *            the maximum amount of time until the simulation stops
 	 * @param maxSteps
+	 *            the maximum amounts of steps (delta cycles) until the
+	 *            simulation stops
 	 * @param listener
+	 *            a listener that can monitor the progress
 	 * @param main
 	 *            will be called to update the model
 	 */

@@ -1,0 +1,11 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Interpreter
+Bundle-SymbolicName: org.pshdl.interpreter
+Bundle-Version: 0.1.111.dev
+Export-Package: org.pshdl.interpreter,
+ org.pshdl.interpreter.access,
+ org.pshdl.interpreter.costs,
+ org.pshdl.interpreter.frames,
+ org.pshdl.interpreter.utils
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7

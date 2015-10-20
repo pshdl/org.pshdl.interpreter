@@ -65,6 +65,8 @@ public class Frame implements Serializable {
 				return "posPredicate[" + em.internals[arg1] + "]";
 			if ((em != null) && (inst == Instruction.negPredicate))
 				return "negPredicate[" + em.internals[arg1] + "]";
+			if ((em != null) && (inst == Instruction.invokeFunction))
+				return "invokeFunction[" + em.functions[arg1].signature() + "]";
 			if (inst.argCount >= 2)
 				return inst.name() + "[" + inst.args[0] + "=" + arg1 + "," + inst.args[1] + "=" + arg2 + "]";
 			if (inst.argCount >= 1)
@@ -136,10 +138,12 @@ public class Frame implements Serializable {
 	public final boolean constant;
 	public int scheduleStage;
 	public final String process;
+	public final boolean isFuncStatement;
 	private static final long serialVersionUID = -1690021519637432408L;
 
 	public Frame(FastInstruction[] instructions, int[] internalDependencies, int[] predPosDepRes, int[] predNegDepRes, int edgePosDepRes, int edgeNegDepRes, int[] outputIds,
-			int maxDataWidth, int maxStackDepth, BigInteger[] constants, String[] constantStrings, int uniqueID, boolean constant, int scheduleStage, String process) {
+			int maxDataWidth, int maxStackDepth, BigInteger[] constants, String[] constantStrings, int uniqueID, boolean constant, int scheduleStage, String process,
+			boolean isFuncStatement) {
 		super();
 		this.constants = constants;
 		this.constantStrings = constantStrings;
@@ -156,6 +160,7 @@ public class Frame implements Serializable {
 		this.uniqueID = uniqueID;
 		this.scheduleStage = scheduleStage;
 		this.process = process;
+		this.isFuncStatement = isFuncStatement;
 	}
 
 	protected int[] selfOrEmpty(int[] predPosDepRes) {
@@ -181,7 +186,7 @@ public class Frame implements Serializable {
 			}
 		}
 		return new Frame(newInst, alias(internalDependencies, em), alias(predPosDepRes, em), alias(predNegDepRes, em), alias(edgePosDepRes, em), alias(edgeNegDepRes, em),
-				new int[0], maxDataWidth, maxStackDepth, constants, constantStrings, -1, constant, scheduleStage, process);
+				new int[0], maxDataWidth, maxStackDepth, constants, constantStrings, -1, constant, scheduleStage, process, isFuncStatement);
 	}
 
 	private int[] alias(int[] internals, ExecutableModel em) {

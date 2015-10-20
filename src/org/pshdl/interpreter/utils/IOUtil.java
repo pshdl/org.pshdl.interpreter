@@ -62,7 +62,7 @@ public class IOUtil {
 	}
 
 	public static enum ModelTypes implements IDType<ModelTypes> {
-		version, src, date, maxDataWidth, maxStackDepth, internal, frame, variable, moduleName, annotations;
+		version, src, date, maxDataWidth, maxStackDepth, internal, frame, variable, moduleName, annotation, function;
 
 		@Override
 		public int getID() {
@@ -76,7 +76,7 @@ public class IOUtil {
 	}
 
 	public static enum FrameTypes implements IDType<FrameTypes> {
-		uniqueID, outputID, internalDep, edgePosDep, edgeNegDep, predPosDep, predNegDep, executionDep, constants, constantStrings, instructions, maxDataWidth, maxStackDepth, flags, scheduleStage, process, enumInfo;
+		uniqueID, outputID, internalDep, edgePosDep, edgeNegDep, predPosDep, predNegDep, executionDep, constants, constantStrings, instructions, maxDataWidth, maxStackDepth, flags, scheduleStage, process, enumInfo, isFuncStatement;
 
 		@Override
 		public int getID() {
@@ -87,6 +87,36 @@ public class IOUtil {
 		public FrameTypes getFromID(int id) {
 			return values()[id & 0x7F];
 		}
+	}
+
+	public static enum FunctionTypes implements IDType<FunctionTypes> {
+		name, returnType, parameter, annotations, statement;
+
+		@Override
+		public int getID() {
+			return ordinal() | 0x100;
+		}
+
+		@Override
+		public FunctionTypes getFromID(int id) {
+			return values()[id & 0xFF];
+		}
+
+	}
+
+	public static enum ParameterTypes implements IDType<ParameterTypes> {
+		rwType, type, enumSpec, ifSpec, funcSpec, funcReturnSpec, name, width, dims, constant;
+
+		@Override
+		public int getID() {
+			return ordinal() | 0x200;
+		}
+
+		@Override
+		public ParameterTypes getFromID(int id) {
+			return values()[id & 0x1FF];
+		}
+
 	}
 
 	public static enum VariableTypes implements IDType<VariableTypes> {
@@ -146,6 +176,10 @@ public class IOUtil {
 		}
 		System.out.println("Variable types:");
 		for (final VariableTypes type : VariableTypes.values()) {
+			System.out.printf("0x%02x | %-16s|%n", type.getID(), type.name());
+		}
+		System.out.println("Function types:");
+		for (final FunctionTypes type : FunctionTypes.values()) {
 			System.out.printf("0x%02x | %-16s|%n", type.getID(), type.name());
 		}
 		final ByteArrayOutputStream baos = new ByteArrayOutputStream();

@@ -40,14 +40,19 @@ import java.util.List;
 import org.pshdl.interpreter.ExecutableModel;
 import org.pshdl.interpreter.Frame;
 import org.pshdl.interpreter.Frame.FastInstruction;
+import org.pshdl.interpreter.FunctionInformation;
 import org.pshdl.interpreter.InternalInformation;
+import org.pshdl.interpreter.ParameterInformation;
+import org.pshdl.interpreter.ParameterInformation.RWType;
 import org.pshdl.interpreter.VariableInformation;
 import org.pshdl.interpreter.VariableInformation.Direction;
 import org.pshdl.interpreter.VariableInformation.Type;
 import org.pshdl.interpreter.utils.IOUtil.FrameTypes;
+import org.pshdl.interpreter.utils.IOUtil.FunctionTypes;
 import org.pshdl.interpreter.utils.IOUtil.IDType;
 import org.pshdl.interpreter.utils.IOUtil.InternalTypes;
 import org.pshdl.interpreter.utils.IOUtil.ModelTypes;
+import org.pshdl.interpreter.utils.IOUtil.ParameterTypes;
 import org.pshdl.interpreter.utils.IOUtil.VariableTypes;
 
 public class ExecutableInputStream extends DataInputStream {
@@ -93,6 +98,7 @@ public class ExecutableInputStream extends DataInputStream {
 			throw new IllegalArgumentException("Not a PS Executable: Missing or wrong header!");
 		final List<InternalInformation> internals = new LinkedList<>();
 		final List<Frame> frameList = new LinkedList<>();
+		final List<FunctionInformation> funcs = new LinkedList<>();
 		final List<VariableInformation> vars = new LinkedList<>();
 		String moduleName = null;
 		String src = null;
@@ -112,6 +118,9 @@ public class ExecutableInputStream extends DataInputStream {
 				break;
 			case variable:
 				vars.add(ex.readVariable());
+				break;
+			case function:
+				funcs.add(ex.readFunction());
 				break;
 			case internal:
 				internals.add(ex.readInternal(vars));
@@ -144,7 +153,7 @@ public class ExecutableInputStream extends DataInputStream {
 			case moduleName:
 				moduleName = tlv.asString();
 				break;
-			case annotations:
+			case annotation:
 				annotations = ex.readStringArray();
 				break;
 			default:
@@ -156,8 +165,95 @@ public class ExecutableInputStream extends DataInputStream {
 		final Frame[] frames = frameList.toArray(new Frame[frameList.size()]);
 		final InternalInformation[] iis = internals.toArray(new InternalInformation[internals.size()]);
 		final VariableInformation[] fvars = vars.toArray(new VariableInformation[vars.size()]);
-		final ExecutableModel executableModel = new ExecutableModel(frames, iis, fvars, moduleName, src, annotations);
+		final FunctionInformation[] functions = funcs.toArray(new FunctionInformation[funcs.size()]);
+		final ExecutableModel executableModel = new ExecutableModel(frames, iis, fvars, functions, moduleName, src, annotations);
 		return executableModel;
+	}
+
+	public FunctionInformation readFunction() throws IOException {
+		TLV tlv = null;
+		String[] annotations = null;
+		String name = null;
+		final List<ParameterInformation> parameter = new LinkedList<>();
+		ParameterInformation returnType = null;
+		boolean isStatement = false;
+		while ((tlv = readTLV(FunctionTypes.name)) != null) {
+			final ExecutableInputStream ex = new ExecutableInputStream(new ByteArrayInputStream(tlv.value));
+			final FunctionTypes it = (FunctionTypes) tlv.type;
+			switch (it) {
+			case annotations:
+				annotations = ex.readStringArray();
+				break;
+			case name:
+				name = tlv.asString();
+				break;
+			case parameter:
+				parameter.add(ex.readParameter());
+				break;
+			case returnType:
+				returnType = ex.readParameter();
+				break;
+			case statement:
+				isStatement = true;
+				break;
+			}
+			ex.close();
+		}
+		final ParameterInformation[] param = parameter.toArray(new ParameterInformation[parameter.size()]);
+		return new FunctionInformation(name, isStatement, returnType, param, annotations);
+	}
+
+	private ParameterInformation readParameter() throws IOException {
+		TLV tlv = null;
+		RWType rwType = RWType.READ;
+		ParameterInformation.Type type = null;
+		String enumSpec = null;
+		String ifSpec = null;
+		final List<ParameterInformation> funcSpec = new LinkedList<>();
+		ParameterInformation funcReturnSpec = null;
+		String name = null;
+		int width = -1;
+		int[] dims = null;
+		boolean constant = false;
+		while ((tlv = readTLV(ParameterTypes.rwType)) != null) {
+			final ExecutableInputStream ex = new ExecutableInputStream(new ByteArrayInputStream(tlv.value));
+			final ParameterTypes it = (ParameterTypes) tlv.type;
+			switch (it) {
+			case constant:
+				constant = ex.readVarInt() != 0;
+				break;
+			case dims:
+				dims = ex.readIntArray();
+				break;
+			case enumSpec:
+				enumSpec = tlv.asString();
+				break;
+			case funcReturnSpec:
+				funcReturnSpec = ex.readParameter();
+				break;
+			case funcSpec:
+				funcSpec.add(ex.readParameter());
+				break;
+			case ifSpec:
+				ifSpec = tlv.asString();
+				break;
+			case name:
+				name = tlv.asString();
+				break;
+			case rwType:
+				rwType = RWType.values()[ex.readVarInt()];
+				break;
+			case type:
+				type = ParameterInformation.Type.values()[ex.readVarInt()];
+				break;
+			case width:
+				width = ex.readVarInt();
+				break;
+			}
+			ex.close();
+		}
+		final ParameterInformation[] params = funcSpec.toArray(new ParameterInformation[funcSpec.size()]);
+		return new ParameterInformation(rwType, type, enumSpec, ifSpec, params, funcReturnSpec, name, width, dims, constant);
 	}
 
 	public VariableInformation readVariable() throws IOException {
@@ -190,21 +286,7 @@ public class ExecutableInputStream extends DataInputStream {
 						dir = Direction.OUT;
 					}
 				}
-				if ((flags & IOUtil.INT_FLAG) == IOUtil.INT_FLAG) {
-					type = Type.INT;
-				}
-				if ((flags & IOUtil.UINT_FLAG) == IOUtil.UINT_FLAG) {
-					type = Type.UINT;
-				}
-				if ((flags & IOUtil.BOOL_FLAG) == IOUtil.BOOL_FLAG) {
-					type = Type.BOOL;
-				}
-				if ((flags & IOUtil.STRING_FLAG) == IOUtil.STRING_FLAG) {
-					type = Type.STRING;
-				}
-				if ((flags & IOUtil.ENUM_FLAG) == IOUtil.ENUM_FLAG) {
-					type = Type.ENUM;
-				}
+				type = typeFromFlag(flags);
 				if ((flags & IOUtil.CLOCK_FLAG) == IOUtil.CLOCK_FLAG) {
 					isClock = true;
 				}
@@ -226,6 +308,26 @@ public class ExecutableInputStream extends DataInputStream {
 		}
 		final VariableInformation res = new VariableInformation(dir, name, width, type, isRegister, isClock, isReset, annotations, dimensions);
 		return res;
+	}
+
+	private Type typeFromFlag(final int flags) {
+		Type type = Type.BIT;
+		if ((flags & IOUtil.INT_FLAG) == IOUtil.INT_FLAG) {
+			type = Type.INT;
+		}
+		if ((flags & IOUtil.UINT_FLAG) == IOUtil.UINT_FLAG) {
+			type = Type.UINT;
+		}
+		if ((flags & IOUtil.BOOL_FLAG) == IOUtil.BOOL_FLAG) {
+			type = Type.BOOL;
+		}
+		if ((flags & IOUtil.STRING_FLAG) == IOUtil.STRING_FLAG) {
+			type = Type.STRING;
+		}
+		if ((flags & IOUtil.ENUM_FLAG) == IOUtil.ENUM_FLAG) {
+			type = Type.ENUM;
+		}
+		return type;
 	}
 
 	public InternalInformation readInternal(List<VariableInformation> varInfos) throws IOException {
@@ -278,10 +380,14 @@ public class ExecutableInputStream extends DataInputStream {
 		FastInstruction[] instructions = new FastInstruction[0];
 		int[] intDeps = new int[0];
 		String process = null;
+		boolean isFuncStatement = false;
 		while ((tlv = readTLV(FrameTypes.constants)) != null) {
 			final ExecutableInputStream ex = new ExecutableInputStream(new ByteArrayInputStream(tlv.value));
 			final FrameTypes type = (FrameTypes) tlv.type;
 			switch (type) {
+			case isFuncStatement:
+				isFuncStatement = true;
+				break;
 			case constants:
 				final String[] strings = ex.readStringArray();
 				consts = new BigInteger[strings.length];
@@ -345,7 +451,7 @@ public class ExecutableInputStream extends DataInputStream {
 			ex.close();
 		}
 		final Frame frame = new Frame(instructions, intDeps, predPosDep, predNegDep, edgePosDep, edgeNegDep, outputID, maxDataWidth, maxStackDepth, consts, constStrings, uniqueID,
-				constant, scheduleStage, process);
+				constant, scheduleStage, process, isFuncStatement);
 		frame.executionDep = executionDep;
 		return frame;
 	}

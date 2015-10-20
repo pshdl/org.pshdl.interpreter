@@ -51,12 +51,15 @@ public class ExecutableModel implements Serializable {
 	public final VariableInformation[] variables;
 	public final String source;
 	public final String[] annotations;
+	public final FunctionInformation[] functions;
 	private static final long serialVersionUID = 7515137334641792104L;
 
-	public ExecutableModel(Frame[] frames, InternalInformation[] internals, VariableInformation[] variables, String moduleName, String source, String[] annotations) {
+	public ExecutableModel(Frame[] frames, InternalInformation[] internals, VariableInformation[] variables, FunctionInformation[] functions, String moduleName, String source,
+			String[] annotations) {
 		super();
 		this.frames = frames;
 		this.internals = internals;
+		this.functions = functions;
 		int maxWidth = -1, maxExecWidth = -1;
 		int maxStack = -1;
 		for (final InternalInformation ii : internals) {
@@ -138,7 +141,12 @@ public class ExecutableModel implements Serializable {
 		final ArrayList<Node<String>> nodes = new ArrayList<>();
 		final Map<String, Node<String>> nodeNames = new LinkedHashMap<>();
 		final Map<String, Frame> frameNames = new LinkedHashMap<>();
+		final List<Frame> funcLists = new ArrayList<>();
 		for (final Frame f : frames) {
+			if (f.isFuncStatement) {
+				funcLists.add(f);
+				continue;
+			}
 			final String frameName = getFrame(f.uniqueID);
 			final Node<String> node = new Node<>(frameName);
 			nodes.add(node);
@@ -153,6 +161,9 @@ public class ExecutableModel implements Serializable {
 		}
 		for (final Frame f : frames) {
 			if (f.process != null) {
+				continue;
+			}
+			if (f.isFuncStatement) {
 				continue;
 			}
 			final Node<String> node = nodeNames.get(getFrame(f.uniqueID));
@@ -202,8 +213,16 @@ public class ExecutableModel implements Serializable {
 			for (int i = 0; i < newOutputs.length; i++) {
 				newOutputs[i] = outputs.get(i);
 			}
-			newList.add(new Frame(frame.instructions, frame.internalDependencies, frame.predPosDepRes, frame.predNegDepRes, frame.edgePosDepRes, frame.edgeNegDepRes, newOutputs,
-					frame.maxDataWidth, frame.maxStackDepth, frame.constants, frame.constantStrings, id++, frame.constant, frame.scheduleStage, frame.process));
+			final Frame newFrame = new Frame(frame.instructions, frame.internalDependencies, frame.predPosDepRes, frame.predNegDepRes, frame.edgePosDepRes, frame.edgeNegDepRes,
+					newOutputs, frame.maxDataWidth, frame.maxStackDepth, frame.constants, frame.constantStrings, id++, frame.constant, frame.scheduleStage, frame.process,
+					frame.isFuncStatement);
+			newList.add(newFrame);
+		}
+		for (final Frame frame : funcLists) {
+			final Frame newFrame = new Frame(frame.instructions, frame.internalDependencies, frame.predPosDepRes, frame.predNegDepRes, frame.edgePosDepRes, frame.edgeNegDepRes,
+					frame.outputIds, frame.maxDataWidth, frame.maxStackDepth, frame.constants, frame.constantStrings, id++, frame.constant, frame.scheduleStage, frame.process,
+					frame.isFuncStatement);
+			newList.add(newFrame);
 		}
 		frames = newList.toArray(new Frame[newList.size()]);
 		return this;

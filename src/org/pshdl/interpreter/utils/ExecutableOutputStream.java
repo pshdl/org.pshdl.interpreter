@@ -37,12 +37,16 @@ import java.util.Map;
 import org.pshdl.interpreter.ExecutableModel;
 import org.pshdl.interpreter.Frame;
 import org.pshdl.interpreter.Frame.FastInstruction;
+import org.pshdl.interpreter.FunctionInformation;
 import org.pshdl.interpreter.InternalInformation;
+import org.pshdl.interpreter.ParameterInformation;
 import org.pshdl.interpreter.VariableInformation;
 import org.pshdl.interpreter.utils.IOUtil.FrameTypes;
+import org.pshdl.interpreter.utils.IOUtil.FunctionTypes;
 import org.pshdl.interpreter.utils.IOUtil.IDType;
 import org.pshdl.interpreter.utils.IOUtil.InternalTypes;
 import org.pshdl.interpreter.utils.IOUtil.ModelTypes;
+import org.pshdl.interpreter.utils.IOUtil.ParameterTypes;
 import org.pshdl.interpreter.utils.IOUtil.VariableTypes;
 
 public class ExecutableOutputStream extends DataOutputStream {
@@ -55,7 +59,7 @@ public class ExecutableOutputStream extends DataOutputStream {
 		// System.out.println("ExecutableOutputStream.writeExecutableModel()" +
 		// model);
 		write("PSEX".getBytes(StandardCharsets.UTF_8));
-		writeByteArray(ModelTypes.version, new byte[] { 0, 3, 0 });
+		writeByteArray(ModelTypes.version, new byte[] { 0, 4, 0 });
 		writeString(ModelTypes.src, model.source);
 		if (model.moduleName != null) {
 			writeString(ModelTypes.moduleName, model.moduleName);
@@ -66,7 +70,12 @@ public class ExecutableOutputStream extends DataOutputStream {
 		writeInt(ModelTypes.maxDataWidth, model.maxDataWidth);
 		writeInt(ModelTypes.maxStackDepth, model.maxStackDepth);
 		if ((model.annotations != null) && (model.annotations.length != 0)) {
-			writeStringArray(ModelTypes.annotations, model.annotations);
+			writeStringArray(ModelTypes.annotation, model.annotations);
+		}
+		if ((model.functions != null) && (model.functions.length != 0)) {
+			for (final FunctionInformation function : model.functions) {
+				writeFunction(function);
+			}
 		}
 		final Map<String, Integer> varIdx = new LinkedHashMap<>();
 		final VariableInformation[] variables = model.variables;
@@ -81,6 +90,57 @@ public class ExecutableOutputStream extends DataOutputStream {
 		for (final Frame f : model.frames) {
 			writeFrame(f);
 		}
+	}
+
+	public void writeFunction(FunctionInformation fi) throws IOException {
+		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		final ExecutableOutputStream obj = new ExecutableOutputStream(baos);
+		final String name = fi.name;
+		obj.writeString(FunctionTypes.name, name);
+		if (fi.returnType != null) {
+			obj.writeParameter(FunctionTypes.returnType, fi.returnType);
+		}
+		for (final ParameterInformation arg : fi.parameter) {
+			obj.writeParameter(FunctionTypes.parameter, arg);
+		}
+		writeByteArray(ModelTypes.function, baos.toByteArray());
+		if (fi.isStatement) {
+			obj.writeHeader(FunctionTypes.statement, 0);
+		}
+		obj.close();
+	}
+
+	public void writeParameter(IDType<?> ft, ParameterInformation param) throws IOException {
+		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		final ExecutableOutputStream obj = new ExecutableOutputStream(baos);
+		obj.writeInt(ParameterTypes.rwType, param.rw.ordinal());
+		obj.writeInt(ParameterTypes.type, param.type.ordinal());
+		if (param.enumSpec != null) {
+			obj.writeString(ParameterTypes.enumSpec, param.enumSpec);
+		}
+		if (param.ifSpec != null) {
+			obj.writeString(ParameterTypes.ifSpec, param.ifSpec);
+		}
+		if (param.funcSpec != null) {
+			for (final ParameterInformation arg : param.funcSpec) {
+				obj.writeParameter(ParameterTypes.funcSpec, arg);
+			}
+		}
+		if (param.funcReturnSpec != null) {
+			obj.writeParameter(ParameterTypes.funcReturnSpec, param.funcReturnSpec);
+		}
+		if (param.name != null) {
+			obj.writeString(ParameterTypes.name, param.name);
+		}
+		if (param.width != -1) {
+			obj.writeInt(ParameterTypes.width, param.width);
+		}
+		if (param.dim != null) {
+			obj.writeIntArray(ParameterTypes.dims, param.dim);
+		}
+		obj.writeInt(ParameterTypes.constant, param.constant ? 1 : 0);
+		writeByteArray(ft, baos.toByteArray());
+		obj.close();
 	}
 
 	public void writeVariable(VariableInformation vi) throws IOException {
@@ -163,6 +223,9 @@ public class ExecutableOutputStream extends DataOutputStream {
 		final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		final ExecutableOutputStream obj = new ExecutableOutputStream(baos);
 		obj.writeInt(FrameTypes.uniqueID, f.uniqueID);
+		if (f.isFuncStatement) {
+			obj.writeHeader(FrameTypes.isFuncStatement, 0);
+		}
 		obj.writeIntArray(FrameTypes.outputID, f.outputIds);
 		obj.writeIntArray(FrameTypes.internalDep, f.internalDependencies);
 		// Only write if they are set
@@ -225,6 +288,10 @@ public class ExecutableOutputStream extends DataOutputStream {
 
 	/**
 	 * Simple TLV for single integers. No preceeding items count
+	 *
+	 * @param e
+	 * @param data
+	 * @throws IOException
 	 */
 	public void writeInt(IDType<?> e, int data) throws IOException {
 		writeByteArray(e, getVarInt(data));
