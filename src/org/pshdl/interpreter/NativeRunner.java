@@ -42,18 +42,29 @@ import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
+import org.pshdl.interpreter.JavaPSHDLLib.Assert;
+
 public class NativeRunner implements IHDLInterpreter {
+
+	public interface IRunListener {
+		public void printfReceived(String printf);
+
+		public void assertionReceived(Assert asert, String message);
+	}
 
 	private final ExecutableModel model;
 	private final Map<String, Integer> varIdx = new LinkedHashMap<>();
 	private final PrintStream outPrint;
 	private final BlockingDeque<String> responses = new LinkedBlockingDeque<>();
 	public final StringWriter commentOutput = new StringWriter();
+	public final StringWriter assertions = new StringWriter();
 	private final Process process;
 	private final int timeOutInSeconds;
 	public final StringBuilder testInput = new StringBuilder();
+	private final IRunListener listener;
 
-	public NativeRunner(final InputStream is, OutputStream os, ExecutableModel model, Process process, int timeOutInSeconds, String name) {
+	public NativeRunner(final InputStream is, OutputStream os, ExecutableModel model, Process process, int timeOutInSeconds, String name, IRunListener listener) {
+		this.listener = listener;
 		this.model = model;
 		this.process = process;
 		try {
@@ -78,7 +89,7 @@ public class NativeRunner implements IHDLInterpreter {
 						final String trimmedLine = line.trim();
 						if (!trimmedLine.isEmpty()) {
 							if (trimmedLine.charAt(0) == '#') {
-								commentOutput.append(trimmedLine.substring(1));
+								commentOutput.append(trimmedLine.substring(1) + "\n");
 							} else {
 								responses.add(trimmedLine);
 							}
@@ -171,19 +182,30 @@ public class NativeRunner implements IHDLInterpreter {
 		}
 		outPrint.flush();
 		try {
-			final String response = responses.pollFirst(timeOutInSeconds, TimeUnit.SECONDS);
-			if (response == null)
-				throw new IllegalArgumentException("TimeOut during communication");
-			final String[] split = response.split(" ");
-			final String[] res = new String[split.length - 1];
-			if (split[0].equals(">" + command)) {
-				for (int i = 1; i < split.length; i++) {
-					final String string = split[i];
-					res[i - 1] = string.trim();
+			String response = null;
+			while (true) {
+				response = responses.pollFirst(timeOutInSeconds, TimeUnit.SECONDS);
+				if (response == null)
+					throw new IllegalArgumentException("TimeOut during communication");
+				final String[] split = response.split(" ");
+				final String[] res = new String[split.length - 1];
+				if (split[0].equals(">" + command)) {
+					for (int i = 1; i < split.length; i++) {
+						final String string = split[i];
+						res[i - 1] = string.trim();
+					}
+					return res;
 				}
-				return res;
+				if (split[0].equals("as")) {
+					final Assert as = Assert.values()[Integer.parseInt(split[1])];
+					listener.assertionReceived(as, response.substring(5));
+				} else if (split[0].equals("pf")) {
+					listener.printfReceived(response.substring(3));
+				} else {
+					System.out.println(testInput);
+					break;
+				}
 			}
-			System.out.println(testInput);
 			throw new IllegalArgumentException("Did not expect the following response:" + response + responses);
 		} catch (final InterruptedException e) {
 			throw new RuntimeException(e);
@@ -212,7 +234,18 @@ public class NativeRunner implements IHDLInterpreter {
 		if (closed)
 			throw new IllegalStateException("Runner already closed");
 		closed = true;
-		send("xn");
+		try {
+			process.exitValue();
+			// The process already terminated, so there is no point in sending
+			// any data anymore
+			return;
+		} catch (final Exception e) {
+		}
+		try {
+			send("xn");
+		} catch (final Throwable e) {
+			System.out.println(commentOutput);
+		}
 	}
 
 	@Override

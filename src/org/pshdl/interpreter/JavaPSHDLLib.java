@@ -1,8 +1,10 @@
 package org.pshdl.interpreter;
 
-import java.util.Formatter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.pshdl.interpreter.NativeRunner.IRunListener;
+import org.pshdl.interpreter.utils.PSHDLFormatter;
 
 public class JavaPSHDLLib {
 	public static enum Assert {
@@ -22,8 +24,33 @@ public class JavaPSHDLLib {
 	}
 
 	public static enum TimeUnit {
-		FS, PS, NS, US, MS, S
+		FS, PS, NS, US, MS, S;
+
+		public String toDisplay() {
+			if (this == US)
+				return "µs";
+			return name().toLowerCase();
+		}
 	}
+
+	public class DefaultListener implements IRunListener {
+
+		@Override
+		public void printfReceived(String printf) {
+			// TODO Auto-generated method stub
+
+		}
+
+		@Override
+		public void assertionReceived(Assert assertLevel, String message) {
+			logAssert(assertLevel.ordinal(), "%s %s:%s", now(), assertLevel, message);
+			if (breakLevel.ordinal() >= assertLevel.ordinal())
+				throw new AssertionError(format("%s %s:%s", now(), assertLevel, message));
+		}
+
+	}
+
+	public IRunListener listener = new DefaultListener();
 
 	private final IHDLInterpreter code;
 	private final Logger logger = Logger.getLogger("pshdl");
@@ -35,11 +62,9 @@ public class JavaPSHDLLib {
 	public Assert breakLevel = Assert.ERROR;
 
 	public void assertThat(boolean expression, long assertIdx, String message) {
-		final Assert assertLevel = getLevel(assertIdx);
 		if (!expression) {
-			if (breakLevel.ordinal() >= assertIdx)
-				throw new AssertionError(format("%s %s:%s", now(), assertLevel, message));
-			printf(assertIdx, "%s %s:%s", now(), assertLevel, message);
+			final Assert assertLevel = getLevel(assertIdx);
+			listener.assertionReceived(assertLevel, message);
 		}
 	}
 
@@ -47,7 +72,7 @@ public class JavaPSHDLLib {
 		return Assert.values()[(int) assertIdx];
 	}
 
-	private void printf(long assertIdx, String fmt, Object... objects) {
+	private void logAssert(long assertIdx, String fmt, Object... objects) {
 		final Assert level = getLevel(assertIdx);
 		final String message = format(fmt, objects);
 		Level logLevel = Level.OFF;
@@ -69,22 +94,25 @@ public class JavaPSHDLLib {
 	}
 
 	private String format(String fmt, Object... objects) {
-		try (Formatter formatter = new Formatter()) {
-			return formatter.format(fmt, objects).toString();
-		}
+		return new PSHDLFormatter(fmt).format(objects).toString();
 	}
 
-	private String now() {
+	public void log(PSHDLFormatter formatter, Object... objects) {
+		logger.log(Level.INFO, formatter.format(objects).toString());
+	}
+
+	public String now() {
 		if (code instanceof IHDLTestbenchInterpreter) {
 			final IHDLTestbenchInterpreter tb = (IHDLTestbenchInterpreter) code;
-			return tb.getTime() + " " + tb.getTimeBase().name().toLowerCase();
+			return tb.getTime() + " " + tb.getTimeBase().toDisplay();
 		}
 		return "Delta-cycle: " + code.getDeltaCycle();
 	}
 
-	public static long pow(long a, long n) {
+	public static long pow(long base, long power) {
 		long result = 1;
-		long p = a;
+		long p = base;
+		long n = power;
 		while (n > 0) {
 			if ((n % 2) != 0) {
 				result = result * p;
