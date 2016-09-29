@@ -93,8 +93,8 @@ public class InternalInformation implements Serializable {
 	/**
 	 * bitStart indicates the largest bit index of that access, while bitEnd
 	 * indicates the lowest bit index. Both values can be -2
-	 * {@link InternalInformation#undefinedBit} to indicate that no bit access is
-	 * given. For single bit accesses both values are the same
+	 * {@link InternalInformation#undefinedBit} to indicate that no bit access
+	 * is given. For single bit accesses both values are the same
 	 */
 	public final int bitStart, bitEnd;
 

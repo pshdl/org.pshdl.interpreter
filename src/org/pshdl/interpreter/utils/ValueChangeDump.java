@@ -22,6 +22,7 @@ public class ValueChangeDump {
 		public final int width;
 		public final String shortCode;
 		public final boolean isReg;
+		public long lastValue = 0;
 
 		public Variable(String name, int width, boolean isReg) {
 			super();
@@ -50,12 +51,19 @@ public class ValueChangeDump {
 		}
 
 		public CharSequence recordValue(long value) {
+			if (value == lastValue)
+				return "";
+			return forceRecord(value);
+		}
+
+		public CharSequence forceRecord(long value) {
+			lastValue = value;
 			final StringBuilder sb = new StringBuilder();
 			if (width == 1) {
 				sb.append(value & 1);
 			} else {
 				sb.append('b');
-				for (int i = width; i > 0; i--) {
+				for (int i = width - 1; i >= 0; i--) {
 					final long newValue = value >> i;
 					sb.append(newValue & 1);
 				}

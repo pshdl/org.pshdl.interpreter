@@ -1101,7 +1101,7 @@ public class PSHDLFormatter {
 				break;
 			}
 
-				// Date
+			// Date
 			case DateTime.NAME_OF_DAY_ABBREV: // 'a'
 			case DateTime.NAME_OF_DAY: { // 'A'
 				final int i = t.get(Calendar.DAY_OF_WEEK);
@@ -1167,7 +1167,7 @@ public class PSHDLFormatter {
 				break;
 			}
 
-				// Composites
+			// Composites
 			case DateTime.TIME: // 'T' (24 hour hh:mm:ss - %tH:%tM:%tS)
 			case DateTime.TIME_24_HOUR: { // 'R' (hh:mm same as %H:%M)
 				final char sep = ':';

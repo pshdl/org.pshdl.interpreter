@@ -83,7 +83,8 @@ public interface IChangeListener {
 		}
 
 		@Override
-		public void valueChangedPredicateArray(long deltaCycle, VariableInformation varInfo, int varIdx, boolean[] oldValue, boolean[] newValue, long[] oldUpdate, long[] newUpdate) {
+		public void valueChangedPredicateArray(long deltaCycle, VariableInformation varInfo, int varIdx, boolean[] oldValue, boolean[] newValue, long[] oldUpdate,
+				long[] newUpdate) {
 			if (!doesMatch(varInfo.name))
 				return;
 			out.printf("%6d %20s ", deltaCycle, varInfo.name);
@@ -128,7 +129,8 @@ public interface IChangeListener {
 		}
 
 		@Override
-		public void valueChangedPredicateArray(long deltaCycle, VariableInformation varInfo, int varIdx, boolean[] oldValue, boolean[] newValue, long[] oldUpdate, long[] newUpdate) {
+		public void valueChangedPredicateArray(long deltaCycle, VariableInformation varInfo, int varIdx, boolean[] oldValue, boolean[] newValue, long[] oldUpdate,
+				long[] newUpdate) {
 			out.printf("%6d %20s ", deltaCycle, varInfo.name);
 			for (int i = 0; i < newValue.length; i++) {
 				if (oldValue[i] != newValue[i]) {
