@@ -3,6 +3,7 @@ package org.pshdl.interpreter.utils;
 import java.io.OutputStream;
 
 import org.pshdl.interpreter.IChangeListener;
+import org.pshdl.interpreter.IHDLInterpreter;
 import org.pshdl.interpreter.IHDLTestbenchInterpreter.ITestbenchStepListener;
 import org.pshdl.interpreter.VariableInformation;
 import org.pshdl.interpreter.utils.ValueChangeDump.TimeBase;
@@ -13,6 +14,12 @@ public class ValueChangeDumpListener implements IChangeListener, ITestbenchStepL
 	private final ValueChangeDump vcd;
 	private final Variable[] vars;
 	private long lastDC;
+	private IHDLInterpreter interpreter;
+
+	public ValueChangeDumpListener(OutputStream os, IHDLInterpreter interpreter, String... varNames) {
+		this(os, interpreter.getVariableInformation(), varNames);
+		this.interpreter = interpreter;
+	}
 
 	public ValueChangeDumpListener(OutputStream os, VariableInformation[] varInfo, String... varNames) {
 		vars = new Variable[varInfo.length];
@@ -20,7 +27,8 @@ public class ValueChangeDumpListener implements IChangeListener, ITestbenchStepL
 		if (varNames != null) {
 			for (int varIdx = 0; varIdx < varInfo.length; varIdx++) {
 				final VariableInformation vi = varInfo[varIdx];
-				for (final String varRegex : varNames) {
+				for (String varRegex : varNames) {
+					varRegex = varRegex.replace("*", ".*");
 					if (vi.name.matches(varRegex)) {
 						addVariable(vi, varIdx);
 						break;
@@ -72,6 +80,13 @@ public class ValueChangeDumpListener implements IChangeListener, ITestbenchStepL
 	@Override
 	public void testbenchStart() {
 		vcd.dumpHeaders();
+		for (int i = 0; i < vars.length; i++) {
+			final Variable variable = vars[i];
+			if (variable != null) {
+				final long value = interpreter.getOutputLong(i);
+				variable.forceRecord(value);
+			}
+		}
 	}
 
 	@Override
@@ -81,6 +96,21 @@ public class ValueChangeDumpListener implements IChangeListener, ITestbenchStepL
 	@Override
 	public boolean nextStep(long currentTime, long currentStep) {
 		return true;
+	}
+
+	public void forceUpdate(int deltaCycle) {
+		vcd.timeStamp(deltaCycle);
+		for (int i = 0; i < vars.length; i++) {
+			final Variable variable = vars[i];
+			if (variable != null) {
+				final long value = interpreter.getOutputLong(i);
+				variable.recordValue(value);
+			}
+		}
+	}
+
+	public Variable[] getVariables() {
+		return vars;
 	}
 
 }

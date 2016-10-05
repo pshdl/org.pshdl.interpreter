@@ -13,6 +13,8 @@ import java.util.Stack;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import org.pshdl.interpreter.VariableInformation;
+
 public class ValueChangeDump {
 	private static int idCounter = 0;
 
@@ -23,6 +25,7 @@ public class ValueChangeDump {
 		public final String shortCode;
 		public final boolean isReg;
 		public long lastValue = 0;
+		public int index = -1;
 
 		public Variable(String name, int width, boolean isReg) {
 			super();
@@ -233,6 +236,18 @@ public class ValueChangeDump {
 		final Variable newVar = new Variable(name, width, isReg);
 		variables.add(newVar);
 		return newVar;
+	}
+
+	public void addVariables(VariableInformation... infos) {
+		if (infos == null)
+			return;
+		for (final VariableInformation vi : infos) {
+			addVariable(vi);
+		}
+	}
+
+	public void addVariable(final VariableInformation vi) {
+		addVariable(vi.name, vi.width, vi.isRegister);
 	}
 
 	public void addVariables(Variable... variable) {
