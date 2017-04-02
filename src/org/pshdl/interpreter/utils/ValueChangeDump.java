@@ -29,7 +29,7 @@ public class ValueChangeDump {
 
 		public Variable(String name, int width, boolean isReg) {
 			super();
-			this.name = "top/" + name;
+			this.name = "top/" + name.replace('.', '/');
 			this.width = width;
 			this.isReg = isReg;
 			int thisId = idCounter++;
